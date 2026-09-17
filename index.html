@@ -7,60 +7,125 @@
 <style>
 /* ============================== THEME / TOKENS ============================== */
 :root{
-  --blue:#2563eb; --blue-dark:#1d4ed8; --blue-light:#eff6ff;
-  --bg:#f4f6fa; --card:#ffffff; --border:#e2e8f0; --border-dark:#cbd5e1;
-  --text:#1e293b; --muted:#64748b; --muted-light:#94a3b8;
-  --green:#16a34a; --green-bg:#dcfce7;
+  /* brand */
+  --navy:#0B1F3A; --navy-light:#132a4d; --navy-lighter:#1c3860;
+  --blue:#2563EB; --blue-dark:#1d4ed8; --blue-bright:#3B82F6; --blue-light:#eff6ff;
+  /* surfaces */
+  --bg:#F5F7FB; --card:#ffffff; --surface:#F8FAFC; --border:#e2e8f0; --border-dark:#cbd5e1;
+  --text:#0f172a; --muted:#64748b; --muted-light:#94a3b8;
+  /* semantic */
+  --green:#059669; --green-bg:#d1fae5;
   --amber:#d97706; --amber-bg:#fef3c7;
   --red:#dc2626; --red-bg:#fee2e2;
   --gray:#64748b; --gray-bg:#f1f5f9;
-  --radius:10px; --shadow:0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.06);
-  --shadow-lg:0 10px 30px rgba(15,23,42,.15);
-  --sidebar-w:220px;
+  /* extra accents for variety in charts / icon chips */
+  --teal:#0d9488; --teal-bg:#ccfbf1;
+  --purple:#7c3aed; --purple-bg:#ede9fe;
+  --pink:#db2777; --pink-bg:#fce7f3;
+  --indigo:#4f46e5; --indigo-bg:#e0e7ff;
+  /* geometry */
+  --radius:12px; --radius-lg:16px;
+  --shadow:0 1px 2px rgba(15,23,42,.05), 0 1px 3px rgba(15,23,42,.06);
+  --shadow-md:0 4px 14px rgba(15,23,42,.08);
+  --shadow-lg:0 16px 40px rgba(15,23,42,.16);
+  --sidebar-w:240px; --sidebar-w-collapsed:72px;
+  --ease:cubic-bezier(.4,0,.2,1); --dur:160ms;
 }
 *{box-sizing:border-box;}
-body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+body{margin:0;font-family:"Inter","Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased;}
 button{font-family:inherit;cursor:pointer;}
 input,select,textarea{font-family:inherit;font-size:14px;}
 a{color:var(--blue);}
 ::-webkit-scrollbar{width:9px;height:9px;}
 ::-webkit-scrollbar-thumb{background:var(--border-dark);border-radius:6px;}
+:focus-visible{outline:2px solid var(--blue-bright);outline-offset:1px;}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+}
 
 /* ============================== LAYOUT SHELL ============================== */
 #app{display:flex;min-height:100vh;}
 #sidebar{
-  width:var(--sidebar-w);flex-shrink:0;background:#0f172a;color:#cbd5e1;
-  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+  width:var(--sidebar-w);flex-shrink:0;background:linear-gradient(180deg,var(--navy) 0%,#0a1a30 100%);color:#94a3b8;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;transition:width var(--dur) var(--ease);
 }
-#sidebar .brand{padding:18px 20px;font-weight:700;font-size:16px;color:#fff;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:8px;}
-#sidebar .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);}
+#sidebar .brand{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:11px;}
+#sidebar .brand-mark{
+  width:34px;height:34px;flex-shrink:0;border-radius:9px;background:linear-gradient(135deg,var(--blue-bright),var(--blue));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;letter-spacing:-.02em;
+  box-shadow:0 2px 8px rgba(37,99,235,.4);
+}
+#sidebar .brand-text{min-width:0;overflow:hidden;}
+#sidebar .brand-title{font-weight:700;font-size:14.5px;color:#fff;white-space:nowrap;line-height:1.25;}
+#sidebar .brand-subtitle{font-size:10.5px;color:#7f93b8;white-space:nowrap;margin-top:1px;letter-spacing:.02em;}
+#sidebar nav{padding:14px 12px;display:flex;flex-direction:column;gap:2px;}
 .nav-item{
-  padding:11px 20px;display:flex;align-items:center;gap:10px;color:#94a3b8;
-  cursor:pointer;font-size:13.5px;border-left:3px solid transparent;transition:.15s;
+  padding:10px 12px;display:flex;align-items:center;gap:11px;color:#94a3b8;position:relative;
+  cursor:pointer;font-size:14px;border-radius:9px;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);
 }
-.nav-item:hover{background:#1e293b;color:#e2e8f0;}
-.nav-item.active{background:#1e293b;color:#fff;border-left-color:var(--blue);}
-.nav-item .icon{width:18px;text-align:center;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#e2e8f0;}
+.nav-item.active{background:linear-gradient(90deg,rgba(59,130,246,.28),rgba(59,130,246,.1));color:#fff;box-shadow:inset 0 0 0 1px rgba(59,130,246,.35);}
+.nav-item.active::before{
+  content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:18px;
+  border-radius:0 3px 3px 0;background:var(--blue-bright);
+}
+.nav-item .icon{width:18px;text-align:center;flex-shrink:0;font-size:14.5px;}
+.nav-item .nav-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-divider{height:1px;background:rgba(255,255,255,.08);margin:10px 14px;}
 #sidebar .spacer{flex:1;}
-#sidebar .footer-note{padding:14px 20px;font-size:11px;color:#475569;border-top:1px solid #1e293b;}
+#sidebar .footer-note{padding:14px 20px;font-size:10.5px;color:#5b6f8f;border-top:1px solid rgba(255,255,255,.08);line-height:1.5;}
+
+@media (max-width:1024px){
+  #sidebar{width:var(--sidebar-w-collapsed);}
+  #sidebar .brand{padding:18px 0;justify-content:center;}
+  #sidebar .brand-text,#sidebar .footer-note{display:none;}
+  #sidebar nav{padding:14px 8px;}
+  .nav-item{justify-content:center;padding:11px 0;}
+  .nav-item .nav-label{display:none;}
+  .nav-item.active::before{left:-8px;}
+}
 
 #main{flex:1;min-width:0;display:flex;flex-direction:column;}
 #topbar{
-  background:#fff;border-bottom:1px solid var(--border);padding:10px 22px;
+  background:#fff;border-bottom:1px solid var(--border);padding:11px 24px;
   display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:20;
 }
-#topbar h1{font-size:16px;margin:0;font-weight:600;}
-.sync-status{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted-light);}
-.sync-dot.ok{background:var(--green);}
+.topbar-left{min-width:0;flex-shrink:1;}
+.topbar-eyebrow{font-size:11px;color:var(--muted-light);font-weight:600;letter-spacing:.03em;text-transform:uppercase;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#topbar h1{font-size:16px;margin:0;font-weight:700;color:var(--text);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.topbar-actions{display:flex;gap:14px;align-items:center;}
+.topbar-group{display:flex;gap:8px;align-items:center;}
+.topbar-sep{width:1px;height:22px;background:var(--border);flex-shrink:0;}
+.sync-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);font-weight:600;
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 12px 6px 10px;white-space:nowrap;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted-light);flex-shrink:0;}
+.sync-dot.ok{background:var(--green);box-shadow:0 0 0 3px var(--green-bg);}
 .sync-dot.busy{background:var(--amber);animation:pulse 1s infinite;}
-.sync-dot.err{background:var(--red);}
+.sync-dot.err{background:var(--red);box-shadow:0 0 0 3px var(--red-bg);}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
-.topbar-actions{display:flex;gap:8px;align-items:center;}
-.present-controls{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:3px;background:#f8fafc;}
+.sync-save-btn{background:transparent;border:1px solid var(--border);}
+.present-controls{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:3px;background:var(--surface);}
 .present-controls .btn-icon{padding:5px 9px;}
 .present-controls .btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
 .present-label{font-size:11.5px;color:var(--muted);padding:0 4px;white-space:nowrap;min-width:88px;text-align:center;}
+.user-chip{display:flex;align-items:center;gap:8px;}
+.avatar{
+  width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue-bright),var(--navy));
+  color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.user-chip .who{line-height:1.25;}
+.user-chip .who .name{font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;}
+.user-chip .who .role{font-size:11px;color:var(--muted-light);white-space:nowrap;}
+@media (max-width:680px){ .user-chip .who{display:none;} }
+@media (max-width:980px){
+  #topbar{flex-wrap:wrap;row-gap:8px;}
+  .topbar-actions{flex-basis:100%;justify-content:flex-end;}
+}
+@media (max-width:480px){
+  .present-label{display:none;}
+  .topbar-actions{gap:8px;}
+  .topbar-sep{display:none;}
+}
 
 /* ============================== PRESENTATION FONT SCALE ============================== */
 body.font-scale-lg{font-size:17px;}
@@ -70,8 +135,8 @@ body.font-scale-lg .badge{font-size:14px;padding:4px 12px;}
 body.font-scale-lg .kpi-card .value{font-size:32px;}
 body.font-scale-lg .kpi-card .label{font-size:14px;}
 body.font-scale-lg .nav-item{font-size:16px;padding:14px 20px;}
-body.font-scale-lg #topbar-title{font-size:20px;}
-body.font-scale-lg .section-title-row h2{font-size:22px;}
+body.font-scale-lg #topbar-title{font-size:28px;}
+body.font-scale-lg .section-title-row h2{font-size:27px;}
 body.font-scale-lg .bar-row, body.font-scale-lg .legend-item{font-size:15px;}
 body.font-scale-lg .help-text{font-size:14px;}
 
@@ -82,8 +147,8 @@ body.font-scale-xl .badge{font-size:17px;padding:5px 14px;}
 body.font-scale-xl .kpi-card .value{font-size:42px;}
 body.font-scale-xl .kpi-card .label{font-size:16px;}
 body.font-scale-xl .nav-item{font-size:19px;padding:16px 20px;}
-body.font-scale-xl #topbar-title{font-size:25px;}
-body.font-scale-xl .section-title-row h2{font-size:27px;}
+body.font-scale-xl #topbar-title{font-size:34px;}
+body.font-scale-xl .section-title-row h2{font-size:33px;}
 body.font-scale-xl .bar-row, body.font-scale-xl .legend-item{font-size:18px;}
 body.font-scale-xl .help-text{font-size:16px;}
 
@@ -94,8 +159,8 @@ body.font-scale-xxl .badge{font-size:20px;padding:6px 16px;}
 body.font-scale-xxl .kpi-card .value{font-size:52px;}
 body.font-scale-xxl .kpi-card .label{font-size:19px;}
 body.font-scale-xxl .nav-item{font-size:22px;padding:18px 20px;}
-body.font-scale-xxl #topbar-title{font-size:30px;}
-body.font-scale-xxl .section-title-row h2{font-size:33px;}
+body.font-scale-xxl #topbar-title{font-size:41px;}
+body.font-scale-xxl .section-title-row h2{font-size:40px;}
 body.font-scale-xxl .bar-row, body.font-scale-xxl .legend-item{font-size:21px;}
 body.font-scale-xxl .help-text{font-size:19px;}
 body.font-scale-xxl .field label{font-size:16px;}
@@ -107,8 +172,8 @@ body.font-scale-xxxl .badge{font-size:24px;padding:7px 18px;}
 body.font-scale-xxxl .kpi-card .value{font-size:64px;}
 body.font-scale-xxxl .kpi-card .label{font-size:22px;}
 body.font-scale-xxxl .nav-item{font-size:26px;padding:20px 22px;}
-body.font-scale-xxxl #topbar-title{font-size:36px;}
-body.font-scale-xxxl .section-title-row h2{font-size:39px;}
+body.font-scale-xxxl #topbar-title{font-size:50px;}
+body.font-scale-xxxl .section-title-row h2{font-size:48px;}
 body.font-scale-xxxl .bar-row, body.font-scale-xxxl .legend-item{font-size:25px;}
 body.font-scale-xxxl .help-text{font-size:22px;}
 body.font-scale-xxxl .field label{font-size:19px;}
@@ -120,17 +185,24 @@ body.font-bold-mode .field label, body.font-bold-mode .help-text{font-weight:700
 body.font-bold-mode .badge{font-weight:800;}
 body.font-bold-mode .kpi-card .value{font-weight:800;}
 
-#content{flex:1;padding:22px;overflow-x:hidden;}
+#content{flex:1;padding:24px 26px;overflow-x:hidden;}
 .view{display:none;}
-.view.active{display:block;}
+.view.active{display:block;animation:view-in .18s var(--ease);}
+@keyframes view-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+/* ============================== PAGE HEADER ============================== */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.page-header-text .page-title{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em;color:var(--text);}
+.page-header-text .page-subtitle{margin:4px 0 0;font-size:13px;color:var(--muted);}
 
 /* ============================== BUTTONS ============================== */
 .btn{
   border:1px solid var(--border-dark);background:#fff;color:var(--text);
   padding:7px 13px;border-radius:8px;font-size:13px;display:inline-flex;align-items:center;gap:6px;
-  transition:.12s;white-space:nowrap;
+  transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease),transform var(--dur) var(--ease);white-space:nowrap;
 }
-.btn:hover{background:#f1f5f9;}
+.btn:hover{background:var(--surface);}
+.btn:active{transform:translateY(1px);}
 .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff;}
 .btn-primary:hover{background:var(--blue-dark);}
 .btn-danger{color:var(--red);border-color:#fecaca;}
@@ -140,97 +212,155 @@ body.font-bold-mode .kpi-card .value{font-weight:800;}
 .btn:disabled{opacity:.5;cursor:not-allowed;}
 
 /* ============================== CARDS / KPI ============================== */
-.grid{display:grid;gap:14px;}
-.kpi-row{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px;}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;}
-.kpi-card .label{font-size:12px;color:var(--muted);margin-bottom:6px;}
-.kpi-card .value{font-size:26px;font-weight:700;}
-.kpi-card .sub{font-size:11.5px;color:var(--muted-light);margin-top:3px;}
+.grid{display:grid;gap:16px;}
+.kpi-row{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:16px;}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;
+  transition:box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.kpi-card{--accent:var(--blue);--accent-bg:var(--blue-light);position:relative;overflow:hidden;}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.kpi-card.kpi-blue{--accent:var(--blue);--accent-bg:var(--blue-light);}
+.kpi-card.kpi-amber{--accent:var(--amber);--accent-bg:var(--amber-bg);}
+.kpi-card.kpi-green{--accent:var(--green);--accent-bg:var(--green-bg);}
+.kpi-card.kpi-slate{--accent:var(--gray);--accent-bg:var(--gray-bg);}
+.kpi-card.kpi-red{--accent:var(--red);--accent-bg:var(--red-bg);}
+.kpi-card .kpi-icon{
+  width:34px;height:34px;border-radius:10px;font-size:15px;margin-bottom:12px;
+  display:inline-flex;align-items:center;justify-content:center;background:var(--accent-bg);color:var(--accent);
+}
+.kpi-card .label{font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.kpi-card .value{font-size:30px;font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--text);}
+.kpi-card.kpi-red .value{color:var(--red);}
+.kpi-card .sub{font-size:11.5px;color:var(--muted-light);margin-top:4px;}
 .dash-grid{grid-template-columns:1.1fr 1fr;}
-.dash-grid2{grid-template-columns:1fr 1fr;margin-top:14px;}
+.dash-grid2{grid-template-columns:1fr 1fr;margin-top:16px;}
 @media (max-width:1000px){.dash-grid,.dash-grid2{grid-template-columns:1fr;}}
-.card h3{margin:0 0 12px;font-size:13.5px;font-weight:600;color:var(--text);}
+.card h3{margin:0;font-size:15px;font-weight:700;color:var(--text);}
+.card-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;}
+.card-title-row .card-title-lead{display:flex;align-items:center;gap:10px;}
+.card-subtitle{font-size:11.5px;color:var(--muted-light);margin:2px 0 0;}
+.card-icon-chip{
+  width:30px;height:30px;border-radius:9px;flex-shrink:0;font-size:13.5px;
+  display:inline-flex;align-items:center;justify-content:center;background:var(--chip-bg,var(--blue-light));color:var(--chip-fg,var(--blue));
+}
 
 /* bar list */
-.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12.5px;}
-.bar-row .bar-label{width:150px;flex-shrink:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.bar-track{flex:1;background:var(--gray-bg);border-radius:5px;height:10px;overflow:hidden;}
-.bar-fill{height:100%;background:var(--blue);border-radius:5px;}
-.bar-count{width:26px;text-align:right;font-weight:600;color:var(--text);}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:11px;font-size:12.5px;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-row .bar-label{width:120px;flex-shrink:0;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;background:var(--surface);border-radius:20px;height:10px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--c1,var(--blue)),var(--c2,var(--blue-bright)));border-radius:20px;transition:width .5s var(--ease);}
+.bar-count{width:26px;text-align:right;font-weight:700;color:var(--text);}
 
-.donut-wrap{display:flex;align-items:center;gap:22px;}
-.donut{width:120px;height:120px;border-radius:50%;flex-shrink:0;}
-.donut-legend .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12.5px;}
+.donut-wrap{display:flex;align-items:center;gap:26px;}
+.donut-outer{position:relative;width:128px;height:128px;flex-shrink:0;}
+.donut{position:absolute;inset:0;border-radius:50%;}
+.donut::after{content:'';position:absolute;inset:22px;background:var(--card);border-radius:50%;box-shadow:inset 0 0 0 1px var(--border);}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+.donut-center .num{font-size:24px;font-weight:800;color:var(--text);line-height:1;}
+.donut-center .lbl{font-size:10px;color:var(--muted-light);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;}
+.donut-legend{flex:1;}
+.donut-legend .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12.5px;}
+.donut-legend .legend-item:last-child{margin-bottom:0;}
 .legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
 
 /* ============================== FILTER BAR ============================== */
-.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
-.filter-bar select, .filter-bar input[type=text]{
-  padding:7px 10px;border:1px solid var(--border-dark);border-radius:8px;background:#fff;min-width:130px;
+.filter-bar{
+  display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;
 }
-.filter-bar input[type=text]{min-width:220px;}
+.filter-bar select, .filter-bar input[type=text]{
+  padding:8px 11px;border:1px solid var(--border-dark);border-radius:8px;background:#fff;min-width:130px;
+  transition:border-color var(--dur) var(--ease);
+}
+.filter-bar select:focus, .filter-bar input[type=text]:focus{outline:2px solid var(--blue-light);border-color:var(--blue);}
+.filter-bar input[type=text]{min-width:240px;}
 .filter-bar .spacer{flex:1;}
 
 /* ============================== TABLES ============================== */
 .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;}
 table{border-collapse:collapse;width:100%;font-size:13px;}
 thead th{
-  position:sticky;top:0;background:#f8fafc;text-align:left;padding:10px 12px;font-weight:600;
-  color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;font-size:12px;z-index:1;
+  position:sticky;top:0;background:var(--surface);text-align:left;padding:11px 14px;font-weight:700;
+  color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;font-size:11px;z-index:1;
+  text-transform:uppercase;letter-spacing:.04em;
 }
-tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;}
-tbody tr:hover{background:#f8fafc;}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--surface);vertical-align:top;}
+tbody tr{transition:background var(--dur) var(--ease);}
+tbody tr:hover{background:var(--surface);}
 tbody tr.row-clickable{cursor:pointer;}
-.cell-ellipsis{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cell-mono{font-family:Consolas,monospace;font-size:12.5px;}
+.cell-ellipsis{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cell-mono{font-family:"SF Mono",Consolas,monospace;font-size:12.5px;}
+.cell-link{color:var(--blue);font-weight:600;}
+tr.row-clickable:hover .cell-link{text-decoration:underline;}
 .row-actions{display:flex;gap:6px;}
-.empty-row td{text-align:center;color:var(--muted-light);padding:30px;}
+.empty-row td{text-align:center;color:var(--muted-light);padding:0;}
+
+/* empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;gap:4px;padding:44px 20px;}
+.empty-state-icon{font-size:26px;color:var(--border-dark);margin-bottom:6px;}
+.empty-state-title{font-size:14px;font-weight:700;color:var(--text);}
+.empty-state-desc{font-size:12.5px;color:var(--muted);margin-bottom:10px;max-width:320px;text-align:center;}
 
 /* badges */
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
 .badge-done{background:var(--green-bg);color:var(--green);}
 .badge-progress{background:var(--amber-bg);color:var(--amber);}
 .badge-cancel{background:var(--gray-bg);color:var(--gray);}
 .badge-overdue{background:var(--red-bg);color:var(--red);}
 .badge-y{background:var(--green-bg);color:var(--green);}
 .badge-n{background:var(--gray-bg);color:var(--gray);}
+.due-cell .due-date{white-space:nowrap;}
+.due-cell .due-sub{font-size:11px;font-weight:700;margin-top:2px;white-space:nowrap;}
+.due-cell .due-sub.is-overdue{color:var(--red);}
+.due-cell .due-sub.is-soon{color:var(--amber);}
+.due-cell .due-sub.is-ok{color:var(--green);}
 
 /* ============================== MODAL ============================== */
 .modal-overlay{
-  position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:flex-start;justify-content:center;
+  position:fixed;inset:0;background:rgba(11,31,58,.55);display:none;align-items:flex-start;justify-content:center;
   z-index:100;padding:30px 16px;overflow-y:auto;
 }
 .modal-overlay.open{display:flex;}
-.modal{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);width:100%;max-width:860px;margin:auto;}
+.modal{background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:100%;max-width:860px;margin:auto;animation:modal-in .18s var(--ease);}
+@keyframes modal-in{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
 .modal.modal-wide{max-width:1080px;}
 .modal-sm{max-width:440px;}
 .modal-header{
-  padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;background:#fff;border-radius:var(--radius) var(--radius) 0 0;z-index:2;
+  padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:2;
 }
-.modal-header h2{margin:0;font-size:16px;}
-.modal-body{padding:20px 22px;}
-.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff;}
-.modal-close{background:none;border:none;font-size:20px;color:var(--muted);padding:2px 6px;border-radius:6px;}
+.modal-header h2{margin:0;font-size:17px;font-weight:700;}
+.modal-subtitle{margin:-8px 0 18px;font-size:12.5px;color:var(--muted);}
+.modal-body{padding:22px 24px;}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff;border-radius:0 0 var(--radius-lg) var(--radius-lg);}
+.modal-close{background:none;border:none;font-size:20px;color:var(--muted);padding:2px 6px;border-radius:6px;transition:background var(--dur) var(--ease);}
 .modal-close:hover{background:var(--gray-bg);}
 
-.form-section{margin-bottom:22px;}
+.form-section{margin-bottom:26px;}
+.form-section:last-child{margin-bottom:0;}
 .form-section .sec-title{
-  font-size:12.5px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.03em;
-  margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--blue-light);
+  display:flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em;
+  margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--blue-light);
 }
+.form-section .sec-title .sec-icon{font-size:13px;flex-shrink:0;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .form-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
 .form-grid.cols-1{grid-template-columns:1fr;}
 @media (max-width:640px){.form-grid,.form-grid.cols-3{grid-template-columns:1fr;}}
-.field{display:flex;flex-direction:column;gap:4px;}
+.field{display:flex;flex-direction:column;gap:5px;}
 .field label{font-size:12px;color:var(--muted);font-weight:600;}
 .field label .req{color:var(--red);}
 .field input, .field select, .field textarea{
-  padding:8px 10px;border:1px solid var(--border-dark);border-radius:7px;background:#fff;color:var(--text);width:100%;
+  padding:9px 11px;border:1px solid var(--border-dark);border-radius:8px;background:#fff;color:var(--text);width:100%;
+  min-height:40px;transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
 }
-.field textarea{resize:vertical;min-height:56px;line-height:1.4;}
-.field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--blue-light);border-color:var(--blue);}
+.field textarea{resize:vertical;min-height:64px;line-height:1.45;}
+.field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-light);}
 .field.invalid input, .field.invalid select, .field.invalid textarea{border-color:var(--red);}
 .field input:disabled, .field select:disabled, .field textarea:disabled,
 .mini-table input:disabled, .mini-table textarea:disabled{background:#f8fafc;color:var(--muted);cursor:not-allowed;}
@@ -278,15 +408,53 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
 }
 .banner button{flex-shrink:0;}
 .help-text{font-size:12px;color:var(--muted-light);margin-top:4px;}
-.section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.section-title-row h2{margin:0;font-size:18px;}
+.section-title-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
+.section-title-row h2{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em;color:var(--text);}
+.section-title-row .section-subtitle{margin:4px 0 0;font-size:13px;color:var(--muted);font-weight:400;}
 .tag-count{background:var(--blue-light);color:var(--blue);border-radius:20px;padding:1px 9px;font-size:11.5px;font-weight:700;}
 .divider{height:1px;background:var(--border);margin:16px 0;}
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:16px;}
 .settings-row:last-child{border-bottom:none;}
-.settings-row .lbl{font-weight:600;font-size:13.5px;}
+.settings-row .lbl{font-weight:700;font-size:13.5px;}
 .settings-row .desc{font-size:12px;color:var(--muted);margin-top:2px;}
-.mono-path{font-family:Consolas,monospace;font-size:12px;background:var(--gray-bg);padding:4px 8px;border-radius:6px;color:var(--text);}
+.mono-path{font-family:"SF Mono",Consolas,monospace;font-size:12px;background:var(--gray-bg);padding:4px 8px;border-radius:6px;color:var(--text);}
+
+/* settings cards */
+.settings-stack{display:flex;flex-direction:column;gap:16px;max-width:720px;}
+.settings-card-head{display:flex;align-items:center;gap:11px;margin-bottom:4px;}
+.settings-card-head .sch-icon{
+  width:30px;height:30px;border-radius:9px;font-size:14px;flex-shrink:0;
+  display:inline-flex;align-items:center;justify-content:center;background:var(--blue-light);color:var(--blue);
+}
+.settings-card-head h3{margin:0;}
+.settings-card-head .status-pill{margin-left:auto;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;}
+.settings-card-head .status-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+.status-pill.is-on{background:var(--green-bg);color:var(--green);}
+.status-pill.is-off{background:var(--gray-bg);color:var(--gray);}
+.danger-zone{border-color:#fecaca;background:linear-gradient(180deg,#fff,#fff8f8);}
+.danger-zone .settings-card-head .sch-icon{background:var(--red-bg);color:var(--red);}
+
+/* segmented control */
+.segmented{display:flex;background:var(--surface);border:1px solid var(--border-dark);border-radius:9px;padding:3px;gap:2px;}
+.segmented-btn{
+  flex:1;border:none;background:transparent;padding:8px 12px;border-radius:7px;font-size:13px;font-weight:600;
+  color:var(--muted);cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);
+}
+.segmented-btn.active{background:#fff;color:var(--blue);box-shadow:var(--shadow);}
+
+/* action attention rows (dashboard) */
+.attn-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--surface);}
+.attn-row:last-child{border-bottom:none;padding-bottom:0;}
+.attn-row:first-child{padding-top:0;}
+.attn-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.attn-dot.red{background:var(--red);box-shadow:0 0 0 3px var(--red-bg);}
+.attn-dot.amber{background:var(--amber);box-shadow:0 0 0 3px var(--amber-bg);}
+.attn-body{min-width:0;flex:1;}
+.attn-title{font-weight:600;font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.attn-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.attn-when{flex-shrink:0;font-size:11px;font-weight:700;white-space:nowrap;padding-top:1px;}
+.attn-when.red{color:var(--red);}
+.attn-when.amber{color:var(--amber);}
 </style>
 </head>
 <body>
@@ -294,31 +462,45 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
 
   <!-- ============================== SIDEBAR ============================== -->
   <aside id="sidebar">
-    <div class="brand"><span class="dot"></span> MoC Management</div>
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <div class="brand-text">
+        <div class="brand-title">MoC Management</div>
+        <div class="brand-subtitle">QA Management System</div>
+      </div>
+    </div>
     <nav>
-      <div class="nav-item active" data-view="dashboard"><span class="icon">&#9635;</span> Dashboard</div>
-      <div class="nav-item" data-view="masterlist"><span class="icon">&#9776;</span> Master List</div>
-      <div class="nav-item" data-view="actionplan"><span class="icon">&#10003;</span> Action Plan</div>
-      <div class="nav-item" data-view="meeting"><span class="icon">&#128197;</span> Agenda &amp; Attendant</div>
-      <div class="nav-item" data-view="settings"><span class="icon">&#9881;</span> Dữ liệu &amp; Cài đặt</div>
+      <div class="nav-item" data-view="masterlist" title="Master List"><span class="icon">&#9776;</span><span class="nav-label">Master List</span></div>
+      <div class="nav-item" data-view="actionplan" title="Action Plan"><span class="icon">&#10003;</span><span class="nav-label">Action Plan</span></div>
+      <div class="nav-item" data-view="meeting" title="Agenda &amp; Attendant"><span class="icon">&#128197;</span><span class="nav-label">Agenda &amp; Attendant</span></div>
+      <div class="nav-item active" data-view="dashboard" title="Dashboard"><span class="icon">&#9635;</span><span class="nav-label">Dashboard</span></div>
+      <div class="nav-divider"></div>
+      <div class="nav-item" data-view="settings" title="Dữ liệu &amp; Cài đặt"><span class="icon">&#9881;</span><span class="nav-label">Dữ liệu &amp; Cài đặt</span></div>
     </nav>
     <div class="spacer"></div>
-    <div class="footer-note">QA.P.035 Management of Change<br>Nội bộ nhà máy</div>
+    <div class="footer-note">QA.P.035<br>Management of Change</div>
   </aside>
 
   <!-- ============================== MAIN ============================== -->
   <div id="main">
     <div id="topbar">
-      <h1 id="topbar-title">Dashboard</h1>
+      <div class="topbar-left">
+        <div class="topbar-eyebrow">MoC Management</div>
+        <h1 id="topbar-title">Dashboard</h1>
+      </div>
       <div class="topbar-actions">
-        <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Đang tải...</span></div>
-        <div class="present-controls" title="Cỡ chữ cho trình chiếu">
+        <div class="topbar-group present-controls" title="Cỡ chữ cho trình chiếu">
           <button class="btn btn-sm btn-icon" id="btn-font-decrease" title="Giảm cỡ chữ">A&#8722;</button>
           <span id="font-scale-label" class="present-label">Chữ thường</span>
           <button class="btn btn-sm btn-icon" id="btn-font-increase" title="Tăng cỡ chữ">A+</button>
           <button class="btn btn-sm btn-icon" id="btn-bold-toggle" title="Tô đậm chữ"><b>B</b></button>
         </div>
-        <button class="btn" id="btn-save-now">&#128190; Lưu ngay</button>
+        <div class="topbar-sep"></div>
+        <div class="topbar-group">
+          <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Đang tải...</span></div>
+          <button class="btn btn-icon sync-save-btn" id="btn-save-now" title="Lưu ngay (Ctrl+S)">&#128190;</button>
+        </div>
+        <div class="topbar-sep"></div>
         <div id="auth-area"></div>
       </div>
     </div>
@@ -330,24 +512,51 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
 
       <!-- ---------- DASHBOARD VIEW ---------- -->
       <section class="view active" id="view-dashboard">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h1 class="page-title">Management of Change</h1>
+            <p class="page-subtitle">Tổng quan yêu cầu thay đổi, tiến độ triển khai và các hành động cần xử lý.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-dashboard-new-moc">+ Thêm MoC mới</button>
+        </div>
         <div class="grid kpi-row" id="kpi-cards"></div>
         <div class="grid dash-grid">
           <div class="card">
-            <h3>Trạng thái MoC</h3>
+            <div class="card-title-row">
+              <div class="card-title-lead">
+                <span class="card-icon-chip" style="--chip-bg:var(--blue-light);--chip-fg:var(--blue);">&#9673;</span>
+                <div><h3>Trạng thái MoC</h3><p class="card-subtitle">Tình trạng triển khai hiện tại</p></div>
+              </div>
+            </div>
             <div class="donut-wrap" id="status-donut-wrap"></div>
           </div>
           <div class="card">
-            <h3>Action Plan quá hạn / sắp đến hạn</h3>
+            <div class="card-title-row">
+              <div class="card-title-lead">
+                <span class="card-icon-chip" style="--chip-bg:var(--red-bg);--chip-fg:var(--red);">&#9888;</span>
+                <div><h3>Cần chú ý</h3><p class="card-subtitle">Action sắp đến hạn hoặc đã trễ hạn</p></div>
+              </div>
+            </div>
             <div id="overdue-list"></div>
           </div>
         </div>
         <div class="grid dash-grid2">
           <div class="card">
-            <h3>MoC theo Bộ phận (Dept)</h3>
+            <div class="card-title-row">
+              <div class="card-title-lead">
+                <span class="card-icon-chip" style="--chip-bg:var(--indigo-bg);--chip-fg:var(--indigo);">&#127970;</span>
+                <div><h3>MoC theo Bộ phận</h3><p class="card-subtitle">Phân bổ theo Dept</p></div>
+              </div>
+            </div>
             <div id="dept-bars"></div>
           </div>
           <div class="card">
-            <h3>MoC theo Nhóm thay đổi (Nature)</h3>
+            <div class="card-title-row">
+              <div class="card-title-lead">
+                <span class="card-icon-chip" style="--chip-bg:var(--teal-bg);--chip-fg:var(--teal);">&#128295;</span>
+                <div><h3>MoC theo Nhóm thay đổi</h3><p class="card-subtitle">Phân bổ theo Nature of change</p></div>
+              </div>
+            </div>
             <div id="nature-bars"></div>
           </div>
         </div>
@@ -356,7 +565,10 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
       <!-- ---------- MASTER LIST VIEW ---------- -->
       <section class="view" id="view-masterlist">
         <div class="section-title-row">
-          <h2>MoC Master List <span class="tag-count" id="ml-count">0</span></h2>
+          <div>
+            <h2>MoC Master List <span class="tag-count" id="ml-count">0</span></h2>
+            <p class="section-subtitle">Quản lý và theo dõi toàn bộ yêu cầu thay đổi</p>
+          </div>
           <button class="btn btn-primary" id="btn-add-moc">+ Thêm MoC mới</button>
         </div>
         <div class="filter-bar">
@@ -385,7 +597,10 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
       <!-- ---------- ACTION PLAN VIEW ---------- -->
       <section class="view" id="view-actionplan">
         <div class="section-title-row">
-          <h2>MoC Action Plan <span class="tag-count" id="ap-count">0</span></h2>
+          <div>
+            <h2>MoC Action Plan <span class="tag-count" id="ap-count">0</span></h2>
+            <p class="section-subtitle">Theo dõi tiến độ và hạn xử lý các hành động</p>
+          </div>
           <button class="btn btn-primary" id="btn-add-action">+ Thêm hành động</button>
         </div>
         <div class="filter-bar">
@@ -437,48 +652,75 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
 
       <!-- ---------- SETTINGS VIEW ---------- -->
       <section class="view" id="view-settings">
-        <h2 style="margin-top:0;">Dữ liệu &amp; Cài đặt</h2>
-        <div class="card" style="max-width:720px;">
-          <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:10px;">
-            <div>
-              <div class="lbl">Dữ liệu dùng chung (Cloudflare)</div>
-              <div class="desc">Kết nối tới Cloudflare Worker (xem <span class="mono-path">cloudflare/worker.js</span>) để nhiều máy/nhiều người tự động đồng bộ qua internet.</div>
-              <div class="desc" id="file-status" style="margin-top:6px;font-weight:600;color:var(--text);">Chưa kết nối</div>
+        <div class="section-title-row">
+          <div>
+            <h2>Dữ liệu &amp; Cài đặt</h2>
+            <p class="section-subtitle">Kết nối dữ liệu, sao lưu và các thao tác quản trị</p>
+          </div>
+        </div>
+        <div class="settings-stack">
+
+          <div class="card">
+            <div class="settings-card-head">
+              <span class="sch-icon">&#9729;</span>
+              <h3>Cloud Sync</h3>
+              <span class="status-pill is-off" id="cloud-status-pill">Chưa kết nối</span>
             </div>
-            <div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
-              <div class="field"><label>Worker URL</label><input type="text" id="cloud-url" placeholder="https://moc-data-api.yoursubdomain.workers.dev"></div>
-              <div class="field"><label>API key</label><input type="password" id="cloud-key" placeholder="API key"></div>
+            <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:10px;border-bottom:none;padding-bottom:6px;">
+              <div>
+                <div class="desc">Kết nối tới Cloudflare Worker (xem <span class="mono-path">cloudflare/worker.js</span>) để nhiều máy/nhiều người tự động đồng bộ qua internet.</div>
+                <div class="desc" id="file-status" style="margin-top:6px;font-weight:600;color:var(--text);">Chưa kết nối</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
+                <div class="field"><label>Worker URL</label><input type="text" id="cloud-url" placeholder="https://moc-data-api.yoursubdomain.workers.dev"></div>
+                <div class="field"><label>API key</label><input type="password" id="cloud-key" placeholder="API key"></div>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-primary btn-sm" id="btn-cloud-connect">Kết nối</button>
+                  <button class="btn btn-sm btn-danger" id="btn-cloud-disconnect" style="display:none;">Ngắt kết nối</button>
+                </div>
+              </div>
+            </div>
+            <div class="settings-row" id="reconnect-row" style="display:none;">
+              <div>
+                <div class="lbl">Mất kết nối Cloudflare</div>
+                <div class="desc">Kiểm tra mạng hoặc API key rồi thử kết nối lại.</div>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-reconnect">Kết nối lại</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="settings-card-head">
+              <span class="sch-icon">&#128190;</span>
+              <h3>Data Backup</h3>
+            </div>
+            <div class="settings-row" style="border-bottom:none;">
+              <div>
+                <div class="lbl">Sao lưu / Khôi phục (JSON)</div>
+                <div class="desc">Xuất toàn bộ dữ liệu ra file JSON, hoặc nhập lại từ bản sao lưu.</div>
+              </div>
               <div style="display:flex;gap:6px;">
-                <button class="btn btn-primary btn-sm" id="btn-cloud-connect">Kết nối</button>
-                <button class="btn btn-sm btn-danger" id="btn-cloud-disconnect" style="display:none;">Ngắt kết nối</button>
+                <button class="btn btn-sm" id="btn-backup-export">Xuất JSON</button>
+                <button class="btn btn-sm" id="btn-backup-import">Nhập JSON</button>
+                <input type="file" id="input-backup-file" accept="application/json" style="display:none;">
               </div>
             </div>
           </div>
-          <div class="settings-row" id="reconnect-row" style="display:none;">
-            <div>
-              <div class="lbl">Mất kết nối Cloudflare</div>
-              <div class="desc">Kiểm tra mạng hoặc API key rồi thử kết nối lại.</div>
+
+          <div class="card danger-zone">
+            <div class="settings-card-head">
+              <span class="sch-icon">&#9888;</span>
+              <h3>Danger Zone</h3>
             </div>
-            <button class="btn btn-primary btn-sm" id="btn-reconnect">Kết nối lại</button>
-          </div>
-          <div class="settings-row">
-            <div>
-              <div class="lbl">Sao lưu / Khôi phục (JSON)</div>
-              <div class="desc">Xuất toàn bộ dữ liệu ra file JSON, hoặc nhập lại từ bản sao lưu.</div>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button class="btn btn-sm" id="btn-backup-export">Xuất JSON</button>
-              <button class="btn btn-sm" id="btn-backup-import">Nhập JSON</button>
-              <input type="file" id="input-backup-file" accept="application/json" style="display:none;">
+            <div class="settings-row" style="border-bottom:none;">
+              <div>
+                <div class="lbl">Reset về dữ liệu mẫu ban đầu</div>
+                <div class="desc" style="color:var(--red);">Xoá toàn bộ dữ liệu hiện tại, khôi phục dữ liệu mẫu gốc từ file Excel.</div>
+              </div>
+              <button class="btn btn-sm btn-danger" id="btn-reset-seed">Reset dữ liệu</button>
             </div>
           </div>
-          <div class="settings-row">
-            <div>
-              <div class="lbl">Reset về dữ liệu mẫu ban đầu</div>
-              <div class="desc" style="color:var(--red);">Xoá toàn bộ dữ liệu hiện tại, khôi phục dữ liệu mẫu gốc từ file Excel.</div>
-            </div>
-            <button class="btn btn-sm btn-danger" id="btn-reset-seed">Reset dữ liệu</button>
-          </div>
+
         </div>
       </section>
 
@@ -540,13 +782,18 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
 <div class="modal-overlay" id="modal-login">
   <div class="modal modal-sm">
     <div class="modal-header">
-      <h2>Đăng nhập</h2>
+      <h2>Chào mừng đến MoC Management</h2>
       <button class="modal-close" data-close-modal="modal-login">&times;</button>
     </div>
     <div class="modal-body">
+      <p class="modal-subtitle">Đăng nhập để quản lý các yêu cầu thay đổi.</p>
       <div class="field">
         <label>Vai trò</label>
-        <select id="login-role">
+        <div class="segmented" id="login-role-segmented">
+          <button type="button" class="segmented-btn active" data-role="admin">Admin</button>
+          <button type="button" class="segmented-btn" data-role="leader">Leader</button>
+        </div>
+        <select id="login-role" style="display:none;">
           <option value="admin">Admin</option>
           <option value="leader">Leader</option>
         </select>
@@ -567,9 +814,9 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
         <div class="err-msg" id="login-leader-error" style="display:none;">Sai mật khẩu.</div>
       </div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="flex-direction:column-reverse;align-items:stretch;">
       <button class="btn" data-close-modal="modal-login">Huỷ</button>
-      <button class="btn btn-primary" id="btn-do-login">Đăng nhập</button>
+      <button class="btn btn-primary" id="btn-do-login" style="justify-content:center;">Đăng nhập</button>
     </div>
   </div>
 </div>
@@ -943,6 +1190,11 @@ function persistCurrentUser(){
   }catch(e){ /* ignore quota errors */ }
 }
 
+function initialsOf(name){
+  const parts = (name||'').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length) return '?';
+  return (parts[0][0] + (parts.length>1 ? parts[parts.length-1][0] : '')).toUpperCase();
+}
 function renderAuthArea(){
   const el = document.getElementById('auth-area');
   if(state.currentUser){
@@ -950,8 +1202,12 @@ function renderAuthArea(){
     const changePwBtn = state.currentUser.role === 'leader'
       ? `<button class="btn btn-sm" id="btn-change-password">Đổi mật khẩu</button>` : '';
     el.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:12.5px;color:var(--text);white-space:nowrap;"><b>${Utils.escapeHtml(state.currentUser.name)}</b> <span style="color:var(--muted-light);">(${roleLabel})</span></span>
+      <div class="user-chip">
+        <div class="avatar">${Utils.escapeHtml(initialsOf(state.currentUser.name))}</div>
+        <div class="who">
+          <div class="name">${Utils.escapeHtml(state.currentUser.name)}</div>
+          <div class="role">${roleLabel}</div>
+        </div>
         ${changePwBtn}
         <button class="btn btn-sm" id="btn-logout">Đăng xuất</button>
       </div>`;
@@ -992,6 +1248,7 @@ function openLoginModal(){
   document.getElementById('login-admin-field').style.display = '';
   document.getElementById('login-leader-field').style.display = 'none';
   document.getElementById('login-leader-password-field').style.display = 'none';
+  document.querySelectorAll('#login-role-segmented .segmented-btn').forEach(b=>b.classList.toggle('active', b.dataset.role==='admin'));
   populateLeaderDropdown();
   document.getElementById('modal-login').classList.add('open');
 }
@@ -1071,7 +1328,7 @@ function applyPermissionsUI(){
 
   document.getElementById('readonly-banner').style.display = editing ? 'none' : 'flex';
 
-  ['btn-add-moc','btn-add-action','btn-add-agenda','btn-add-attendant'].forEach(id=>{
+  ['btn-add-moc','btn-dashboard-new-moc','btn-add-action','btn-add-agenda','btn-add-attendant'].forEach(id=>{
     const btn = document.getElementById(id);
     if(btn) btn.style.display = editing ? '' : 'none';
   });
@@ -1201,6 +1458,12 @@ function updateFileStatusUI(){
   if(keyInput && state.cloud) keyInput.value = state.cloud.apiKey;
   const disconnectBtn = document.getElementById('btn-cloud-disconnect');
   if(disconnectBtn) disconnectBtn.style.display = state.cloud ? '' : 'none';
+  const pill = document.getElementById('cloud-status-pill');
+  if(pill){
+    pill.textContent = state.cloud ? 'Connected' : 'Not connected';
+    pill.classList.toggle('is-on', !!state.cloud);
+    pill.classList.toggle('is-off', !state.cloud);
+  }
 }
 
 /* ================================================================================
@@ -1297,15 +1560,16 @@ function renderDashboard(){
   }).length;
 
   document.getElementById('kpi-cards').innerHTML = [
-    {label:'Tổng số MoC', value: total, sub:''},
-    {label:'Đang xử lý', value: progress, sub:''},
-    {label:'Hoàn thành', value: done, sub: total ? Math.round(done/total*100)+'%' : ''},
-    {label:'Đã huỷ', value: cancel, sub:''},
-    {label:'Action quá hạn', value: overdueActions, sub: overdueActions>0 ? 'cần xử lý' : 'ổn'}
+    {label:'Tổng số MoC', value: total, sub:'Tất cả yêu cầu thay đổi', icon:'&#9671;', tone:'blue'},
+    {label:'Đang xử lý', value: progress, sub:'Đang triển khai', icon:'&#9202;', tone:'amber'},
+    {label:'Hoàn thành', value: done, sub: total ? Math.round(done/total*100)+'% hoàn thành' : 'Chưa có dữ liệu', icon:'&#10003;', tone:'green'},
+    {label:'Đã huỷ', value: cancel, sub:'Không tiếp tục triển khai', icon:'&#10005;', tone:'slate'},
+    {label:'Action quá hạn', value: overdueActions, sub: overdueActions>0 ? 'Cần xử lý ngay' : 'Ổn định', icon:'&#9888;', tone: overdueActions>0 ? 'red' : 'green'}
   ].map(k=>`
-    <div class="card kpi-card">
+    <div class="card kpi-card kpi-${k.tone}">
+      <div class="kpi-icon">${k.icon}</div>
       <div class="label">${k.label}</div>
-      <div class="value" style="${k.label==='Action quá hạn' && k.value>0 ? 'color:var(--red);':''}">${k.value}</div>
+      <div class="value">${k.value}</div>
       <div class="sub">${k.sub}</div>
     </div>`).join('');
 
@@ -1322,7 +1586,10 @@ function renderDashboard(){
     return `${s.color} ${from}deg ${to}deg`;
   }).join(', ');
   document.getElementById('status-donut-wrap').innerHTML = `
-    <div class="donut" style="background:conic-gradient(${stops}); ${sum<=1?'background:var(--gray-bg);':''}"></div>
+    <div class="donut-outer">
+      <div class="donut" style="background:conic-gradient(${stops}); ${sum<=1?'background:var(--gray-bg);':''}"></div>
+      <div class="donut-center"><div class="num">${total}</div><div class="lbl">Total</div></div>
+    </div>
     <div class="donut-legend">
       ${segs.map(s=>`<div class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${s.label}: <b>${s.count}</b></div>`).join('')}
     </div>`;
@@ -1332,22 +1599,21 @@ function renderDashboard(){
   // nature bars
   renderBarList('nature-bars', groupCount(moc,'natureOfChange'));
 
-  // overdue / upcoming actions list
+  // action attention: overdue / upcoming actions list
   const soon = ap.filter(a=> a.status!=='Done' && a.status!=='Cancel' && a.dueDate)
     .map(a=>({...a, diff: Utils.daysDiffFromToday(a.dueDate)}))
     .filter(a=>a.diff!==null)
     .sort((a,b)=>a.diff-b.diff)
     .slice(0,6);
   document.getElementById('overdue-list').innerHTML = soon.length ? soon.map(a=>`
-    <div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px;">
-      <div style="min-width:0;">
-        <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;">${Utils.escapeHtml(a.issue||a.action||'(chưa đặt tên)')}</div>
-        <div style="color:var(--muted);">${Utils.escapeHtml(a.pic||'')} • ${Utils.escapeHtml(a.function||'')}</div>
+    <div class="attn-row">
+      <div class="attn-dot ${a.diff<0?'red':'amber'}"></div>
+      <div class="attn-body">
+        <div class="attn-title">${Utils.escapeHtml(a.issue||a.action||'(chưa đặt tên)')}</div>
+        <div class="attn-meta">PIC: ${Utils.escapeHtml(a.pic||'—')} • ${Utils.escapeHtml(a.function||'')}</div>
       </div>
-      <div style="flex-shrink:0;">
-        <span class="badge ${a.diff<0?'badge-overdue':'badge-progress'}">${a.diff<0 ? Math.abs(a.diff)+' ngày trễ' : (a.diff===0?'Hôm nay':'còn '+a.diff+'d')}</span>
-      </div>
-    </div>`).join('') : '<div class="help-text">Không có action nào sắp/đang trễ hạn.</div>';
+      <div class="attn-when ${a.diff<0?'red':'amber'}">${a.diff<0 ? Math.abs(a.diff)+' ngày trễ' : (a.diff===0?'Hôm nay':'còn '+a.diff+' ngày')}</div>
+    </div>`).join('') : '<div class="empty-state" style="padding:24px 12px;"><div class="empty-state-icon">&#9989;</div><div class="empty-state-desc">Không có action nào sắp/đang trễ hạn.</div></div>';
 }
 function groupCount(arr, key){
   const map = {};
@@ -1357,16 +1623,26 @@ function groupCount(arr, key){
   });
   return Object.entries(map).sort((a,b)=>b[1]-a[1]);
 }
+const BAR_PALETTE = [
+  ['var(--blue)','var(--blue-bright)'], ['var(--teal)','#2dd4bf'], ['var(--purple)','#a78bfa'],
+  ['var(--amber)','#fbbf24'], ['var(--pink)','#f472b6'], ['var(--indigo)','#818cf8']
+];
 function renderBarList(elId, entries){
   const el = document.getElementById(elId);
-  if(!entries.length){ el.innerHTML = '<div class="help-text">Chưa có dữ liệu.</div>'; return; }
+  if(!entries.length){ el.innerHTML = '<div class="empty-state" style="padding:20px 12px;"><div class="empty-state-desc">Chưa có dữ liệu.</div></div>'; return; }
   const max = Math.max(...entries.map(e=>e[1]));
-  el.innerHTML = entries.map(([label,count])=>`
+  el.innerHTML = entries.map(([label,count],idx)=>{
+    const [c1,c2] = BAR_PALETTE[idx % BAR_PALETTE.length];
+    return `
     <div class="bar-row">
       <div class="bar-label" title="${Utils.escapeHtml(label)}">${Utils.escapeHtml(label)}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,count/max*100)}%"></div></div>
+      <div class="bar-track"><div class="bar-fill" data-w="${Math.max(4,count/max*100)}" style="width:0%;--c1:${c1};--c2:${c2};"></div></div>
       <div class="bar-count">${count}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+  requestAnimationFrame(()=>{
+    el.querySelectorAll('.bar-fill').forEach(fill=>{ fill.style.width = fill.dataset.w + '%'; });
+  });
 }
 
 /* ================================================================================
@@ -1399,12 +1675,18 @@ function renderMasterList(){
   document.getElementById('ml-count').textContent = rows.length;
   const tbody = document.getElementById('ml-tbody');
   if(!rows.length){
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Không có MoC nào khớp bộ lọc.</td></tr>';
+    const totalEmpty = !state.data.mocList.length;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9"><div class="empty-state">
+      <div class="empty-state-icon">&#9671;</div>
+      <div class="empty-state-title">${totalEmpty ? 'Chưa có MoC nào' : 'Không có kết quả khớp bộ lọc'}</div>
+      <div class="empty-state-desc">${totalEmpty ? 'Tạo yêu cầu thay đổi đầu tiên để bắt đầu theo dõi.' : 'Thử điều chỉnh bộ lọc hoặc từ khoá tìm kiếm.'}</div>
+      ${totalEmpty && canEdit() ? '<button class="btn btn-primary btn-sm" onclick="openMocModal(null)">+ Tạo MoC mới</button>' : ''}
+    </div></td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map(m=>`
     <tr class="row-clickable" data-id="${m.id}">
-      <td class="cell-mono">${Utils.escapeHtml(m.mocNo)}</td>
+      <td class="cell-mono cell-link">${Utils.escapeHtml(m.mocNo)}</td>
       <td>${Utils.escapeHtml(m.requestDate)}</td>
       <td>${Utils.escapeHtml(m.changeOwner)}</td>
       <td>${Utils.escapeHtml(m.dept)}</td>
@@ -1544,7 +1826,7 @@ function mocFormTemplate(rec){
   const showValidUntil = rec.typeOfChange === 'Temporary Change' || rec.typeOfChange === 'Emergency Change';
   return `
   <div class="form-section">
-    <div class="sec-title">Thông tin chung</div>
+    <div class="sec-title"><span class="sec-icon">&#8505;</span>Thông tin chung</div>
     <div class="form-grid cols-3">
       <div class="field"><label>MoC No</label><input id="f-mocNo" value="${Utils.escapeHtml(rec.mocNo)}" placeholder="MoC-Dept.2026.001"></div>
       <div class="field"><label>Request Date</label><input id="f-requestDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.requestDate)}"></div>
@@ -1569,7 +1851,7 @@ function mocFormTemplate(rec){
   </div>
 
   <div class="form-section">
-    <div class="sec-title">Step 1 — Definition and Request for Change</div>
+    <div class="sec-title"><span class="sec-icon">&#9998;</span>Step 1 — Definition and Request for Change</div>
     <div class="field"><label>1.1 Name of change <span class="req">*</span></label><input id="f-nameOfChange" value="${Utils.escapeHtml(rec.nameOfChange)}"></div>
     <div class="form-grid cols-3" style="margin-top:12px;">
       <div class="field"><label>1.2 Type of change</label><select id="f-typeOfChange">${selectOptions(CONFIG.types, rec.typeOfChange)}</select></div>
@@ -1581,7 +1863,7 @@ function mocFormTemplate(rec){
   </div>
 
   <div class="form-section">
-    <div class="sec-title">Step 2 — Risk &amp; Action</div>
+    <div class="sec-title"><span class="sec-icon">&#9888;</span>Step 2 — Risk &amp; Action</div>
     <div class="form-grid">
       <div class="field"><label>Risk (SHE, Q, Volume, Regulation, Others)</label><textarea id="f-risk">${Utils.escapeHtml(rec.risk)}</textarea></div>
       <div class="field"><label>Action (mitigate/eliminate/reduce risk)</label><textarea id="f-action">${Utils.escapeHtml(rec.action)}</textarea></div>
@@ -1590,7 +1872,7 @@ function mocFormTemplate(rec){
   </div>
 
   <div class="form-section">
-    <div class="sec-title">Step 3 — Approval</div>
+    <div class="sec-title"><span class="sec-icon">&#10003;</span>Step 3 — Approval</div>
     <p class="help-text" style="margin-top:-4px;margin-bottom:10px;">Change owner + Area owner luôn bắt buộc. Thêm người duyệt khác chỉ khi thay đổi thực sự cần (rủi ro cao, liên quan tài chính/nhân sự...).</p>
     <table class="mini-table" id="approval-table">
       <thead><tr><th style="width:22%">Position</th><th>Full name</th><th style="width:150px">Date</th><th style="width:70px">Sign off</th><th style="width:30px"></th></tr></thead>
@@ -1603,13 +1885,13 @@ function mocFormTemplate(rec){
   </div>
 
   <div class="form-section">
-    <div class="sec-title">Step 5 — Implementation</div>
+    <div class="sec-title"><span class="sec-icon">&#9635;</span>Step 5 — Implementation</div>
     <p class="help-text">Theo dõi từng hành động triển khai cụ thể ở tab <b>Action Plan</b> (gắn theo mã MoC này) thay vì lặp lại ở đây.</p>
     <button type="button" class="btn btn-sm always-visible-btn" id="btn-goto-action-plan">Xem Action Plan của MoC này</button>
   </div>
 
   <div class="form-section">
-    <div class="sec-title">Step 6 — Verification (by Change owner/Area owner)</div>
+    <div class="sec-title"><span class="sec-icon">&#9989;</span>Step 6 — Verification (by Change owner/Area owner)</div>
     <div class="field"><label>Implementation result</label><textarea id="f-verifResult">${Utils.escapeHtml(rec.verification.result)}</textarea></div>
     <div class="field" style="margin-top:12px;max-width:320px;"><label>Kết quả xác nhận</label><select id="f-verifState">${selectOptions(CONFIG.verificationStates, rec.verification.state)}</select></div>
     <table class="mini-table" id="verif-table" style="margin-top:12px;">
@@ -1619,7 +1901,7 @@ function mocFormTemplate(rec){
   </div>
 
   <div class="form-section">
-    <div class="sec-title">Remarks</div>
+    <div class="sec-title"><span class="sec-icon">&#9998;</span>Remarks</div>
     <textarea id="f-remarks">${Utils.escapeHtml(rec.remarks)}</textarea>
   </div>
   `;
@@ -1807,18 +2089,29 @@ function renderActionPlan(){
   document.getElementById('ap-count').textContent = rows.length;
   const tbody = document.getElementById('ap-tbody');
   if(!rows.length){
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Không có hành động nào khớp bộ lọc.</td></tr>';
+    const totalEmpty = !state.data.actionPlan.length;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><div class="empty-state">
+      <div class="empty-state-icon">&#10003;</div>
+      <div class="empty-state-title">${totalEmpty ? 'Chưa có hành động nào' : 'Không có kết quả khớp bộ lọc'}</div>
+      <div class="empty-state-desc">${totalEmpty ? 'Thêm hành động để bắt đầu theo dõi tiến độ.' : 'Thử điều chỉnh bộ lọc hoặc từ khoá tìm kiếm.'}</div>
+      ${totalEmpty && canEdit() ? '<button class="btn btn-primary btn-sm" onclick="openActionModal(null)">+ Thêm hành động</button>' : ''}
+    </div></td></tr>`;
     return;
   }
   tbody.innerHTML = rows.map(a=>{
     const diff = (a.status!=='Done' && a.status!=='Cancel') ? Utils.daysDiffFromToday(a.dueDate) : null;
     const overdue = diff!==null && diff<0;
+    const soon = diff!==null && diff>=0 && diff<=3;
+    let dueSub = '';
+    if(overdue) dueSub = `<div class="due-sub is-overdue">${Math.abs(diff)} ngày trễ</div>`;
+    else if(soon) dueSub = `<div class="due-sub is-soon">${diff===0?'Đến hạn hôm nay':'còn '+diff+' ngày'}</div>`;
+    else if(a.status==='Done') dueSub = `<div class="due-sub is-ok">Đã hoàn thành</div>`;
     return `<tr class="row-clickable" data-id="${a.id}">
       <td>${Utils.escapeHtml(a.date)}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(a.issue)}">${Utils.escapeHtml(a.issue)}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(a.action)}">${Utils.escapeHtml(a.action)}</td>
       <td>${Utils.escapeHtml(a.pic)}</td>
-      <td>${overdue?'<span class="badge badge-overdue">':''}${Utils.escapeHtml(a.dueDate)}${overdue?'</span>':''}</td>
+      <td class="due-cell"><div class="due-date">${Utils.escapeHtml(a.dueDate)}</div>${dueSub}</td>
       <td><span class="badge ${statusBadgeClass(a.status)}">${Utils.escapeHtml(a.status||'On progress')}</span></td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(a.remark)}">${Utils.escapeHtml(a.remark)}</td>
       <td class="row-actions">
@@ -2642,6 +2935,7 @@ function bindStaticEvents(){
 
   // Master list
   document.getElementById('btn-add-moc').addEventListener('click', ()=>openMocModal(null));
+  document.getElementById('btn-dashboard-new-moc').addEventListener('click', ()=>openMocModal(null));
   document.getElementById('ml-search').addEventListener('input', renderMasterList);
   document.getElementById('ml-filter-dept').addEventListener('change', renderMasterList);
   document.getElementById('ml-filter-status').addEventListener('change', renderMasterList);
@@ -2698,6 +2992,14 @@ function bindStaticEvents(){
     document.getElementById('login-admin-field').style.display = isAdmin ? '' : 'none';
     document.getElementById('login-leader-field').style.display = isAdmin ? 'none' : '';
     document.getElementById('login-leader-password-field').style.display = isAdmin ? 'none' : '';
+  });
+  document.querySelectorAll('#login-role-segmented .segmented-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const sel = document.getElementById('login-role');
+      sel.value = btn.dataset.role;
+      sel.dispatchEvent(new Event('change'));
+      document.querySelectorAll('#login-role-segmented .segmented-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    });
   });
   document.getElementById('login-leader-password').addEventListener('keydown', e=>{
     if(e.key === 'Enter'){ e.preventDefault(); doLogin(); }
