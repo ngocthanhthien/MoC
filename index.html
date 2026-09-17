@@ -284,6 +284,27 @@ body.font-bold-mode .kpi-card .value{font-weight:800;}
 .filter-bar input[type=text]{min-width:240px;}
 .filter-bar .spacer{flex:1;}
 
+/* multi-select filter dropdown (checkbox list) */
+.msel{position:relative;}
+.msel-btn{
+  padding:8px 11px;border:1px solid var(--border-dark);border-radius:8px;background:#fff;min-width:130px;
+  font-size:13px;color:var(--text);display:inline-flex;align-items:center;justify-content:space-between;gap:8px;
+  cursor:pointer;transition:border-color var(--dur) var(--ease);white-space:nowrap;
+}
+.msel-btn::after{content:'▾';font-size:10px;color:var(--muted-light);}
+.msel-btn:hover{border-color:var(--border-dark);background:var(--surface);}
+.msel.has-selection .msel-btn{border-color:var(--blue);color:var(--blue);font-weight:600;background:var(--blue-light);}
+.msel-menu{
+  display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:30;min-width:210px;max-height:280px;overflow-y:auto;
+  background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);padding:6px;
+}
+.msel.open .msel-menu{display:block;}
+.msel-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;font-size:13px;cursor:pointer;white-space:nowrap;}
+.msel-item:hover{background:var(--surface);}
+.msel-item input{width:auto;flex-shrink:0;}
+.msel-actions{display:flex;gap:6px;padding:4px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.msel-actions button{background:none;border:none;color:var(--blue);font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 4px;}
+
 /* ============================== TABLES ============================== */
 .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;}
 table{border-collapse:collapse;width:100%;font-size:13px;}
@@ -292,6 +313,11 @@ thead th{
   color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;font-size:11px;z-index:1;
   text-transform:uppercase;letter-spacing:.04em;
 }
+thead th[data-sort]{cursor:pointer;user-select:none;transition:color var(--dur) var(--ease);}
+thead th[data-sort]:hover{color:var(--text);}
+thead th[data-sort] .sort-arrow{display:inline-block;margin-left:4px;font-size:9px;color:var(--border-dark);}
+thead th[data-sort].sort-active{color:var(--blue);}
+thead th[data-sort].sort-active .sort-arrow{color:var(--blue);}
 tbody td{padding:12px 14px;border-bottom:1px solid var(--surface);vertical-align:top;}
 tbody tr{transition:background var(--dur) var(--ease);}
 tbody tr:hover{background:var(--surface);}
@@ -576,9 +602,10 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
         </div>
         <div class="filter-bar">
           <input type="text" id="ml-search" placeholder="Tìm MoC No / tên / change owner...">
-          <select id="ml-filter-dept"><option value="">Tất cả bộ phận</option></select>
-          <select id="ml-filter-status"><option value="">Tất cả trạng thái</option></select>
-          <select id="ml-filter-nature"><option value="">Tất cả nhóm</option></select>
+          <div class="msel" id="ml-filter-dept"><button type="button" class="msel-btn">Tất cả bộ phận</button><div class="msel-menu"></div></div>
+          <div class="msel" id="ml-filter-status"><button type="button" class="msel-btn">Tất cả trạng thái</button><div class="msel-menu"></div></div>
+          <div class="msel" id="ml-filter-nature"><button type="button" class="msel-btn">Tất cả nhóm</button><div class="msel-menu"></div></div>
+          <div class="msel" id="ml-filter-type"><button type="button" class="msel-btn">Tất cả loại</button><div class="msel-menu"></div></div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;">
             <input type="checkbox" id="ml-show-all-status"> Hiện cả Done/Cancel
           </label>
@@ -589,8 +616,15 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>MoC No</th><th>Request Date</th><th>Change Owner</th><th>Dept</th>
-              <th>Name of change</th><th>Nature</th><th>Type</th><th>Status</th><th></th>
+              <th data-sort="mocNo">MoC No<span class="sort-arrow"></span></th>
+              <th data-sort="requestDate">Request Date<span class="sort-arrow"></span></th>
+              <th data-sort="changeOwner">Change Owner<span class="sort-arrow"></span></th>
+              <th data-sort="dept">Dept<span class="sort-arrow"></span></th>
+              <th data-sort="nameOfChange">Name of change<span class="sort-arrow"></span></th>
+              <th data-sort="natureOfChange">Nature<span class="sort-arrow"></span></th>
+              <th data-sort="typeOfChange">Type<span class="sort-arrow"></span></th>
+              <th data-sort="status">Status<span class="sort-arrow"></span></th>
+              <th></th>
             </tr></thead>
             <tbody id="ml-tbody"></tbody>
           </table>
@@ -608,8 +642,8 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
         </div>
         <div class="filter-bar">
           <input type="text" id="ap-search" placeholder="Tìm issue / action / PIC...">
-          <select id="ap-filter-function"><option value="">Tất cả function</option></select>
-          <select id="ap-filter-status"><option value="">Tất cả trạng thái</option></select>
+          <div class="msel" id="ap-filter-function"><button type="button" class="msel-btn">Tất cả function</button><div class="msel-menu"></div></div>
+          <div class="msel" id="ap-filter-status"><button type="button" class="msel-btn">Tất cả trạng thái</button><div class="msel-menu"></div></div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;">
             <input type="checkbox" id="ap-show-all-status"> Hiện cả Done/Cancel
           </label>
@@ -619,8 +653,14 @@ thead .att-sticky-col{z-index:3;background:#f8fafc;}
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>Date</th><th>Issue</th><th>Action</th><th>PIC</th>
-              <th>Due date</th><th>Status</th><th>Remark</th><th></th>
+              <th data-sort="date">Date<span class="sort-arrow"></span></th>
+              <th data-sort="issue">Issue<span class="sort-arrow"></span></th>
+              <th data-sort="action">Action<span class="sort-arrow"></span></th>
+              <th data-sort="pic">PIC<span class="sort-arrow"></span></th>
+              <th data-sort="dueDate">Due date<span class="sort-arrow"></span></th>
+              <th data-sort="status">Status<span class="sort-arrow"></span></th>
+              <th data-sort="remark">Remark<span class="sort-arrow"></span></th>
+              <th></th>
             </tr></thead>
             <tbody id="ap-tbody"></tbody>
           </table>
@@ -1148,7 +1188,9 @@ const state = {
   mocEditingIsNew: false,
   actionEditing: null,
   agendaEditing: null,
-  currentUser: null      // { role:'admin'|'leader', name:string, function:string }
+  currentUser: null,     // { role:'admin'|'leader', name:string, function:string }
+  mlSort: { field:'requestDate', dir:'desc' },
+  apSort: { field:'date', dir:'desc' }
 };
 
 function cloneSeed(){
@@ -1581,24 +1623,101 @@ function renderActiveView(){
 }
 
 /* ================================================================================
-   FILTER OPTIONS (populate dropdowns from CONFIG)
+   FILTER OPTIONS — multi-select checkbox dropdowns (click a button, tick items)
 ================================================================================ */
-function fillSelect(select, values, keepFirst){
-  const first = keepFirst ? select.firstElementChild : null;
-  select.innerHTML = '';
-  if(first) select.appendChild(first);
-  values.forEach(v=>{
-    const o = document.createElement('option'); o.value=v; o.textContent=v; select.appendChild(o);
+const MultiSelect = (()=>{
+  const registry = {};
+
+  function renderMenu(id){
+    const reg = registry[id];
+    const menu = document.querySelector('#'+id+' .msel-menu');
+    menu.innerHTML = `
+      <div class="msel-actions">
+        <button type="button" data-msel-all>Chọn tất cả</button>
+        <button type="button" data-msel-none>Bỏ chọn</button>
+      </div>
+      ${reg.options.map(v => `<label class="msel-item"><input type="checkbox" value="${Utils.escapeHtml(v)}" ${reg.selected.has(v)?'checked':''}> ${Utils.escapeHtml(v)}</label>`).join('')}`;
+    menu.querySelector('[data-msel-all]').addEventListener('click', ()=>{ reg.options.forEach(v=>reg.selected.add(v)); afterChange(id); });
+    menu.querySelector('[data-msel-none]').addEventListener('click', ()=>{ reg.selected.clear(); afterChange(id); });
+    menu.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        if(cb.checked) reg.selected.add(cb.value); else reg.selected.delete(cb.value);
+        updateButton(id);
+        reg.onChange();
+      });
+    });
+  }
+  function updateButton(id){
+    const reg = registry[id];
+    const root = document.getElementById(id);
+    const btn = root.querySelector('.msel-btn');
+    const n = reg.selected.size;
+    btn.textContent = n===0 ? reg.placeholder : (n===1 ? [...reg.selected][0] : n+' đã chọn');
+    root.classList.toggle('has-selection', n>0);
+  }
+  function afterChange(id){ renderMenu(id); updateButton(id); registry[id].onChange(); }
+
+  function init(id, options, placeholder, onChange){
+    registry[id] = { options, placeholder, onChange, selected: new Set() };
+    const root = document.getElementById(id);
+    root.querySelector('.msel-btn').textContent = placeholder;
+    renderMenu(id);
+    root.querySelector('.msel-btn').addEventListener('click', e=>{
+      e.stopPropagation();
+      document.querySelectorAll('.msel.open').forEach(m=>{ if(m!==root) m.classList.remove('open'); });
+      root.classList.toggle('open');
+    });
+  }
+  function getSelected(id){ return registry[id] ? Array.from(registry[id].selected) : []; }
+
+  document.addEventListener('click', e=>{
+    document.querySelectorAll('.msel.open').forEach(m=>{ if(!m.contains(e.target)) m.classList.remove('open'); });
   });
-}
+
+  return { init, getSelected };
+})();
+
 function renderAllFilterOptions(){
-  fillSelect(document.getElementById('ml-filter-dept'), CONFIG.depts, true);
-  fillSelect(document.getElementById('ml-filter-status'), CONFIG.statuses, true);
-  fillSelect(document.getElementById('ml-filter-nature'), CONFIG.natures, true);
-  fillSelect(document.getElementById('ap-filter-function'), CONFIG.depts, true);
-  fillSelect(document.getElementById('ap-filter-status'), CONFIG.statuses, true);
+  MultiSelect.init('ml-filter-dept', CONFIG.depts, 'Tất cả bộ phận', renderMasterList);
+  MultiSelect.init('ml-filter-status', CONFIG.statuses, 'Tất cả trạng thái', renderMasterList);
+  MultiSelect.init('ml-filter-nature', CONFIG.natures, 'Tất cả nhóm', renderMasterList);
+  MultiSelect.init('ml-filter-type', CONFIG.types, 'Tất cả loại', renderMasterList);
+  MultiSelect.init('ap-filter-function', CONFIG.depts, 'Tất cả function', renderActionPlan);
+  MultiSelect.init('ap-filter-status', CONFIG.statuses, 'Tất cả trạng thái', renderActionPlan);
 }
 function renderDashboardFilters(){ /* placeholder for future dashboard-level filters */ }
+
+/* ================================================================================
+   TABLE SORT — click a <th data-sort> to sort Master List / Action Plan by that field
+================================================================================ */
+function sortRows(rows, sortState){
+  if(!sortState || !sortState.field) return rows;
+  const { field, dir } = sortState;
+  const mul = dir === 'asc' ? 1 : -1;
+  return [...rows].sort((a,b)=>{
+    const av = String(a[field]||'').toLowerCase(), bv = String(b[field]||'').toLowerCase();
+    return av.localeCompare(bv, 'vi') * mul;
+  });
+}
+function bindSortableHeaders(tableViewId, sortStateKey, renderFn){
+  document.querySelectorAll('#'+tableViewId+' thead th[data-sort]').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const field = th.dataset.sort;
+      const cur = state[sortStateKey];
+      if(cur.field === field) cur.dir = cur.dir === 'asc' ? 'desc' : 'asc';
+      else { cur.field = field; cur.dir = 'asc'; }
+      updateSortIndicators(tableViewId, cur);
+      renderFn();
+    });
+  });
+}
+function updateSortIndicators(tableViewId, sortState){
+  document.querySelectorAll('#'+tableViewId+' thead th[data-sort]').forEach(th=>{
+    const active = th.dataset.sort === sortState.field;
+    th.classList.toggle('sort-active', active);
+    th.querySelector('.sort-arrow').textContent = active ? (sortState.dir==='asc' ? '▲' : '▼') : '';
+  });
+}
 
 /* ================================================================================
    DASHBOARD RENDER
@@ -1712,25 +1831,28 @@ function renderBarList(elId, entries){
 ================================================================================ */
 function getMasterListFiltered(){
   const search = document.getElementById('ml-search').value.trim().toLowerCase();
-  const dept = document.getElementById('ml-filter-dept').value;
-  const status = document.getElementById('ml-filter-status').value;
-  const nature = document.getElementById('ml-filter-nature').value;
+  const depts = MultiSelect.getSelected('ml-filter-dept');
+  const statuses = MultiSelect.getSelected('ml-filter-status');
+  const natures = MultiSelect.getSelected('ml-filter-nature');
+  const types = MultiSelect.getSelected('ml-filter-type');
   const showAllStatus = document.getElementById('ml-show-all-status').checked;
-  return state.data.mocList.filter(m=>{
+  const rows = state.data.mocList.filter(m=>{
     const effStatus = m.status || 'On progress';
-    if(status){
-      if(effStatus !== status) return false;
+    if(statuses.length){
+      if(!statuses.includes(effStatus)) return false;
     } else if(!showAllStatus && (effStatus === 'Done' || effStatus === 'Cancel')){
       return false;
     }
-    if(dept && m.dept !== dept) return false;
-    if(nature && m.natureOfChange !== nature) return false;
+    if(depts.length && !depts.includes(m.dept)) return false;
+    if(natures.length && !natures.includes(m.natureOfChange)) return false;
+    if(types.length && !types.includes(m.typeOfChange)) return false;
     if(search){
       const hay = [m.mocNo,m.nameOfChange,m.changeOwner,m.reasonOfChange,m.dept].join(' ').toLowerCase();
       if(!hay.includes(search)) return false;
     }
     return true;
-  }).sort((a,b)=> String(b.requestDate||'').localeCompare(String(a.requestDate||'')));
+  });
+  return sortRows(rows, state.mlSort);
 }
 function renderMasterList(){
   const rows = getMasterListFiltered();
@@ -1853,14 +1975,34 @@ function suggestMocNo(dept, dateStr){
   return prefix + String(max+1).padStart(3,'0');
 }
 
-function selectOptions(values, current){
+// Optional `labels` maps a stored English value (used everywhere else in the app —
+// filters, badges, CSV, dashboard groupings) to a Vietnamese display string shown
+// only inside the MoC/Action popups (see mục "nội dung Pop-up ưu tiên tiếng Việt").
+// The <option value=""> stays the original English string, so nothing outside the
+// popup needs to change.
+function selectOptions(values, current, labels){
+  const label = v => (labels && labels[v]) || v;
   let html = '<option value=""></option>';
   if(current && !values.includes(current)){
     html += `<option value="${Utils.escapeHtml(current)}" selected>${Utils.escapeHtml(current)} (giá trị cũ)</option>`;
   }
-  html += values.map(v=>`<option value="${Utils.escapeHtml(v)}" ${v===current?'selected':''}>${Utils.escapeHtml(v)}</option>`).join('');
+  html += values.map(v=>`<option value="${Utils.escapeHtml(v)}" ${v===current?'selected':''}>${Utils.escapeHtml(label(v))}</option>`).join('');
   return html;
 }
+
+// Vietnamese display labels for the popup dropdowns only — table columns, filters,
+// CSV export, dashboard and email report keep showing the original English values.
+const STATUS_LABEL_VI = { 'On progress':'Đang xử lý', 'Done':'Hoàn thành', 'Cancel':'Đã huỷ' };
+const TYPE_LABEL_VI = {
+  'Permanent Change':'Thay đổi vĩnh viễn', 'Temporary Change':'Thay đổi tạm thời',
+  'Emergency Change':'Thay đổi khẩn cấp', 'Like for Like Change':'Thay đổi tương đương (Like for Like)',
+  'One for One Change':'Thay đổi 1-đổi-1 (One for One)'
+};
+const NATURE_LABEL_VI = {
+  'Materials & Ingredients':'Nguyên vật liệu', 'Manufacturing process':'Quy trình sản xuất',
+  'Equipment':'Thiết bị', 'Infrastructure':'Cơ sở hạ tầng',
+  'Regulatory & Internal compliance':'Tuân thủ quy định & nội bộ'
+};
 
 function openMocModal(id, viewOnly){
   const isNew = !id;
@@ -1891,54 +2033,54 @@ function mocFormTemplate(rec){
   <div class="form-section">
     <div class="sec-title"><span class="sec-icon">&#8505;</span>Thông tin chung</div>
     <div class="form-grid cols-3">
-      <div class="field"><label>MoC No</label><input id="f-mocNo" value="${Utils.escapeHtml(rec.mocNo)}" placeholder="MoC-Dept.2026.001"></div>
-      <div class="field"><label>Request Date</label><input id="f-requestDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.requestDate)}"></div>
+      <div class="field"><label>Mã MoC</label><input id="f-mocNo" value="${Utils.escapeHtml(rec.mocNo)}" placeholder="MoC-Dept.2026.001"></div>
+      <div class="field"><label>Ngày yêu cầu</label><input id="f-requestDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.requestDate)}"></div>
       <div class="field"><label>Change Owner <span class="req">*</span></label><input id="f-changeOwner" list="people-datalist" value="${Utils.escapeHtml(rec.changeOwner)}"></div>
     </div>
     <div class="form-grid" style="margin-top:12px;">
-      <div class="field"><label>Dept <span class="req">*</span></label>
+      <div class="field"><label>Bộ phận <span class="req">*</span></label>
         <select id="f-dept">${selectOptions(CONFIG.depts, rec.dept)}</select>
       </div>
-      <div class="field"><label>Status</label>
-        <select id="f-status">${selectOptions(CONFIG.statuses, rec.status)}</select>
+      <div class="field"><label>Trạng thái</label>
+        <select id="f-status">${selectOptions(CONFIG.statuses, rec.status, STATUS_LABEL_VI)}</select>
       </div>
     </div>
     <div class="field" style="margin-top:12px;">
-      <label>Relevant people</label>
+      <label>Người liên quan</label>
       <input id="f-relevantPeople" list="people-datalist" value="${Utils.escapeHtml(rec.relevantPeople)}" placeholder="Tên, cách nhau bởi dấu phẩy">
       <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
         <select id="relevant-people-picker" style="max-width:220px;padding:6px 8px;border:1px solid var(--border-dark);border-radius:6px;"></select>
-        <button type="button" class="btn btn-sm" id="btn-add-relevant-person">+ Thêm vào Relevant people</button>
+        <button type="button" class="btn btn-sm" id="btn-add-relevant-person">+ Thêm vào Người liên quan</button>
       </div>
     </div>
   </div>
 
   <div class="form-section">
-    <div class="sec-title"><span class="sec-icon">&#9998;</span>Step 1 — Definition and Request for Change</div>
-    <div class="field"><label>1.1 Name of change <span class="req">*</span></label><input id="f-nameOfChange" value="${Utils.escapeHtml(rec.nameOfChange)}"></div>
+    <div class="sec-title"><span class="sec-icon">&#9998;</span>Bước 1 — Định nghĩa &amp; Yêu cầu thay đổi</div>
+    <div class="field"><label>1.1 Tên thay đổi <span class="req">*</span></label><input id="f-nameOfChange" value="${Utils.escapeHtml(rec.nameOfChange)}"></div>
     <div class="form-grid cols-3" style="margin-top:12px;">
-      <div class="field"><label>1.2 Type of change</label><select id="f-typeOfChange">${selectOptions(CONFIG.types, rec.typeOfChange)}</select></div>
-      <div class="field" id="field-validUntil" style="${showValidUntil?'':'display:none;'}"><label>Valid until</label><input id="f-validUntil" value="${Utils.escapeHtml(rec.validUntil)}" placeholder="dd/mm/yyyy"></div>
-      <div class="field"><label>1.3 Nature of Change</label><select id="f-natureOfChange">${selectOptions(CONFIG.natures, rec.natureOfChange)}</select></div>
+      <div class="field"><label>1.2 Loại thay đổi</label><select id="f-typeOfChange">${selectOptions(CONFIG.types, rec.typeOfChange, TYPE_LABEL_VI)}</select></div>
+      <div class="field" id="field-validUntil" style="${showValidUntil?'':'display:none;'}"><label>Có hiệu lực đến</label><input id="f-validUntil" value="${Utils.escapeHtml(rec.validUntil)}" placeholder="dd/mm/yyyy"></div>
+      <div class="field"><label>1.3 Nhóm thay đổi</label><select id="f-natureOfChange">${selectOptions(CONFIG.natures, rec.natureOfChange, NATURE_LABEL_VI)}</select></div>
     </div>
-    <div class="field" style="margin-top:12px;"><label>1.4 Reason of change</label><textarea id="f-reasonOfChange">${Utils.escapeHtml(rec.reasonOfChange)}</textarea></div>
-    <div class="field" style="margin-top:12px;"><label>1.5 Description of proposed change</label><textarea id="f-description">${Utils.escapeHtml(rec.description)}</textarea></div>
+    <div class="field" style="margin-top:12px;"><label>1.4 Lý do thay đổi</label><textarea id="f-reasonOfChange">${Utils.escapeHtml(rec.reasonOfChange)}</textarea></div>
+    <div class="field" style="margin-top:12px;"><label>1.5 Mô tả thay đổi đề xuất</label><textarea id="f-description">${Utils.escapeHtml(rec.description)}</textarea></div>
   </div>
 
   <div class="form-section">
-    <div class="sec-title"><span class="sec-icon">&#9888;</span>Step 2 — Risk &amp; Action</div>
+    <div class="sec-title"><span class="sec-icon">&#9888;</span>Bước 2 — Rủi ro &amp; Hành động</div>
     <div class="form-grid">
-      <div class="field"><label>Risk (SHE, Q, Volume, Regulation, Others)</label><textarea id="f-risk">${Utils.escapeHtml(rec.risk)}</textarea></div>
-      <div class="field"><label>Action (mitigate/eliminate/reduce risk)</label><textarea id="f-action">${Utils.escapeHtml(rec.action)}</textarea></div>
+      <div class="field"><label>Rủi ro (SHE, Chất lượng, Sản lượng, Quy định, Khác)</label><textarea id="f-risk">${Utils.escapeHtml(rec.risk)}</textarea></div>
+      <div class="field"><label>Hành động (giảm thiểu/loại bỏ/hạn chế rủi ro)</label><textarea id="f-action">${Utils.escapeHtml(rec.action)}</textarea></div>
     </div>
-    <div class="field" style="margin-top:12px;"><label>Results</label><textarea id="f-results">${Utils.escapeHtml(rec.results)}</textarea></div>
+    <div class="field" style="margin-top:12px;"><label>Kết quả</label><textarea id="f-results">${Utils.escapeHtml(rec.results)}</textarea></div>
   </div>
 
   <div class="form-section">
-    <div class="sec-title"><span class="sec-icon">&#10003;</span>Step 3 — Approval</div>
-    <p class="help-text" style="margin-top:-4px;margin-bottom:10px;">Change owner + Area owner luôn bắt buộc. Thêm người duyệt khác chỉ khi thay đổi thực sự cần (rủi ro cao, liên quan tài chính/nhân sự...).</p>
+    <div class="sec-title"><span class="sec-icon">&#10003;</span>Bước 3 — Phê duyệt</div>
+    <p class="help-text" style="margin-top:-4px;margin-bottom:10px;">Change Owner + Area Owner luôn bắt buộc. Thêm người duyệt khác chỉ khi thay đổi thực sự cần (rủi ro cao, liên quan tài chính/nhân sự...).</p>
     <table class="mini-table" id="approval-table">
-      <thead><tr><th style="width:22%">Position</th><th>Full name</th><th style="width:150px">Date</th><th style="width:70px">Sign off</th><th style="width:30px"></th></tr></thead>
+      <thead><tr><th style="width:22%">Vị trí</th><th>Họ tên</th><th style="width:150px">Ngày</th><th style="width:70px">Ký duyệt</th><th style="width:30px"></th></tr></thead>
       <tbody id="approval-tbody"></tbody>
     </table>
     <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
@@ -1948,23 +2090,23 @@ function mocFormTemplate(rec){
   </div>
 
   <div class="form-section">
-    <div class="sec-title"><span class="sec-icon">&#9635;</span>Step 5 — Implementation</div>
+    <div class="sec-title"><span class="sec-icon">&#9635;</span>Bước 5 — Triển khai</div>
     <p class="help-text">Theo dõi từng hành động triển khai cụ thể ở tab <b>Action Plan</b> (gắn theo mã MoC này) thay vì lặp lại ở đây.</p>
     <button type="button" class="btn btn-sm always-visible-btn" id="btn-goto-action-plan">Xem Action Plan của MoC này</button>
   </div>
 
   <div class="form-section">
-    <div class="sec-title"><span class="sec-icon">&#9989;</span>Step 6 — Verification (by Change owner/Area owner)</div>
-    <div class="field"><label>Implementation result</label><textarea id="f-verifResult">${Utils.escapeHtml(rec.verification.result)}</textarea></div>
+    <div class="sec-title"><span class="sec-icon">&#9989;</span>Bước 6 — Xác nhận (bởi Change Owner/Area Owner)</div>
+    <div class="field"><label>Kết quả triển khai</label><textarea id="f-verifResult">${Utils.escapeHtml(rec.verification.result)}</textarea></div>
     <div class="field" style="margin-top:12px;max-width:320px;"><label>Kết quả xác nhận</label><select id="f-verifState">${selectOptions(CONFIG.verificationStates, rec.verification.state)}</select></div>
     <table class="mini-table" id="verif-table" style="margin-top:12px;">
-      <thead><tr><th style="width:30%">Role</th><th style="width:150px">Date</th><th>Signature (ghi tên xác nhận)</th></tr></thead>
+      <thead><tr><th style="width:30%">Vai trò</th><th style="width:150px">Ngày</th><th>Chữ ký (ghi tên xác nhận)</th></tr></thead>
       <tbody id="verif-tbody"></tbody>
     </table>
   </div>
 
   <div class="form-section">
-    <div class="sec-title"><span class="sec-icon">&#9998;</span>Remarks</div>
+    <div class="sec-title"><span class="sec-icon">&#9998;</span>Ghi chú</div>
     <textarea id="f-remarks">${Utils.escapeHtml(rec.remarks)}</textarea>
   </div>
   `;
@@ -2129,23 +2271,24 @@ function saveMocFromModal(){
 ================================================================================ */
 function getActionPlanFiltered(){
   const search = document.getElementById('ap-search').value.trim().toLowerCase();
-  const fn = document.getElementById('ap-filter-function').value;
-  const status = document.getElementById('ap-filter-status').value;
+  const fns = MultiSelect.getSelected('ap-filter-function');
+  const statuses = MultiSelect.getSelected('ap-filter-status');
   const showAllStatus = document.getElementById('ap-show-all-status').checked;
-  return state.data.actionPlan.filter(a=>{
+  const rows = state.data.actionPlan.filter(a=>{
     const effStatus = a.status || 'On progress';
-    if(status){
-      if(effStatus !== status) return false;
+    if(statuses.length){
+      if(!statuses.includes(effStatus)) return false;
     } else if(!showAllStatus && (effStatus === 'Done' || effStatus === 'Cancel')){
       return false;
     }
-    if(fn && a.function !== fn) return false;
+    if(fns.length && !fns.includes(a.function)) return false;
     if(search){
       const hay = [a.issue,a.action,a.pic,a.mocCode].join(' ').toLowerCase();
       if(!hay.includes(search)) return false;
     }
     return true;
-  }).sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+  });
+  return sortRows(rows, state.apSort);
 }
 function renderActionPlan(){
   const rows = getActionPlanFiltered();
@@ -2214,24 +2357,24 @@ function openActionModal(id, viewOnly){
   const mocOptions = '<datalist id="moc-code-list">' + state.data.mocList.map(m=>`<option value="${Utils.escapeHtml(m.mocNo)}">`).join('') + '</datalist>';
   document.getElementById('action-modal-body').innerHTML = `
     <div class="form-grid">
-      <div class="field"><label>Date</label><input id="a-date" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.date)}"></div>
-      <div class="field"><label>MoC code</label><input id="a-mocCode" list="moc-code-list" value="${Utils.escapeHtml(rec.mocCode)}">${mocOptions}</div>
+      <div class="field"><label>Ngày</label><input id="a-date" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.date)}"></div>
+      <div class="field"><label>Mã MoC</label><input id="a-mocCode" list="moc-code-list" value="${Utils.escapeHtml(rec.mocCode)}">${mocOptions}</div>
     </div>
-    <div class="field" style="margin-top:12px;"><label>Issue</label><textarea id="a-issue">${Utils.escapeHtml(rec.issue)}</textarea></div>
-    <div class="field" style="margin-top:12px;"><label>Action <span class="req">*</span></label><textarea id="a-action">${Utils.escapeHtml(rec.action)}</textarea></div>
+    <div class="field" style="margin-top:12px;"><label>Vấn đề</label><textarea id="a-issue">${Utils.escapeHtml(rec.issue)}</textarea></div>
+    <div class="field" style="margin-top:12px;"><label>Hành động <span class="req">*</span></label><textarea id="a-action">${Utils.escapeHtml(rec.action)}</textarea></div>
     <div class="form-grid" style="margin-top:12px;">
       <div class="field"><label>PIC</label><input id="a-pic" value="${Utils.escapeHtml(rec.pic)}"></div>
-      <div class="field"><label>Partner</label><input id="a-partner" value="${Utils.escapeHtml(rec.partner)}"></div>
+      <div class="field"><label>Phối hợp</label><input id="a-partner" value="${Utils.escapeHtml(rec.partner)}"></div>
     </div>
     <div class="form-grid" style="margin-top:12px;">
-      <div class="field"><label>Function</label><select id="a-function">${selectOptions(CONFIG.depts, rec.function)}</select></div>
-      <div class="field"><label>Status</label><select id="a-status">${selectOptions(CONFIG.statuses, rec.status)}</select></div>
+      <div class="field"><label>Bộ phận</label><select id="a-function">${selectOptions(CONFIG.depts, rec.function)}</select></div>
+      <div class="field"><label>Trạng thái</label><select id="a-status">${selectOptions(CONFIG.statuses, rec.status, STATUS_LABEL_VI)}</select></div>
     </div>
     <div class="form-grid" style="margin-top:12px;">
-      <div class="field"><label>Due date</label><input id="a-dueDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.dueDate)}"></div>
-      <div class="field"><label>Complete date</label><input id="a-completeDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.completeDate)}"></div>
+      <div class="field"><label>Hạn xử lý</label><input id="a-dueDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.dueDate)}"></div>
+      <div class="field"><label>Ngày hoàn thành</label><input id="a-completeDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.completeDate)}"></div>
     </div>
-    <div class="field" style="margin-top:12px;"><label>Remark</label><textarea id="a-remark">${Utils.escapeHtml(rec.remark)}</textarea></div>
+    <div class="field" style="margin-top:12px;"><label>Ghi chú</label><textarea id="a-remark">${Utils.escapeHtml(rec.remark)}</textarea></div>
   `;
   applyModalPermissions('action-modal-body', 'btn-save-action', 'btn-delete-action', isNew, !viewOnly && canEdit(), !viewOnly && canDelete());
   state.modalOpen = true;
@@ -2248,7 +2391,7 @@ function saveActionFromModal(){
   rec.action = val('a-action').trim(); rec.pic = val('a-pic'); rec.partner = val('a-partner');
   rec.function = val('a-function'); rec.status = val('a-status'); rec.dueDate = val('a-dueDate');
   rec.completeDate = val('a-completeDate'); rec.remark = val('a-remark');
-  if(!rec.action){ showToast('Action là bắt buộc.', 'err'); return; }
+  if(!rec.action){ showToast('Hành động là bắt buộc.', 'err'); return; }
   rec.updatedAt = Utils.nowISO();
   rec.updatedBy = state.currentUser.name;
   const idx = state.data.actionPlan.findIndex(a=>a.id===rec.id);
@@ -2555,13 +2698,15 @@ function drawEmailChart(filteredMocs){
 
 function getEmailFilterDesc(){
   const parts = [];
-  const dept = document.getElementById('ml-filter-dept').value;
-  const status = document.getElementById('ml-filter-status').value;
-  const nature = document.getElementById('ml-filter-nature').value;
+  const depts = MultiSelect.getSelected('ml-filter-dept');
+  const statuses = MultiSelect.getSelected('ml-filter-status');
+  const natures = MultiSelect.getSelected('ml-filter-nature');
+  const types = MultiSelect.getSelected('ml-filter-type');
   const search = document.getElementById('ml-search').value.trim();
-  if(dept) parts.push('Bộ phận: '+dept);
-  if(status) parts.push('Trạng thái: '+status);
-  if(nature) parts.push('Nhóm: '+nature);
+  if(depts.length) parts.push('Bộ phận: '+depts.join(', '));
+  if(statuses.length) parts.push('Trạng thái: '+statuses.join(', '));
+  if(natures.length) parts.push('Nhóm: '+natures.join(', '));
+  if(types.length) parts.push('Loại: '+types.join(', '));
   if(search) parts.push('Tìm: "'+search+'"');
   return parts.length ? parts.join(' • ') : 'Toàn bộ Master List';
 }
@@ -3216,6 +3361,10 @@ function bindStaticEvents(){
 async function init(){
   bindStaticEvents();
   renderAllFilterOptions();
+  bindSortableHeaders('view-masterlist', 'mlSort', renderMasterList);
+  bindSortableHeaders('view-actionplan', 'apSort', renderActionPlan);
+  updateSortIndicators('view-masterlist', state.mlSort);
+  updateSortIndicators('view-actionplan', state.apSort);
   loadPresentPrefs();
   applyPresentPrefs();
   await restoreSession(); // shows the login gate itself if there's no valid session
