@@ -397,6 +397,18 @@ tr.row-clickable:hover .cell-link{text-decoration:underline;}
 .mini-table input:disabled, .mini-table textarea:disabled{background:#f8fafc;color:var(--muted);cursor:not-allowed;}
 .field .err-msg{font-size:11px;color:var(--red);}
 
+/* Date fields: force a dd/mm/yyyy DISPLAY regardless of the browser's own locale
+   (native <input type="date"> draws its text in the OS/browser locale, which isn't
+   reliably dd/mm/yyyy for every user) — see wireDateField(). The real <input
+   type="date"> stays in the DOM (hidden) so a calendar picker + ISO value/events are
+   still native; a visible readonly text sibling just shows the formatted date. */
+.date-field{position:relative;}
+.date-field .date-display{padding-right:32px;cursor:pointer;}
+.date-field .date-display:disabled{cursor:not-allowed;}
+.date-field .date-native{position:absolute;right:8px;top:50%;width:18px;height:18px;margin-top:-9px;opacity:0;z-index:1;}
+.date-field .date-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted-light);pointer-events:none;}
+.mini-table .date-field .date-display{padding:6px 26px 6px 8px;font-size:12.5px;}
+
 .mini-table{width:100%;border-collapse:collapse;font-size:12.5px;}
 .mini-table th{text-align:left;padding:6px 8px;color:var(--muted);font-size:11.5px;border-bottom:1px solid var(--border);}
 .mini-table td{padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top;}
@@ -999,7 +1011,7 @@ const Utils = {
   },
   toCSV(rows, columns){
     const header = columns.map(c=>Utils.csvEscape(c.label)).join(',');
-    const lines = rows.map(r=>columns.map(c=>Utils.csvEscape(r[c.key])).join(','));
+    const lines = rows.map(r=>columns.map(c=>Utils.csvEscape(c.format ? c.format(r[c.key]) : r[c.key])).join(','));
     return '﻿'+[header, ...lines].join('\r\n');
   },
   parseDateSafe(str){
@@ -1013,8 +1025,77 @@ const Utils = {
     const today = new Date(); today.setHours(0,0,0,0);
     d.setHours(0,0,0,0);
     return Math.round((d - today)/86400000);
+  },
+  // Dates are always STORED as ISO 'yyyy-mm-dd' (what <input type="date"> reads/writes,
+  // and what keeps string-sort / day-diff math correct) — this only formats for DISPLAY
+  // in tables, CSV and email report, per "tất cả ngày hiển thị dd/mm/yyyy".
+  formatDateVN(iso){
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso||'');
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : (iso||'');
+  },
+  // Best-effort upgrade of a legacy free-typed 'dd/mm/yyyy' value (only ever possible
+  // for `validUntil`, which used to be plain text) to the ISO shape <input type="date">
+  // requires — leaves anything already ISO, or anything unrecognized, untouched.
+  toISODate(str){
+    if(!str) return '';
+    if(/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(str.trim());
+    if(!m) return str;
+    return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
   }
 };
+
+/* ================================================================================
+   DATE FIELDS — every <input type="date"> gets a visible dd/mm/yyyy read-out so the
+   format is guaranteed no matter the browser/OS locale, while the real <input
+   type="date"> (native calendar picker, ISO value) stays underneath doing the work —
+   existing code reading/writing that input's id/value/events is untouched.
+================================================================================ */
+function wireDateField(nativeInput){
+  if(!nativeInput || nativeInput.dataset.dateWired) return;
+  nativeInput.dataset.dateWired = '1';
+  const wrap = document.createElement('div');
+  wrap.className = 'date-field';
+  nativeInput.parentNode.insertBefore(wrap, nativeInput);
+  wrap.appendChild(nativeInput);
+  nativeInput.classList.add('date-native');
+  nativeInput.tabIndex = -1;
+
+  const disp = document.createElement('input');
+  disp.type = 'text';
+  disp.className = 'date-display';
+  disp.placeholder = 'dd/mm/yyyy';
+  disp.readOnly = true;
+  disp.value = Utils.formatDateVN(nativeInput.value);
+  disp.disabled = nativeInput.disabled;
+  wrap.insertBefore(disp, nativeInput);
+
+  const icon = document.createElement('span');
+  icon.className = 'date-icon';
+  icon.textContent = '\u{1F4C5}';
+  wrap.appendChild(icon);
+
+  const openPicker = () => {
+    if(disp.disabled) return;
+    try{ nativeInput.showPicker(); }catch(e){ nativeInput.focus(); }
+  };
+  disp.addEventListener('click', openPicker);
+  disp.addEventListener('keydown', e=>{
+    if(disp.disabled) return;
+    if(e.key === 'Backspace' || e.key === 'Delete'){
+      e.preventDefault();
+      nativeInput.value = '';
+      disp.value = '';
+      nativeInput.dispatchEvent(new Event('change', {bubbles:true}));
+    } else if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault(); openPicker();
+    }
+  });
+  nativeInput.addEventListener('change', ()=>{ disp.value = Utils.formatDateVN(nativeInput.value); });
+}
+function wireAllDateFields(root){
+  (root||document).querySelectorAll('input[type="date"]:not(.date-native)').forEach(wireDateField);
+}
 
 function showToast(msg, type){
   const wrap = document.getElementById('toast-wrap');
@@ -1871,7 +1952,7 @@ function renderMasterList(){
   tbody.innerHTML = rows.map(m=>`
     <tr class="row-clickable" data-id="${m.id}">
       <td class="cell-mono cell-link">${Utils.escapeHtml(m.mocNo)}</td>
-      <td>${Utils.escapeHtml(m.requestDate)}</td>
+      <td>${Utils.escapeHtml(Utils.formatDateVN(m.requestDate))}</td>
       <td>${Utils.escapeHtml(m.changeOwner)}</td>
       <td>${Utils.escapeHtml(m.dept)}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(m.nameOfChange)}">${Utils.escapeHtml(m.nameOfChange)}</td>
@@ -2013,6 +2094,7 @@ function openMocModal(id, viewOnly){
   document.getElementById('moc-modal-title').textContent = titlePrefix;
   document.getElementById('moc-modal-body').innerHTML = mocFormTemplate(rec);
   bindMocFormEvents(rec, isNew);
+  wireAllDateFields(document.getElementById('moc-modal-body'));
   const mocAllowEdit = !viewOnly && (isNew ? canEdit() : canEditMoc(rec));
   const mocAllowDelete = !viewOnly && canDelete();
   applyModalPermissions('moc-modal-body', 'btn-save-moc', 'btn-delete-moc', isNew, mocAllowEdit, mocAllowDelete);
@@ -2034,7 +2116,7 @@ function mocFormTemplate(rec){
     <div class="sec-title"><span class="sec-icon">&#8505;</span>Thông tin chung</div>
     <div class="form-grid cols-3">
       <div class="field"><label>Mã MoC</label><input id="f-mocNo" value="${Utils.escapeHtml(rec.mocNo)}" placeholder="MoC-Dept.2026.001"></div>
-      <div class="field"><label>Ngày yêu cầu</label><input id="f-requestDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.requestDate)}"></div>
+      <div class="field"><label>Ngày yêu cầu</label><input id="f-requestDate" type="date" value="${Utils.escapeHtml(rec.requestDate)}"></div>
       <div class="field"><label>Change Owner <span class="req">*</span></label><input id="f-changeOwner" list="people-datalist" value="${Utils.escapeHtml(rec.changeOwner)}"></div>
     </div>
     <div class="form-grid" style="margin-top:12px;">
@@ -2060,7 +2142,7 @@ function mocFormTemplate(rec){
     <div class="field"><label>1.1 Tên thay đổi <span class="req">*</span></label><input id="f-nameOfChange" value="${Utils.escapeHtml(rec.nameOfChange)}"></div>
     <div class="form-grid cols-3" style="margin-top:12px;">
       <div class="field"><label>1.2 Loại thay đổi</label><select id="f-typeOfChange">${selectOptions(CONFIG.types, rec.typeOfChange, TYPE_LABEL_VI)}</select></div>
-      <div class="field" id="field-validUntil" style="${showValidUntil?'':'display:none;'}"><label>Có hiệu lực đến</label><input id="f-validUntil" value="${Utils.escapeHtml(rec.validUntil)}" placeholder="dd/mm/yyyy"></div>
+      <div class="field" id="field-validUntil" style="${showValidUntil?'':'display:none;'}"><label>Có hiệu lực đến</label><input id="f-validUntil" type="date" value="${Utils.escapeHtml(Utils.toISODate(rec.validUntil))}"></div>
       <div class="field"><label>1.3 Nhóm thay đổi</label><select id="f-natureOfChange">${selectOptions(CONFIG.natures, rec.natureOfChange, NATURE_LABEL_VI)}</select></div>
     </div>
     <div class="field" style="margin-top:12px;"><label>1.4 Lý do thay đổi</label><textarea id="f-reasonOfChange">${Utils.escapeHtml(rec.reasonOfChange)}</textarea></div>
@@ -2118,7 +2200,7 @@ function renderMocSubTables(rec){
     return `<tr data-idx="${idx}">
       <td>${Utils.escapeHtml(a.role)}</td>
       <td><input class="appr-name" value="${Utils.escapeHtml(a.name)}"></td>
-      <td><input class="appr-date" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(a.date)}"></td>
+      <td><input class="appr-date" type="date" value="${Utils.escapeHtml(a.date)}"></td>
       <td style="text-align:center;"><input class="appr-signoff" type="checkbox" ${a.signOff?'checked':''}></td>
       <td>${isCore ? '' : `<button class="row-del-btn" data-del-approval="${idx}" title="Bỏ vai trò này">&#128465;</button>`}</td>
     </tr>`;
@@ -2126,7 +2208,7 @@ function renderMocSubTables(rec){
   document.getElementById('verif-tbody').innerHTML = rec.verification.signatures.map((s,idx)=>`
     <tr data-idx="${idx}">
       <td>${Utils.escapeHtml(s.role)}</td>
-      <td><input class="verif-date" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(s.date)}"></td>
+      <td><input class="verif-date" type="date" value="${Utils.escapeHtml(s.date)}"></td>
       <td><input class="verif-sig" value="${Utils.escapeHtml(s.signature)}" placeholder="Tên xác nhận"></td>
     </tr>`).join('');
 
@@ -2141,6 +2223,9 @@ function renderMocSubTables(rec){
   document.querySelectorAll('[data-del-approval]').forEach(btn=>btn.addEventListener('click', ()=>{
     rec.approvals.splice(parseInt(btn.dataset.delApproval,10),1); renderMocSubTables(rec);
   }));
+
+  wireAllDateFields(document.getElementById('approval-table'));
+  wireAllDateFields(document.getElementById('verif-table'));
 }
 
 function bindMocFormEvents(rec, isNew){
@@ -2313,11 +2398,11 @@ function renderActionPlan(){
     else if(soon) dueSub = `<div class="due-sub is-soon">${diff===0?'Đến hạn hôm nay':'còn '+diff+' ngày'}</div>`;
     else if(a.status==='Done') dueSub = `<div class="due-sub is-ok">Đã hoàn thành</div>`;
     return `<tr class="row-clickable" data-id="${a.id}">
-      <td>${Utils.escapeHtml(a.date)}</td>
+      <td>${Utils.escapeHtml(Utils.formatDateVN(a.date))}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(a.issue)}">${Utils.escapeHtml(a.issue)}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(a.action)}">${Utils.escapeHtml(a.action)}</td>
       <td>${Utils.escapeHtml(a.pic)}</td>
-      <td class="due-cell"><div class="due-date">${Utils.escapeHtml(a.dueDate)}</div>${dueSub}</td>
+      <td class="due-cell"><div class="due-date">${Utils.escapeHtml(Utils.formatDateVN(a.dueDate))}</div>${dueSub}</td>
       <td><span class="badge ${statusBadgeClass(a.status)}">${Utils.escapeHtml(a.status||'On progress')}</span></td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(a.remark)}">${Utils.escapeHtml(a.remark)}</td>
       <td class="row-actions">
@@ -2357,7 +2442,7 @@ function openActionModal(id, viewOnly){
   const mocOptions = '<datalist id="moc-code-list">' + state.data.mocList.map(m=>`<option value="${Utils.escapeHtml(m.mocNo)}">`).join('') + '</datalist>';
   document.getElementById('action-modal-body').innerHTML = `
     <div class="form-grid">
-      <div class="field"><label>Ngày</label><input id="a-date" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.date)}"></div>
+      <div class="field"><label>Ngày</label><input id="a-date" type="date" value="${Utils.escapeHtml(rec.date)}"></div>
       <div class="field"><label>Mã MoC</label><input id="a-mocCode" list="moc-code-list" value="${Utils.escapeHtml(rec.mocCode)}">${mocOptions}</div>
     </div>
     <div class="field" style="margin-top:12px;"><label>Vấn đề</label><textarea id="a-issue">${Utils.escapeHtml(rec.issue)}</textarea></div>
@@ -2371,11 +2456,12 @@ function openActionModal(id, viewOnly){
       <div class="field"><label>Trạng thái</label><select id="a-status">${selectOptions(CONFIG.statuses, rec.status, STATUS_LABEL_VI)}</select></div>
     </div>
     <div class="form-grid" style="margin-top:12px;">
-      <div class="field"><label>Hạn xử lý</label><input id="a-dueDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.dueDate)}"></div>
-      <div class="field"><label>Ngày hoàn thành</label><input id="a-completeDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.completeDate)}"></div>
+      <div class="field"><label>Hạn xử lý</label><input id="a-dueDate" type="date" value="${Utils.escapeHtml(rec.dueDate)}"></div>
+      <div class="field"><label>Ngày hoàn thành</label><input id="a-completeDate" type="date" value="${Utils.escapeHtml(rec.completeDate)}"></div>
     </div>
     <div class="field" style="margin-top:12px;"><label>Ghi chú</label><textarea id="a-remark">${Utils.escapeHtml(rec.remark)}</textarea></div>
   `;
+  wireAllDateFields(document.getElementById('action-modal-body'));
   applyModalPermissions('action-modal-body', 'btn-save-action', 'btn-delete-action', isNew, !viewOnly && canEdit(), !viewOnly && canDelete());
   state.modalOpen = true;
   const actionOverlay = document.getElementById('modal-action');
@@ -2535,11 +2621,11 @@ function renderAttendant(){
 ================================================================================ */
 function exportMasterListCSV(){
   const cols = [
-    {key:'mocNo',label:'MoC No'},{key:'requestDate',label:'Request Date'},{key:'changeOwner',label:'Change Owner'},
+    {key:'mocNo',label:'MoC No'},{key:'requestDate',label:'Request Date',format:Utils.formatDateVN},{key:'changeOwner',label:'Change Owner'},
     {key:'dept',label:'Dept'},{key:'nameOfChange',label:'Name of change'},{key:'reasonOfChange',label:'Reason of change'},
     {key:'description',label:'Description'},{key:'risk',label:'Risk'},
     {key:'action',label:'Action'},{key:'results',label:'Results'},{key:'typeOfChange',label:'Type of change'},
-    {key:'validUntil',label:'Valid until'},{key:'natureOfChange',label:'Nature of change'},{key:'status',label:'Status'},
+    {key:'validUntil',label:'Valid until',format:Utils.formatDateVN},{key:'natureOfChange',label:'Nature of change'},{key:'status',label:'Status'},
     {key:'remarks',label:'Remarks'}
   ];
   const csv = Utils.toCSV(getMasterListFiltered(), cols);
@@ -2547,9 +2633,9 @@ function exportMasterListCSV(){
 }
 function exportActionPlanCSV(){
   const cols = [
-    {key:'date',label:'Date'},{key:'mocCode',label:'MoC code'},{key:'issue',label:'Issue'},{key:'action',label:'Action'},
-    {key:'pic',label:'PIC'},{key:'partner',label:'Partner'},{key:'function',label:'Function'},{key:'dueDate',label:'Due date'},
-    {key:'completeDate',label:'Complete date'},{key:'status',label:'Status'},{key:'remark',label:'Remark'}
+    {key:'date',label:'Date',format:Utils.formatDateVN},{key:'mocCode',label:'MoC code'},{key:'issue',label:'Issue'},{key:'action',label:'Action'},
+    {key:'pic',label:'PIC'},{key:'partner',label:'Partner'},{key:'function',label:'Function'},{key:'dueDate',label:'Due date',format:Utils.formatDateVN},
+    {key:'completeDate',label:'Complete date',format:Utils.formatDateVN},{key:'status',label:'Status'},{key:'remark',label:'Remark'}
   ];
   const csv = Utils.toCSV(getActionPlanFiltered(), cols);
   Utils.downloadBlob(csv, 'MoC_Action_Plan_'+Utils.todayISO()+'.csv', 'text/csv;charset=utf-8');
@@ -2818,7 +2904,7 @@ function buildEmailHTML(filteredMocs, pendingActions, chartDataUri, attendantInf
           background:${a.status==='Done'?'#dcfce7':a.status==='Cancel'?'#f1f5f9':'#fef3c7'};
           color:${a.status==='Done'?'#16a34a':a.status==='Cancel'?'#64748b':'#d97706'};">${Utils.escapeHtml(a.status||'On progress')}</span>
       </td>
-      <td style="${td}${overdue?'color:#dc2626;font-weight:700;':''}">${Utils.escapeHtml(a.dueDate)||'—'}${overdue?' (trễ '+Math.abs(diff)+'d)':''}</td>
+      <td style="${td}${overdue?'color:#dc2626;font-weight:700;':''}">${Utils.escapeHtml(Utils.formatDateVN(a.dueDate))||'—'}${overdue?' (trễ '+Math.abs(diff)+'d)':''}</td>
     </tr>`;
   }).join('');
 
@@ -2917,7 +3003,7 @@ function buildEmailPlainText(filteredMocs, pendingActions, attendantInfo){
     pendingActions.slice(0,20).forEach(a=>{
       const diff = (a.status!=='Done' && a.status!=='Cancel') ? Utils.daysDiffFromToday(a.dueDate) : null;
       const overdue = diff!==null && diff<0;
-      lines.push('- '+oneLine(a.issue||a.action,55)+' | PIC: '+a.pic+' | '+(a.status||'On progress')+' | Due: '+(a.dueDate||'—')+(overdue?' (TRỄ '+Math.abs(diff)+' ngày)':''));
+      lines.push('- '+oneLine(a.issue||a.action,55)+' | PIC: '+a.pic+' | '+(a.status||'On progress')+' | Due: '+(Utils.formatDateVN(a.dueDate)||'—')+(overdue?' (TRỄ '+Math.abs(diff)+' ngày)':''));
     });
     if(pendingActions.length>20) lines.push('... và '+(pendingActions.length-20)+' hành động khác.');
   } else lines.push('(không có Action trong phạm vi tab Action Plan hiện tại)');
