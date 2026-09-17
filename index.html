@@ -1,0 +1,2782 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoC Management App</title>
+<style>
+/* ============================== THEME / TOKENS ============================== */
+:root{
+  --blue:#2563eb; --blue-dark:#1d4ed8; --blue-light:#eff6ff;
+  --bg:#f4f6fa; --card:#ffffff; --border:#e2e8f0; --border-dark:#cbd5e1;
+  --text:#1e293b; --muted:#64748b; --muted-light:#94a3b8;
+  --green:#16a34a; --green-bg:#dcfce7;
+  --amber:#d97706; --amber-bg:#fef3c7;
+  --red:#dc2626; --red-bg:#fee2e2;
+  --gray:#64748b; --gray-bg:#f1f5f9;
+  --radius:10px; --shadow:0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.06);
+  --shadow-lg:0 10px 30px rgba(15,23,42,.15);
+  --sidebar-w:220px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;font-size:14px;}
+a{color:var(--blue);}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-thumb{background:var(--border-dark);border-radius:6px;}
+
+/* ============================== LAYOUT SHELL ============================== */
+#app{display:flex;min-height:100vh;}
+#sidebar{
+  width:var(--sidebar-w);flex-shrink:0;background:#0f172a;color:#cbd5e1;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+}
+#sidebar .brand{padding:18px 20px;font-weight:700;font-size:16px;color:#fff;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:8px;}
+#sidebar .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);}
+.nav-item{
+  padding:11px 20px;display:flex;align-items:center;gap:10px;color:#94a3b8;
+  cursor:pointer;font-size:13.5px;border-left:3px solid transparent;transition:.15s;
+}
+.nav-item:hover{background:#1e293b;color:#e2e8f0;}
+.nav-item.active{background:#1e293b;color:#fff;border-left-color:var(--blue);}
+.nav-item .icon{width:18px;text-align:center;}
+#sidebar .spacer{flex:1;}
+#sidebar .footer-note{padding:14px 20px;font-size:11px;color:#475569;border-top:1px solid #1e293b;}
+
+#main{flex:1;min-width:0;display:flex;flex-direction:column;}
+#topbar{
+  background:#fff;border-bottom:1px solid var(--border);padding:10px 22px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:20;
+}
+#topbar h1{font-size:16px;margin:0;font-weight:600;}
+.sync-status{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted-light);}
+.sync-dot.ok{background:var(--green);}
+.sync-dot.busy{background:var(--amber);animation:pulse 1s infinite;}
+.sync-dot.err{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.present-controls{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:8px;padding:3px;background:#f8fafc;}
+.present-controls .btn-icon{padding:5px 9px;}
+.present-controls .btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.present-label{font-size:11.5px;color:var(--muted);padding:0 4px;white-space:nowrap;min-width:88px;text-align:center;}
+
+/* ============================== PRESENTATION FONT SCALE ============================== */
+body.font-scale-lg{font-size:17px;}
+body.font-scale-lg thead th{font-size:14.5px;}
+body.font-scale-lg tbody td{font-size:16px;padding:12px 14px;}
+body.font-scale-lg .badge{font-size:14px;padding:4px 12px;}
+body.font-scale-lg .kpi-card .value{font-size:32px;}
+body.font-scale-lg .kpi-card .label{font-size:14px;}
+body.font-scale-lg .nav-item{font-size:16px;padding:14px 20px;}
+body.font-scale-lg #topbar-title{font-size:20px;}
+body.font-scale-lg .section-title-row h2{font-size:22px;}
+body.font-scale-lg .bar-row, body.font-scale-lg .legend-item{font-size:15px;}
+body.font-scale-lg .help-text{font-size:14px;}
+
+body.font-scale-xl{font-size:21px;}
+body.font-scale-xl thead th{font-size:17px;}
+body.font-scale-xl tbody td{font-size:20px;padding:15px 17px;}
+body.font-scale-xl .badge{font-size:17px;padding:5px 14px;}
+body.font-scale-xl .kpi-card .value{font-size:42px;}
+body.font-scale-xl .kpi-card .label{font-size:16px;}
+body.font-scale-xl .nav-item{font-size:19px;padding:16px 20px;}
+body.font-scale-xl #topbar-title{font-size:25px;}
+body.font-scale-xl .section-title-row h2{font-size:27px;}
+body.font-scale-xl .bar-row, body.font-scale-xl .legend-item{font-size:18px;}
+body.font-scale-xl .help-text{font-size:16px;}
+
+body.font-scale-xxl{font-size:26px;}
+body.font-scale-xxl thead th{font-size:20px;}
+body.font-scale-xxl tbody td{font-size:25px;padding:18px 20px;}
+body.font-scale-xxl .badge{font-size:20px;padding:6px 16px;}
+body.font-scale-xxl .kpi-card .value{font-size:52px;}
+body.font-scale-xxl .kpi-card .label{font-size:19px;}
+body.font-scale-xxl .nav-item{font-size:22px;padding:18px 20px;}
+body.font-scale-xxl #topbar-title{font-size:30px;}
+body.font-scale-xxl .section-title-row h2{font-size:33px;}
+body.font-scale-xxl .bar-row, body.font-scale-xxl .legend-item{font-size:21px;}
+body.font-scale-xxl .help-text{font-size:19px;}
+body.font-scale-xxl .field label{font-size:16px;}
+
+body.font-scale-xxxl{font-size:32px;}
+body.font-scale-xxxl thead th{font-size:24px;}
+body.font-scale-xxxl tbody td{font-size:30px;padding:22px 24px;}
+body.font-scale-xxxl .badge{font-size:24px;padding:7px 18px;}
+body.font-scale-xxxl .kpi-card .value{font-size:64px;}
+body.font-scale-xxxl .kpi-card .label{font-size:22px;}
+body.font-scale-xxxl .nav-item{font-size:26px;padding:20px 22px;}
+body.font-scale-xxxl #topbar-title{font-size:36px;}
+body.font-scale-xxxl .section-title-row h2{font-size:39px;}
+body.font-scale-xxxl .bar-row, body.font-scale-xxxl .legend-item{font-size:25px;}
+body.font-scale-xxxl .help-text{font-size:22px;}
+body.font-scale-xxxl .field label{font-size:19px;}
+
+/* ============================== PRESENTATION BOLD MODE ============================== */
+body.font-bold-mode, body.font-bold-mode tbody td, body.font-bold-mode thead th,
+body.font-bold-mode .nav-item, body.font-bold-mode .kpi-card .label, body.font-bold-mode .bar-label,
+body.font-bold-mode .field label, body.font-bold-mode .help-text{font-weight:700;}
+body.font-bold-mode .badge{font-weight:800;}
+body.font-bold-mode .kpi-card .value{font-weight:800;}
+
+#content{flex:1;padding:22px;overflow-x:hidden;}
+.view{display:none;}
+.view.active{display:block;}
+
+/* ============================== BUTTONS ============================== */
+.btn{
+  border:1px solid var(--border-dark);background:#fff;color:var(--text);
+  padding:7px 13px;border-radius:8px;font-size:13px;display:inline-flex;align-items:center;gap:6px;
+  transition:.12s;white-space:nowrap;
+}
+.btn:hover{background:#f1f5f9;}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+.btn-primary:hover{background:var(--blue-dark);}
+.btn-danger{color:var(--red);border-color:#fecaca;}
+.btn-danger:hover{background:var(--red-bg);}
+.btn-sm{padding:4px 9px;font-size:12px;border-radius:6px;}
+.btn-icon{padding:6px 8px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ============================== CARDS / KPI ============================== */
+.grid{display:grid;gap:14px;}
+.kpi-row{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;}
+.kpi-card .label{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.kpi-card .value{font-size:26px;font-weight:700;}
+.kpi-card .sub{font-size:11.5px;color:var(--muted-light);margin-top:3px;}
+.dash-grid{grid-template-columns:1.1fr 1fr;}
+.dash-grid2{grid-template-columns:1fr 1fr;margin-top:14px;}
+@media (max-width:1000px){.dash-grid,.dash-grid2{grid-template-columns:1fr;}}
+.card h3{margin:0 0 12px;font-size:13.5px;font-weight:600;color:var(--text);}
+
+/* bar list */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12.5px;}
+.bar-row .bar-label{width:150px;flex-shrink:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;background:var(--gray-bg);border-radius:5px;height:10px;overflow:hidden;}
+.bar-fill{height:100%;background:var(--blue);border-radius:5px;}
+.bar-count{width:26px;text-align:right;font-weight:600;color:var(--text);}
+
+.donut-wrap{display:flex;align-items:center;gap:22px;}
+.donut{width:120px;height:120px;border-radius:50%;flex-shrink:0;}
+.donut-legend .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12.5px;}
+.legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+
+/* ============================== FILTER BAR ============================== */
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.filter-bar select, .filter-bar input[type=text]{
+  padding:7px 10px;border:1px solid var(--border-dark);border-radius:8px;background:#fff;min-width:130px;
+}
+.filter-bar input[type=text]{min-width:220px;}
+.filter-bar .spacer{flex:1;}
+
+/* ============================== TABLES ============================== */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;}
+table{border-collapse:collapse;width:100%;font-size:13px;}
+thead th{
+  position:sticky;top:0;background:#f8fafc;text-align:left;padding:10px 12px;font-weight:600;
+  color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;font-size:12px;z-index:1;
+}
+tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;}
+tbody tr:hover{background:#f8fafc;}
+tbody tr.row-clickable{cursor:pointer;}
+.cell-ellipsis{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cell-mono{font-family:Consolas,monospace;font-size:12.5px;}
+.row-actions{display:flex;gap:6px;}
+.empty-row td{text-align:center;color:var(--muted-light);padding:30px;}
+
+/* badges */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+.badge-done{background:var(--green-bg);color:var(--green);}
+.badge-progress{background:var(--amber-bg);color:var(--amber);}
+.badge-cancel{background:var(--gray-bg);color:var(--gray);}
+.badge-overdue{background:var(--red-bg);color:var(--red);}
+.badge-y{background:var(--green-bg);color:var(--green);}
+.badge-n{background:var(--gray-bg);color:var(--gray);}
+
+/* ============================== MODAL ============================== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:flex-start;justify-content:center;
+  z-index:100;padding:30px 16px;overflow-y:auto;
+}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);width:100%;max-width:860px;margin:auto;}
+.modal.modal-wide{max-width:1080px;}
+.modal-sm{max-width:440px;}
+.modal-header{
+  padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:#fff;border-radius:var(--radius) var(--radius) 0 0;z-index:2;
+}
+.modal-header h2{margin:0;font-size:16px;}
+.modal-body{padding:20px 22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff;}
+.modal-close{background:none;border:none;font-size:20px;color:var(--muted);padding:2px 6px;border-radius:6px;}
+.modal-close:hover{background:var(--gray-bg);}
+
+.form-section{margin-bottom:22px;}
+.form-section .sec-title{
+  font-size:12.5px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.03em;
+  margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--blue-light);
+}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.form-grid.cols-1{grid-template-columns:1fr;}
+@media (max-width:640px){.form-grid,.form-grid.cols-3{grid-template-columns:1fr;}}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:12px;color:var(--muted);font-weight:600;}
+.field label .req{color:var(--red);}
+.field input, .field select, .field textarea{
+  padding:8px 10px;border:1px solid var(--border-dark);border-radius:7px;background:#fff;color:var(--text);width:100%;
+}
+.field textarea{resize:vertical;min-height:56px;line-height:1.4;}
+.field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--blue-light);border-color:var(--blue);}
+.field.invalid input, .field.invalid select, .field.invalid textarea{border-color:var(--red);}
+.field input:disabled, .field select:disabled, .field textarea:disabled,
+.mini-table input:disabled, .mini-table textarea:disabled{background:#f8fafc;color:var(--muted);cursor:not-allowed;}
+.field .err-msg{font-size:11px;color:var(--red);}
+
+.mini-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.mini-table th{text-align:left;padding:6px 8px;color:var(--muted);font-size:11.5px;border-bottom:1px solid var(--border);}
+.mini-table td{padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:top;}
+.mini-table input, .mini-table textarea{padding:6px 8px;font-size:12.5px;border:1px solid var(--border-dark);border-radius:6px;width:100%;}
+.mini-table textarea{min-height:38px;}
+.row-del-btn{background:none;border:none;color:var(--red);font-size:14px;padding:2px 6px;}
+
+/* ============================== TOAST ============================== */
+#toast-wrap{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:8px;z-index:200;}
+.toast{
+  background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;box-shadow:var(--shadow-lg);
+  display:flex;align-items:center;gap:8px;animation:toast-in .2s ease-out;min-width:200px;
+}
+.toast.ok{background:#166534;}
+.toast.err{background:#991b1b;}
+@keyframes toast-in{from{transform:translateY(10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* ============================== ATTENDANT WEEK GRID ============================== */
+.wk-cell{
+  width:34px;height:28px;text-align:center;border:1px solid var(--border);border-radius:5px;
+  font-size:11.5px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);
+}
+.wk-cell[data-v="o"]{background:var(--green-bg);color:var(--green);}
+.wk-cell[data-v="a"]{background:var(--red-bg);color:var(--red);}
+.wk-cell[data-v="l"]{background:var(--amber-bg);color:var(--amber);}
+.wk-cell[data-v="n/a"]{background:var(--gray-bg);color:var(--muted-light);font-size:9.5px;}
+.wk-cell[data-v="-"]{background:#f8fafc;color:var(--muted-light);}
+
+/* Frozen Name/Function/Requirement columns on the Attendant table while scrolling weeks */
+.att-sticky-col{position:sticky;background:#fff;z-index:2;box-shadow:1px 0 0 var(--border);}
+.att-sticky-col.att-col-name{left:0;min-width:160px;}
+.att-sticky-col.att-col-function{left:160px;min-width:120px;}
+.att-sticky-col.att-col-requirement{left:280px;min-width:100px;box-shadow:2px 0 3px rgba(15,23,42,.06);}
+thead .att-sticky-col{z-index:3;background:#f8fafc;}
+
+/* ============================== MISC ============================== */
+.banner{
+  background:var(--amber-bg);color:#92400e;border:1px solid #fde68a;border-radius:8px;padding:10px 16px;
+  margin-bottom:14px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.banner button{flex-shrink:0;}
+.help-text{font-size:12px;color:var(--muted-light);margin-top:4px;}
+.section-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title-row h2{margin:0;font-size:18px;}
+.tag-count{background:var(--blue-light);color:var(--blue);border-radius:20px;padding:1px 9px;font-size:11.5px;font-weight:700;}
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:16px;}
+.settings-row:last-child{border-bottom:none;}
+.settings-row .lbl{font-weight:600;font-size:13.5px;}
+.settings-row .desc{font-size:12px;color:var(--muted);margin-top:2px;}
+.mono-path{font-family:Consolas,monospace;font-size:12px;background:var(--gray-bg);padding:4px 8px;border-radius:6px;color:var(--text);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============================== SIDEBAR ============================== -->
+  <aside id="sidebar">
+    <div class="brand"><span class="dot"></span> MoC Management</div>
+    <nav>
+      <div class="nav-item active" data-view="dashboard"><span class="icon">&#9635;</span> Dashboard</div>
+      <div class="nav-item" data-view="masterlist"><span class="icon">&#9776;</span> Master List</div>
+      <div class="nav-item" data-view="actionplan"><span class="icon">&#10003;</span> Action Plan</div>
+      <div class="nav-item" data-view="meeting"><span class="icon">&#128197;</span> Agenda &amp; Attendant</div>
+      <div class="nav-item" data-view="settings"><span class="icon">&#9881;</span> Dữ liệu &amp; Cài đặt</div>
+    </nav>
+    <div class="spacer"></div>
+    <div class="footer-note">QA.P.035 Management of Change<br>Nội bộ nhà máy</div>
+  </aside>
+
+  <!-- ============================== MAIN ============================== -->
+  <div id="main">
+    <div id="topbar">
+      <h1 id="topbar-title">Dashboard</h1>
+      <div class="topbar-actions">
+        <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Đang tải...</span></div>
+        <div class="present-controls" title="Cỡ chữ cho trình chiếu">
+          <button class="btn btn-sm btn-icon" id="btn-font-decrease" title="Giảm cỡ chữ">A&#8722;</button>
+          <span id="font-scale-label" class="present-label">Chữ thường</span>
+          <button class="btn btn-sm btn-icon" id="btn-font-increase" title="Tăng cỡ chữ">A+</button>
+          <button class="btn btn-sm btn-icon" id="btn-bold-toggle" title="Tô đậm chữ"><b>B</b></button>
+        </div>
+        <button class="btn" id="btn-save-now">&#128190; Lưu ngay</button>
+        <div id="auth-area"></div>
+      </div>
+    </div>
+    <div class="banner" id="readonly-banner" style="display:none;border-radius:0;margin:0;justify-content:center;">
+      &#128274; Bạn đang xem ở chế độ chỉ xem. <button class="btn btn-sm" id="btn-open-login-banner" style="margin-left:6px;">Đăng nhập để chỉnh sửa</button>
+    </div>
+
+    <div id="content">
+
+      <!-- ---------- DASHBOARD VIEW ---------- -->
+      <section class="view active" id="view-dashboard">
+        <div class="grid kpi-row" id="kpi-cards"></div>
+        <div class="grid dash-grid">
+          <div class="card">
+            <h3>Trạng thái MoC</h3>
+            <div class="donut-wrap" id="status-donut-wrap"></div>
+          </div>
+          <div class="card">
+            <h3>Action Plan quá hạn / sắp đến hạn</h3>
+            <div id="overdue-list"></div>
+          </div>
+        </div>
+        <div class="grid dash-grid2">
+          <div class="card">
+            <h3>MoC theo Bộ phận (Dept)</h3>
+            <div id="dept-bars"></div>
+          </div>
+          <div class="card">
+            <h3>MoC theo Nhóm thay đổi (Nature)</h3>
+            <div id="nature-bars"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- MASTER LIST VIEW ---------- -->
+      <section class="view" id="view-masterlist">
+        <div class="section-title-row">
+          <h2>MoC Master List <span class="tag-count" id="ml-count">0</span></h2>
+          <button class="btn btn-primary" id="btn-add-moc">+ Thêm MoC mới</button>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="ml-search" placeholder="Tìm MoC No / tên / change owner...">
+          <select id="ml-filter-dept"><option value="">Tất cả bộ phận</option></select>
+          <select id="ml-filter-status"><option value="">Tất cả trạng thái</option></select>
+          <select id="ml-filter-nature"><option value="">Tất cả nhóm</option></select>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;">
+            <input type="checkbox" id="ml-show-all-status"> Hiện cả Done/Cancel
+          </label>
+          <div class="spacer"></div>
+          <button class="btn btn-sm" id="btn-export-ml">&#8681; Xuất CSV</button>
+          <button class="btn btn-sm btn-primary" id="btn-open-email">&#128231; Gửi Email báo cáo</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>MoC No</th><th>Request Date</th><th>Change Owner</th><th>Dept</th>
+              <th>Name of change</th><th>Nature</th><th>Type</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody id="ml-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ---------- ACTION PLAN VIEW ---------- -->
+      <section class="view" id="view-actionplan">
+        <div class="section-title-row">
+          <h2>MoC Action Plan <span class="tag-count" id="ap-count">0</span></h2>
+          <button class="btn btn-primary" id="btn-add-action">+ Thêm hành động</button>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="ap-search" placeholder="Tìm issue / action / PIC...">
+          <select id="ap-filter-function"><option value="">Tất cả function</option></select>
+          <select id="ap-filter-status"><option value="">Tất cả trạng thái</option></select>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;">
+            <input type="checkbox" id="ap-show-all-status"> Hiện cả Done/Cancel
+          </label>
+          <div class="spacer"></div>
+          <button class="btn btn-sm" id="btn-export-ap">&#8681; Xuất CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Date</th><th>Issue</th><th>Action</th><th>PIC</th>
+              <th>Due date</th><th>Status</th><th>Remark</th><th></th>
+            </tr></thead>
+            <tbody id="ap-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ---------- AGENDA & ATTENDANT VIEW ---------- -->
+      <section class="view" id="view-meeting">
+        <div class="section-title-row">
+          <h2>Agenda họp định kỳ</h2>
+          <button class="btn btn-primary btn-sm" id="btn-add-agenda">+ Thêm mục agenda</button>
+        </div>
+        <div class="table-wrap" style="margin-bottom:26px;">
+          <table>
+            <thead><tr><th style="width:20%">Topic</th><th>Content</th><th style="width:80px">Time</th><th style="width:100px">PIC</th><th></th></tr></thead>
+            <tbody id="agenda-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="section-title-row">
+          <h2>Điểm danh (Attendant)</h2>
+          <button class="btn btn-primary btn-sm" id="btn-add-attendant">+ Thêm người</button>
+        </div>
+        <p class="help-text">Click vào từng ô tuần để đổi trạng thái: (trống) → o (có mặt) → a (vắng) → l (trễ) → n/a → - (không họp).</p>
+        <div class="table-wrap">
+          <table id="attendant-table">
+            <thead><tr id="attendant-head-row"></tr></thead>
+            <tbody id="attendant-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ---------- SETTINGS VIEW ---------- -->
+      <section class="view" id="view-settings">
+        <h2 style="margin-top:0;">Dữ liệu &amp; Cài đặt</h2>
+        <div class="card" style="max-width:720px;">
+          <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+            <div>
+              <div class="lbl">Dữ liệu dùng chung (Cloudflare)</div>
+              <div class="desc">Kết nối tới Cloudflare Worker (xem <span class="mono-path">cloudflare/worker.js</span>) để nhiều máy/nhiều người tự động đồng bộ qua internet.</div>
+              <div class="desc" id="file-status" style="margin-top:6px;font-weight:600;color:var(--text);">Chưa kết nối</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;max-width:480px;">
+              <div class="field"><label>Worker URL</label><input type="text" id="cloud-url" placeholder="https://moc-data-api.yoursubdomain.workers.dev"></div>
+              <div class="field"><label>API key</label><input type="password" id="cloud-key" placeholder="API key"></div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-primary btn-sm" id="btn-cloud-connect">Kết nối</button>
+                <button class="btn btn-sm btn-danger" id="btn-cloud-disconnect" style="display:none;">Ngắt kết nối</button>
+              </div>
+            </div>
+          </div>
+          <div class="settings-row" id="reconnect-row" style="display:none;">
+            <div>
+              <div class="lbl">Mất kết nối Cloudflare</div>
+              <div class="desc">Kiểm tra mạng hoặc API key rồi thử kết nối lại.</div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-reconnect">Kết nối lại</button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="lbl">Sao lưu / Khôi phục (JSON)</div>
+              <div class="desc">Xuất toàn bộ dữ liệu ra file JSON, hoặc nhập lại từ bản sao lưu.</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm" id="btn-backup-export">Xuất JSON</button>
+              <button class="btn btn-sm" id="btn-backup-import">Nhập JSON</button>
+              <input type="file" id="input-backup-file" accept="application/json" style="display:none;">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="lbl">Reset về dữ liệu mẫu ban đầu</div>
+              <div class="desc" style="color:var(--red);">Xoá toàn bộ dữ liệu hiện tại, khôi phục dữ liệu mẫu gốc từ file Excel.</div>
+            </div>
+            <button class="btn btn-sm btn-danger" id="btn-reset-seed">Reset dữ liệu</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================== MOC FORM MODAL ============================== -->
+<div class="modal-overlay" id="modal-moc">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2 id="moc-modal-title">MoC mới</h2>
+      <button class="modal-close" data-close-modal="modal-moc">&times;</button>
+    </div>
+    <div class="modal-body" id="moc-modal-body">
+      <!-- rendered by JS -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="btn-delete-moc" style="margin-right:auto;display:none;">Xoá MoC này</button>
+      <button class="btn" data-close-modal="modal-moc">Đóng</button>
+      <button class="btn btn-primary" id="btn-save-moc">Lưu MoC</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== ACTION PLAN MODAL ============================== -->
+<div class="modal-overlay" id="modal-action">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 id="action-modal-title">Thêm hành động</h2>
+      <button class="modal-close" data-close-modal="modal-action">&times;</button>
+    </div>
+    <div class="modal-body" id="action-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="btn-delete-action" style="margin-right:auto;display:none;">Xoá</button>
+      <button class="btn" data-close-modal="modal-action">Đóng</button>
+      <button class="btn btn-primary" id="btn-save-action">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== AGENDA MODAL ============================== -->
+<div class="modal-overlay" id="modal-agenda">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 id="agenda-modal-title">Thêm agenda</h2>
+      <button class="modal-close" data-close-modal="modal-agenda">&times;</button>
+    </div>
+    <div class="modal-body" id="agenda-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="btn-delete-agenda" style="margin-right:auto;display:none;">Xoá</button>
+      <button class="btn" data-close-modal="modal-agenda">Đóng</button>
+      <button class="btn btn-primary" id="btn-save-agenda">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== LOGIN MODAL ============================== -->
+<div class="modal-overlay" id="modal-login">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Đăng nhập</h2>
+      <button class="modal-close" data-close-modal="modal-login">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Vai trò</label>
+        <select id="login-role">
+          <option value="admin">Admin</option>
+          <option value="leader">Leader</option>
+        </select>
+      </div>
+      <div class="field" id="login-admin-field" style="margin-top:12px;">
+        <label>Mật khẩu Admin</label>
+        <input type="password" id="login-password" placeholder="Nhập mật khẩu">
+        <div class="err-msg" id="login-error" style="display:none;">Sai mật khẩu.</div>
+      </div>
+      <div class="field" id="login-leader-field" style="margin-top:12px;display:none;">
+        <label>Chọn Leader</label>
+        <select id="login-leader-name"></select>
+      </div>
+      <div class="field" id="login-leader-password-field" style="margin-top:12px;display:none;">
+        <label>Mật khẩu</label>
+        <input type="password" id="login-leader-password" placeholder="Mặc định = đúng tên của bạn">
+        <div class="help-text">Mật khẩu mặc định là tên của bạn (chưa đổi). Đăng nhập xong có thể đổi mật khẩu ở góc phải.</div>
+        <div class="err-msg" id="login-leader-error" style="display:none;">Sai mật khẩu.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close-modal="modal-login">Huỷ</button>
+      <button class="btn btn-primary" id="btn-do-login">Đăng nhập</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== CHANGE PASSWORD MODAL ============================== -->
+<div class="modal-overlay" id="modal-changepw">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Đổi mật khẩu</h2>
+      <button class="modal-close" data-close-modal="modal-changepw">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Mật khẩu hiện tại</label><input type="password" id="cp-current"></div>
+      <div class="field" style="margin-top:12px;"><label>Mật khẩu mới</label><input type="password" id="cp-new"></div>
+      <div class="field" style="margin-top:12px;"><label>Nhập lại mật khẩu mới</label><input type="password" id="cp-confirm"></div>
+      <div class="err-msg" id="cp-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close-modal="modal-changepw">Huỷ</button>
+      <button class="btn btn-primary" id="btn-do-changepw">Đổi mật khẩu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== EMAIL REPORT MODAL ============================== -->
+<div class="modal-overlay" id="modal-email">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2>Soạn Email báo cáo MoC</h2>
+      <button class="modal-close" data-close-modal="modal-email">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="help-text" style="margin-top:-4px;">Nội dung MoC theo đúng bộ lọc đang áp dụng ở Master List, phần Action lấy theo bộ lọc hiện tại của tab Action Plan ( <span id="email-scope-desc" style="font-weight:600;color:var(--text);"></span> ). Trình duyệt không thể tự gửi email trực tiếp — file <b>.eml</b> (bản nháp sẵn sàng gửi, có kèm biểu đồ) đã tự động tải về, mở file đó bằng Outlook/Mail để hoàn tất và bấm Gửi. Đổi To/Tiêu đề bên dưới rồi bấm "Tải lại file .eml" nếu cần cập nhật.</p>
+      <div class="form-grid cols-3">
+        <div class="field"><label>Gửi đến (To)</label><input id="email-to" placeholder="vd: qa@congty.com; eng@congty.com"></div>
+        <div class="field" style="grid-column:span 2;"><label>Tiêu đề</label><input id="email-subject"></div>
+      </div>
+      <div class="help-text" id="email-recipient-hint" style="margin-top:4px;"></div>
+
+      <div class="divider"></div>
+      <div class="sec-title" style="margin-bottom:10px;">Xem trước nội dung</div>
+      <div id="email-preview" style="border:1px solid var(--border);border-radius:8px;padding:16px 18px;max-height:420px;overflow-y:auto;background:#fff;"></div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap;">
+      <button class="btn" id="btn-email-download-chart" style="margin-right:auto;">&#128202; Tải ảnh biểu đồ</button>
+      <button class="btn" data-close-modal="modal-email">Đóng</button>
+      <button class="btn" id="btn-email-copy">&#128203; Sao chép nội dung</button>
+      <button class="btn" id="btn-email-open">&#9993; Mở bằng mailto:</button>
+      <button class="btn btn-primary" id="btn-email-download-eml">&#11015; Tải lại file .eml</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="people-datalist"></datalist>
+<div id="toast-wrap"></div>
+
+<script>
+/* ================================================================================
+   CONFIG
+================================================================================ */
+const CONFIG = {
+  depts: ['QA','Ops','ENG','ME','PRO','R&D','SHE','SC','FIN','HR','E2E','Other'],
+  types: ['Permanent Change','Temporary Change','Emergency Change','Like for Like Change','One for One Change'],
+  natures: ['Materials & Ingredients','Manufacturing process','Equipment','Infrastructure','Regulatory & Internal compliance'],
+  statuses: ['On progress','Done','Cancel'],
+  weekValues: ['','o','a','l','n/a','-'],
+  // Approval: only Change owner + Area owner are mandatory on every MoC. All other roles
+  // (incl. the nature-based functional reviewer) are optional, added on demand — Lean
+  // simplification based on real usage data: 0/25 historical MoCs ever filled the old
+  // fixed 10-role table.
+  approvalCoreRoles: ['Change owner','Area owner'],
+  approvalOptionalRoles: [
+    'OPs & OE Manager','QA Manager','ENG Lead','MAIN Manager',
+    'SC Manager','FIN Manager','HR Manager','General Director'
+  ],
+  // Suggested functional reviewer per Nature of change — auto-added as an approval row
+  // (still removable) when that Nature is selected, instead of always showing all roles.
+  natureFunctionalRole: {
+    'Materials & Ingredients': 'QA Manager',
+    'Manufacturing process': 'OPs & OE Manager',
+    'Equipment': 'ENG Lead',
+    'Infrastructure': 'ENG Lead',
+    'Regulatory & Internal compliance': 'QA Manager'
+  },
+  verificationRoles: ['Change owner','Area Owner'],
+  verificationStates: ['Chưa xong', 'Đạt - Hoàn tất', 'Không đạt - Cần làm lại'],
+  adminPassword: 'QAILD'
+};
+
+/* ================================================================================
+   UTILS
+================================================================================ */
+const Utils = {
+  uuid(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
+      const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8); return v.toString(16);
+    });
+  },
+  nowISO(){ return new Date().toISOString(); },
+  todayISO(){ return new Date().toISOString().slice(0,10); },
+  escapeHtml(str){
+    if(str===null||str===undefined) return '';
+    return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  },
+  nl2br(str){ return Utils.escapeHtml(str).replace(/\n/g,'<br>'); },
+  debounce(fn, ms){
+    let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
+  },
+  downloadBlob(content, filename, type){
+    const blob = new Blob([content], {type});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  },
+  csvEscape(v){
+    if(v===null||v===undefined) return '';
+    const s = String(v).replace(/\r?\n/g,' ');
+    if(/[",;]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+    return s;
+  },
+  toCSV(rows, columns){
+    const header = columns.map(c=>Utils.csvEscape(c.label)).join(',');
+    const lines = rows.map(r=>columns.map(c=>Utils.csvEscape(r[c.key])).join(','));
+    return '﻿'+[header, ...lines].join('\r\n');
+  },
+  parseDateSafe(str){
+    if(!str) return null;
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  },
+  daysDiffFromToday(dateStr){
+    const d = Utils.parseDateSafe(dateStr);
+    if(!d) return null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    d.setHours(0,0,0,0);
+    return Math.round((d - today)/86400000);
+  }
+};
+
+function showToast(msg, type){
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' '+type : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 2800);
+}
+
+/* ================================================================================
+   PRESENTATION MODE — font size / bold, for projecting during meetings.
+   Saved per-device in localStorage since each meeting room's screen differs.
+================================================================================ */
+const PRESENT_PREFS_KEY = 'moc_app_present_prefs_v1';
+const FONT_SCALE_CLASSES = ['', 'font-scale-lg', 'font-scale-xl', 'font-scale-xxl', 'font-scale-xxxl'];
+const FONT_SCALE_LABELS = ['Chữ thường', 'Chữ lớn', 'Chữ rất lớn', 'Chữ cực lớn', 'Chữ khổng lồ'];
+const presentPrefs = { scaleIdx: 0, bold: false };
+
+function loadPresentPrefs(){
+  try{
+    const raw = localStorage.getItem(PRESENT_PREFS_KEY);
+    if(raw){
+      const p = JSON.parse(raw);
+      presentPrefs.scaleIdx = Math.min(FONT_SCALE_CLASSES.length-1, Math.max(0, p.scaleIdx|0));
+      presentPrefs.bold = !!p.bold;
+    }
+  }catch(e){ /* ignore */ }
+}
+function savePresentPrefs(){
+  try{ localStorage.setItem(PRESENT_PREFS_KEY, JSON.stringify(presentPrefs)); }catch(e){ /* ignore */ }
+}
+function applyPresentPrefs(){
+  FONT_SCALE_CLASSES.forEach(c=>{ if(c) document.body.classList.remove(c); });
+  const cls = FONT_SCALE_CLASSES[presentPrefs.scaleIdx];
+  if(cls) document.body.classList.add(cls);
+  document.body.classList.toggle('font-bold-mode', presentPrefs.bold);
+  document.getElementById('font-scale-label').textContent = FONT_SCALE_LABELS[presentPrefs.scaleIdx];
+  document.getElementById('btn-bold-toggle').classList.toggle('active', presentPrefs.bold);
+  document.getElementById('btn-font-decrease').disabled = presentPrefs.scaleIdx === 0;
+  document.getElementById('btn-font-increase').disabled = presentPrefs.scaleIdx === FONT_SCALE_CLASSES.length-1;
+}
+
+/* ================================================================================
+   STORAGE — Cloudflare Worker (cloud API) + localStorage cache
+================================================================================ */
+const Storage = (()=>{
+  const CACHE_KEY = 'moc_app_cache_v1';
+  const CLOUD_CONFIG_KEY = 'moc_app_cloud_v1';
+
+  function loadCloudConfig(){
+    try{
+      const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function saveCloudConfig(cfg){
+    try{ localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg)); }catch(e){ /* ignore quota errors */ }
+  }
+  function clearCloudConfig(){
+    try{ localStorage.removeItem(CLOUD_CONFIG_KEY); }catch(e){ /* ignore */ }
+  }
+
+  async function cloudRequest(cfg, method, body){
+    const url = cfg.url.replace(/\/+$/,'') + '/data';
+    const res = await fetch(url, {
+      method,
+      headers: Object.assign({ 'X-Api-Key': cfg.apiKey }, body ? {'Content-Type':'application/json'} : {}),
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if(!res.ok){
+      const err = new Error('cloud_error_' + res.status);
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  }
+  async function cloudGet(cfg){ return cloudRequest(cfg, 'GET'); }
+  async function cloudPut(cfg, dataObj){ return cloudRequest(cfg, 'PUT', dataObj); }
+
+  function loadLocalCache(){
+    try{
+      const raw = localStorage.getItem(CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function saveLocalCache(dataObj){
+    try{ localStorage.setItem(CACHE_KEY, JSON.stringify(dataObj)); }catch(e){ /* ignore quota errors */ }
+  }
+
+  function mergeCollections(localArr, remoteArr){
+    const map = new Map();
+    (remoteArr||[]).forEach(item=>{ if(item && item.id) map.set(item.id, item); });
+    (localArr||[]).forEach(item=>{
+      if(!item || !item.id) return;
+      const ex = map.get(item.id);
+      if(!ex || String(item.updatedAt||'') >= String(ex.updatedAt||'')) map.set(item.id, item);
+    });
+    return Array.from(map.values());
+  }
+  function mergeUsers(local, remote){
+    const out = Object.assign({}, remote||{});
+    Object.entries(local||{}).forEach(([name, rec])=>{
+      const ex = out[name];
+      if(!ex || String((rec&&rec.updatedAt)||'') >= String((ex&&ex.updatedAt)||'')) out[name] = rec;
+    });
+    return out;
+  }
+  function mergeData(local, remote){
+    if(!remote) return local;
+    return {
+      schemaVersion: local.schemaVersion || 1,
+      mocList: mergeCollections(local.mocList, remote.mocList),
+      actionPlan: mergeCollections(local.actionPlan, remote.actionPlan),
+      agenda: mergeCollections(local.agenda, remote.agenda),
+      attendant: mergeCollections(local.attendant, remote.attendant),
+      users: mergeUsers(local.users, remote.users)
+    };
+  }
+
+  return {
+    loadCloudConfig, saveCloudConfig, clearCloudConfig,
+    cloudGet, cloudPut,
+    loadLocalCache, saveLocalCache, mergeData
+  };
+})();
+
+/* ================================================================================
+   STATE
+================================================================================ */
+const state = {
+  data: { schemaVersion:1, mocList:[], actionPlan:[], agenda:[], attendant:[], users:{} },
+  cloud: null,        // { url, apiKey } once connected — see Storage.loadCloudConfig()
+  cloudOk: false,
+  dirty: false,
+  modalOpen: false,
+  activeView: 'dashboard',
+  mocEditing: null,      // record being edited in MoC modal (working copy)
+  mocEditingIsNew: false,
+  actionEditing: null,
+  agendaEditing: null,
+  currentUser: null      // { role:'admin'|'leader', name:string }
+};
+
+function cloneSeed(){
+  return normalizeData(JSON.parse(JSON.stringify(SEED_DATA)));
+}
+
+function normalizeData(d){
+  return {
+    schemaVersion: (d && d.schemaVersion) || 1,
+    mocList: (d && d.mocList) || [],
+    actionPlan: (d && d.actionPlan) || [],
+    agenda: (d && d.agenda) || [],
+    attendant: (d && d.attendant) || [],
+    users: (d && d.users) || {}
+  };
+}
+
+/* ================================================================================
+   AUTH / PERMISSIONS
+   - Not logged in: read-only (view only).
+   - Leader: can add new MoC/Action/Agenda/Attendant. Can only EDIT an existing MoC if
+     they are its Change Owner or listed in "Relevant people" — cannot delete, no Settings.
+   - Admin: full access (add/edit/delete ANY record + Settings/file connection/reset),
+     ownership restriction does not apply to Admin.
+   NOTE: this is a lightweight identity gate for an internal single-file app, not real
+   security — the admin password lives in client-side source and is not a secret.
+================================================================================ */
+const AUTH_STORAGE_KEY = 'moc_app_user_v1';
+
+function canEdit(){ return !!state.currentUser; }
+function canDelete(){ return !!state.currentUser && state.currentUser.role === 'admin'; }
+function canAccessSettings(){ return !!state.currentUser && state.currentUser.role === 'admin'; }
+function requireEdit(){
+  if(canEdit()) return true;
+  showToast('Vui lòng đăng nhập để chỉnh sửa.', 'err');
+  return false;
+}
+function requireDelete(){
+  if(canDelete()) return true;
+  showToast('Chỉ Admin mới được xoá.', 'err');
+  return false;
+}
+
+// Vietnamese-aware loose name match: strip diacritics + case, so "Vũ Trần" / "vu tran"
+// / "VU TRAN" are all treated as the same person despite inconsistent spelling in the
+// source data.
+function normalizeNameForMatch(str){
+  return (str||'')
+    .toLowerCase()
+    .replace(/đ/g,'d')
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+function isPersonInMoc(name, rec){
+  if(!name || !rec) return false;
+  const target = normalizeNameForMatch(name);
+  if(!target) return false;
+  const owner = normalizeNameForMatch(rec.changeOwner);
+  if(owner && (owner.includes(target) || target.includes(owner))) return true;
+  const relevant = (rec.relevantPeople||'').split(/[,\/\n]/).map(normalizeNameForMatch).filter(Boolean);
+  return relevant.some(p => p.includes(target) || target.includes(p));
+}
+// Can this MoC record be edited by the current user? Admin: always. Leader: only if
+// Change Owner or listed in Relevant people. Not logged in: never.
+function canEditMoc(rec){
+  if(!state.currentUser) return false;
+  if(state.currentUser.role === 'admin') return true;
+  return isPersonInMoc(state.currentUser.name, rec);
+}
+function requireEditMoc(rec, isNew){
+  if(!canEdit()){ showToast('Vui lòng đăng nhập để chỉnh sửa.', 'err'); return false; }
+  if(!isNew && !canEditMoc(rec)){
+    showToast('Chỉ Change Owner hoặc người liên quan (Relevant people) mới được chỉnh sửa MoC này.', 'err');
+    return false;
+  }
+  return true;
+}
+
+function loadCurrentUser(){
+  try{
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    state.currentUser = raw ? JSON.parse(raw) : null;
+  }catch(e){ state.currentUser = null; }
+}
+function persistCurrentUser(){
+  try{
+    if(state.currentUser) localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state.currentUser));
+    else localStorage.removeItem(AUTH_STORAGE_KEY);
+  }catch(e){ /* ignore quota errors */ }
+}
+
+function renderAuthArea(){
+  const el = document.getElementById('auth-area');
+  if(state.currentUser){
+    const roleLabel = state.currentUser.role === 'admin' ? 'Admin' : 'Leader';
+    const changePwBtn = state.currentUser.role === 'leader'
+      ? `<button class="btn btn-sm" id="btn-change-password">Đổi mật khẩu</button>` : '';
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12.5px;color:var(--text);white-space:nowrap;"><b>${Utils.escapeHtml(state.currentUser.name)}</b> <span style="color:var(--muted-light);">(${roleLabel})</span></span>
+        ${changePwBtn}
+        <button class="btn btn-sm" id="btn-logout">Đăng xuất</button>
+      </div>`;
+    if(state.currentUser.role === 'leader'){
+      document.getElementById('btn-change-password').addEventListener('click', openChangePasswordModal);
+    }
+    document.getElementById('btn-logout').addEventListener('click', doLogout);
+  } else {
+    el.innerHTML = `<button class="btn btn-sm btn-primary" id="btn-open-login">&#128100; Đăng nhập</button>`;
+    document.getElementById('btn-open-login').addEventListener('click', openLoginModal);
+  }
+}
+
+function populateLeaderDropdown(){
+  const sel = document.getElementById('login-leader-name');
+  const names = state.data.attendant.map(p=>p.name).filter(Boolean);
+  sel.innerHTML = names.length
+    ? names.map(n=>`<option value="${Utils.escapeHtml(n)}">${Utils.escapeHtml(n)}</option>`).join('')
+    : '<option value="">(Chưa có danh sách Leader trong Attendant)</option>';
+}
+
+// Leader password check: uses a custom password if the person has set one
+// (state.data.users[name]), otherwise falls back to the default — their own name,
+// case-insensitive. This mirrors "Change Owner" identity since Leader accounts are the
+// pool of people who appear as Change Owner / Relevant people on MoC records.
+function checkLeaderPassword(name, password){
+  const rec = state.data.users && state.data.users[name];
+  if(rec && rec.password) return password === rec.password;
+  return (password||'').trim().toLowerCase() === (name||'').trim().toLowerCase();
+}
+
+function openLoginModal(){
+  document.getElementById('login-role').value = 'admin';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-leader-password').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-leader-error').style.display = 'none';
+  document.getElementById('login-admin-field').style.display = '';
+  document.getElementById('login-leader-field').style.display = 'none';
+  document.getElementById('login-leader-password-field').style.display = 'none';
+  populateLeaderDropdown();
+  document.getElementById('modal-login').classList.add('open');
+}
+function closeLoginModal(){ document.getElementById('modal-login').classList.remove('open'); }
+
+function doLogin(){
+  const role = document.getElementById('login-role').value;
+  if(role === 'admin'){
+    const pw = document.getElementById('login-password').value;
+    if(pw !== CONFIG.adminPassword){
+      document.getElementById('login-error').style.display = 'block';
+      return;
+    }
+    state.currentUser = { role:'admin', name:'Admin' };
+  } else {
+    const name = document.getElementById('login-leader-name').value;
+    if(!name){ showToast('Danh sách Leader trống — hãy thêm người ở tab Agenda & Attendant trước.', 'err'); return; }
+    const pw = document.getElementById('login-leader-password').value;
+    if(!checkLeaderPassword(name, pw)){
+      document.getElementById('login-leader-error').style.display = 'block';
+      return;
+    }
+    state.currentUser = { role:'leader', name };
+  }
+  persistCurrentUser();
+  closeLoginModal();
+  renderAuthArea();
+  applyPermissionsUI();
+  renderActiveView();
+  showToast('Xin chào ' + state.currentUser.name + '.', 'ok');
+}
+
+function openChangePasswordModal(){
+  document.getElementById('cp-current').value = '';
+  document.getElementById('cp-new').value = '';
+  document.getElementById('cp-confirm').value = '';
+  document.getElementById('cp-error').style.display = 'none';
+  document.getElementById('modal-changepw').classList.add('open');
+}
+function closeChangePasswordModal(){ document.getElementById('modal-changepw').classList.remove('open'); }
+function doChangePassword(){
+  if(!state.currentUser || state.currentUser.role !== 'leader'){
+    showToast('Chỉ tài khoản Leader mới tự đổi mật khẩu ở đây.', 'err');
+    return;
+  }
+  const errEl = document.getElementById('cp-error');
+  errEl.style.display = 'none';
+  const cur = document.getElementById('cp-current').value;
+  const next = document.getElementById('cp-new').value;
+  const confirmPw = document.getElementById('cp-confirm').value;
+  if(!checkLeaderPassword(state.currentUser.name, cur)){
+    errEl.textContent = 'Mật khẩu hiện tại không đúng.'; errEl.style.display = 'block'; return;
+  }
+  if(!next || next.length < 3){
+    errEl.textContent = 'Mật khẩu mới cần ít nhất 3 ký tự.'; errEl.style.display = 'block'; return;
+  }
+  if(next !== confirmPw){
+    errEl.textContent = 'Nhập lại mật khẩu mới không khớp.'; errEl.style.display = 'block'; return;
+  }
+  state.data.users = state.data.users || {};
+  state.data.users[state.currentUser.name] = { password: next, updatedAt: Utils.nowISO() };
+  markDirty();
+  closeChangePasswordModal();
+  showToast('Đã đổi mật khẩu.', 'ok');
+}
+function doLogout(){
+  state.currentUser = null;
+  persistCurrentUser();
+  renderAuthArea();
+  applyPermissionsUI();
+  renderActiveView();
+}
+
+function applyPermissionsUI(){
+  const editing = canEdit();
+  const settingsOk = canAccessSettings();
+
+  document.getElementById('readonly-banner').style.display = editing ? 'none' : 'flex';
+
+  ['btn-add-moc','btn-add-action','btn-add-agenda','btn-add-attendant'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(btn) btn.style.display = editing ? '' : 'none';
+  });
+
+  const settingsNav = document.querySelector('.nav-item[data-view="settings"]');
+  if(settingsNav) settingsNav.style.display = settingsOk ? '' : 'none';
+  if(!settingsOk && state.activeView === 'settings'){
+    switchView('dashboard');
+  }
+}
+
+function applyModalPermissions(bodyId, saveBtnId, deleteBtnId, isNew, allowEdit, allowDelete){
+  const editing = !!allowEdit;
+  const deleting = !!allowDelete;
+  const body = document.getElementById(bodyId);
+  body.querySelectorAll('input, select, textarea').forEach(el=>{ el.disabled = !editing; });
+  body.querySelectorAll('button').forEach(btn=>{
+    if(btn.classList.contains('always-visible-btn')) return;
+    btn.style.display = editing ? '' : 'none';
+  });
+  const saveBtn = document.getElementById(saveBtnId);
+  if(saveBtn) saveBtn.style.display = editing ? '' : 'none';
+  const delBtn = document.getElementById(deleteBtnId);
+  if(delBtn) delBtn.style.display = (!isNew && deleting) ? 'inline-flex' : 'none';
+}
+
+/* ================================================================================
+   SYNC STATUS UI
+================================================================================ */
+function setSyncStatus(kind, text){
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-text');
+  dot.className = 'sync-dot' + (kind ? ' '+kind : '');
+  txt.textContent = text;
+}
+
+/* ================================================================================
+   SAVE / LOAD PIPELINE
+================================================================================ */
+function markDirty(){ state.dirty = true; debouncedSave(); }
+
+async function saveData(){
+  Storage.saveLocalCache(state.data);
+  if(!state.cloud){
+    setSyncStatus('', state.dirty ? 'Đã lưu cục bộ (chưa kết nối Cloudflare)' : 'Đã lưu cục bộ');
+    state.dirty = false;
+    return;
+  }
+  setSyncStatus('busy', 'Đang lưu...');
+  try{
+    const merged = await Storage.cloudPut(state.cloud, state.data);
+    state.data = normalizeData(merged);
+    Storage.saveLocalCache(state.data);
+    state.dirty = false;
+    state.cloudOk = true;
+    setSyncStatus('ok', 'Đã lưu • ' + new Date().toLocaleTimeString('vi-VN'));
+    renderActiveView();
+    document.getElementById('reconnect-row').style.display = 'none';
+  }catch(e){
+    console.error(e);
+    state.cloudOk = false;
+    setSyncStatus('err', e.status === 401 ? 'Sai API key — kiểm tra lại kết nối' : 'Lỗi lưu lên Cloudflare — kiểm tra mạng');
+    document.getElementById('reconnect-row').style.display = 'flex';
+  }
+}
+const debouncedSave = Utils.debounce(saveData, 1200);
+
+async function refreshFromCloud(){
+  if(!state.cloud || state.modalOpen) return;
+  try{
+    const remote = await Storage.cloudGet(state.cloud);
+    state.cloudOk = true;
+    if(!remote) return;
+    const before = JSON.stringify(state.data);
+    state.data = Storage.mergeData(state.data, remote);
+    if(JSON.stringify(state.data) !== before){
+      Storage.saveLocalCache(state.data);
+      renderActiveView();
+      renderDashboardFilters();
+    }
+  }catch(e){ state.cloudOk = false; /* silent — keep last known data */ }
+}
+setInterval(refreshFromCloud, 25000);
+
+async function connectCloud(url, apiKey){
+  const cfg = { url: (url||'').trim(), apiKey: (apiKey||'').trim() };
+  if(!cfg.url || !cfg.apiKey){ showToast('Vui lòng nhập đủ URL và API key.', 'err'); return; }
+  setSyncStatus('busy', 'Đang kết nối...');
+  try{
+    const remote = await Storage.cloudGet(cfg);
+    state.data = Storage.mergeData(state.data, remote);
+    state.cloud = cfg;
+    state.cloudOk = true;
+    Storage.saveCloudConfig(cfg);
+    await Storage.cloudPut(cfg, state.data).then(merged => { state.data = normalizeData(merged); });
+    Storage.saveLocalCache(state.data);
+    setSyncStatus('ok', 'Đã kết nối Cloudflare');
+    showToast('Đã kết nối dữ liệu Cloudflare.', 'ok');
+  }catch(e){
+    console.error(e);
+    state.cloudOk = false;
+    setSyncStatus('err', e.status === 401 ? 'Sai API key' : 'Không kết nối được — kiểm tra URL/mạng');
+    showToast(e.status === 401 ? 'Sai API key.' : 'Không kết nối được tới Cloudflare Worker.', 'err');
+    return;
+  }
+  updateFileStatusUI();
+  renderActiveView();
+  renderAllFilterOptions();
+}
+
+function disconnectCloud(){
+  state.cloud = null;
+  state.cloudOk = false;
+  Storage.clearCloudConfig();
+  setSyncStatus('', 'Đã ngắt kết nối — dữ liệu chỉ lưu cục bộ trên máy này');
+  updateFileStatusUI();
+}
+
+function updateFileStatusUI(){
+  const el = document.getElementById('file-status');
+  el.textContent = state.cloud
+    ? ('Đã kết nối: ' + state.cloud.url)
+    : 'Chưa kết nối — dữ liệu chỉ lưu cục bộ trên máy này';
+  const urlInput = document.getElementById('cloud-url');
+  const keyInput = document.getElementById('cloud-key');
+  if(urlInput && state.cloud) urlInput.value = state.cloud.url;
+  if(keyInput && state.cloud) keyInput.value = state.cloud.apiKey;
+  const disconnectBtn = document.getElementById('btn-cloud-disconnect');
+  if(disconnectBtn) disconnectBtn.style.display = state.cloud ? '' : 'none';
+}
+
+/* ================================================================================
+   INIT STORAGE
+================================================================================ */
+async function initStorage(){
+  const cache = Storage.loadLocalCache();
+  state.data = cache ? normalizeData(cache) : cloneSeed();
+
+  const cfg = Storage.loadCloudConfig();
+  if(!cfg){
+    setSyncStatus('', cache ? 'Đã lưu cục bộ (chưa kết nối Cloudflare)' : 'Dữ liệu mẫu — chưa kết nối Cloudflare');
+    return;
+  }
+  state.cloud = cfg;
+  setSyncStatus('busy', 'Đang tải dữ liệu...');
+  try{
+    const remote = await Storage.cloudGet(cfg);
+    state.data = Storage.mergeData(state.data, remote);
+    state.cloudOk = true;
+    Storage.saveLocalCache(state.data);
+    setSyncStatus('ok', 'Đã kết nối • ' + cfg.url);
+  }catch(e){
+    state.cloudOk = false;
+    setSyncStatus('err', e.status === 401 ? 'Sai API key' : 'Không kết nối được Cloudflare — dùng dữ liệu cục bộ');
+    document.getElementById('reconnect-row').style.display = 'flex';
+  }
+  updateFileStatusUI();
+}
+
+/* ================================================================================
+   NAVIGATION
+================================================================================ */
+const VIEW_TITLES = {
+  dashboard:'Dashboard', masterlist:'MoC Master List', actionplan:'MoC Action Plan',
+  meeting:'Agenda & Attendant', settings:'Dữ liệu & Cài đặt'
+};
+function switchView(view){
+  state.activeView = view;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active', el.dataset.view===view));
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.getElementById('topbar-title').textContent = VIEW_TITLES[view];
+  renderActiveView();
+  if(view === 'meeting') setTimeout(scrollAttendantToCurrentWeek, 0);
+}
+function renderActiveView(){
+  if(state.activeView==='dashboard') renderDashboard();
+  else if(state.activeView==='masterlist') renderMasterList();
+  else if(state.activeView==='actionplan') renderActionPlan();
+  else if(state.activeView==='meeting'){ renderAgenda(); renderAttendant(); }
+  else if(state.activeView==='settings') updateFileStatusUI();
+}
+
+/* ================================================================================
+   FILTER OPTIONS (populate dropdowns from CONFIG)
+================================================================================ */
+function fillSelect(select, values, keepFirst){
+  const first = keepFirst ? select.firstElementChild : null;
+  select.innerHTML = '';
+  if(first) select.appendChild(first);
+  values.forEach(v=>{
+    const o = document.createElement('option'); o.value=v; o.textContent=v; select.appendChild(o);
+  });
+}
+function renderAllFilterOptions(){
+  fillSelect(document.getElementById('ml-filter-dept'), CONFIG.depts, true);
+  fillSelect(document.getElementById('ml-filter-status'), CONFIG.statuses, true);
+  fillSelect(document.getElementById('ml-filter-nature'), CONFIG.natures, true);
+  fillSelect(document.getElementById('ap-filter-function'), CONFIG.depts, true);
+  fillSelect(document.getElementById('ap-filter-status'), CONFIG.statuses, true);
+}
+function renderDashboardFilters(){ /* placeholder for future dashboard-level filters */ }
+
+/* ================================================================================
+   DASHBOARD RENDER
+================================================================================ */
+function statusBadgeClass(status){
+  if(status==='Done') return 'badge-done';
+  if(status==='Cancel') return 'badge-cancel';
+  return 'badge-progress';
+}
+function renderDashboard(){
+  const moc = state.data.mocList;
+  const ap = state.data.actionPlan;
+  const total = moc.length;
+  const done = moc.filter(m=>m.status==='Done').length;
+  const progress = moc.filter(m=>m.status!=='Done' && m.status!=='Cancel').length;
+  const cancel = moc.filter(m=>m.status==='Cancel').length;
+  const overdueActions = ap.filter(a=>{
+    if(a.status==='Done' || a.status==='Cancel') return false;
+    const diff = Utils.daysDiffFromToday(a.dueDate);
+    return diff !== null && diff < 0;
+  }).length;
+
+  document.getElementById('kpi-cards').innerHTML = [
+    {label:'Tổng số MoC', value: total, sub:''},
+    {label:'Đang xử lý', value: progress, sub:''},
+    {label:'Hoàn thành', value: done, sub: total ? Math.round(done/total*100)+'%' : ''},
+    {label:'Đã huỷ', value: cancel, sub:''},
+    {label:'Action quá hạn', value: overdueActions, sub: overdueActions>0 ? 'cần xử lý' : 'ổn'}
+  ].map(k=>`
+    <div class="card kpi-card">
+      <div class="label">${k.label}</div>
+      <div class="value" style="${k.label==='Action quá hạn' && k.value>0 ? 'color:var(--red);':''}">${k.value}</div>
+      <div class="sub">${k.sub}</div>
+    </div>`).join('');
+
+  // status donut (CSS conic-gradient)
+  const segs = [
+    {label:'Đang xử lý', count:progress, color:'var(--amber)'},
+    {label:'Hoàn thành', count:done, color:'var(--green)'},
+    {label:'Đã huỷ', count:cancel, color:'var(--gray)'}
+  ];
+  const sum = segs.reduce((a,s)=>a+s.count,0) || 1;
+  let acc = 0;
+  const stops = segs.map(s=>{
+    const from = acc/sum*360; acc += s.count; const to = acc/sum*360;
+    return `${s.color} ${from}deg ${to}deg`;
+  }).join(', ');
+  document.getElementById('status-donut-wrap').innerHTML = `
+    <div class="donut" style="background:conic-gradient(${stops}); ${sum<=1?'background:var(--gray-bg);':''}"></div>
+    <div class="donut-legend">
+      ${segs.map(s=>`<div class="legend-item"><span class="legend-swatch" style="background:${s.color}"></span>${s.label}: <b>${s.count}</b></div>`).join('')}
+    </div>`;
+
+  // dept bars
+  renderBarList('dept-bars', groupCount(moc,'dept'));
+  // nature bars
+  renderBarList('nature-bars', groupCount(moc,'natureOfChange'));
+
+  // overdue / upcoming actions list
+  const soon = ap.filter(a=> a.status!=='Done' && a.status!=='Cancel' && a.dueDate)
+    .map(a=>({...a, diff: Utils.daysDiffFromToday(a.dueDate)}))
+    .filter(a=>a.diff!==null)
+    .sort((a,b)=>a.diff-b.diff)
+    .slice(0,6);
+  document.getElementById('overdue-list').innerHTML = soon.length ? soon.map(a=>`
+    <div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px;">
+      <div style="min-width:0;">
+        <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;">${Utils.escapeHtml(a.issue||a.action||'(chưa đặt tên)')}</div>
+        <div style="color:var(--muted);">${Utils.escapeHtml(a.pic||'')} • ${Utils.escapeHtml(a.function||'')}</div>
+      </div>
+      <div style="flex-shrink:0;">
+        <span class="badge ${a.diff<0?'badge-overdue':'badge-progress'}">${a.diff<0 ? Math.abs(a.diff)+' ngày trễ' : (a.diff===0?'Hôm nay':'còn '+a.diff+'d')}</span>
+      </div>
+    </div>`).join('') : '<div class="help-text">Không có action nào sắp/đang trễ hạn.</div>';
+}
+function groupCount(arr, key){
+  const map = {};
+  arr.forEach(item=>{
+    const v = (item[key]||'').trim() || '(chưa xác định)';
+    map[v] = (map[v]||0)+1;
+  });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+}
+function renderBarList(elId, entries){
+  const el = document.getElementById(elId);
+  if(!entries.length){ el.innerHTML = '<div class="help-text">Chưa có dữ liệu.</div>'; return; }
+  const max = Math.max(...entries.map(e=>e[1]));
+  el.innerHTML = entries.map(([label,count])=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${Utils.escapeHtml(label)}">${Utils.escapeHtml(label)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,count/max*100)}%"></div></div>
+      <div class="bar-count">${count}</div>
+    </div>`).join('');
+}
+
+/* ================================================================================
+   MASTER LIST RENDER
+================================================================================ */
+function getMasterListFiltered(){
+  const search = document.getElementById('ml-search').value.trim().toLowerCase();
+  const dept = document.getElementById('ml-filter-dept').value;
+  const status = document.getElementById('ml-filter-status').value;
+  const nature = document.getElementById('ml-filter-nature').value;
+  const showAllStatus = document.getElementById('ml-show-all-status').checked;
+  return state.data.mocList.filter(m=>{
+    const effStatus = m.status || 'On progress';
+    if(status){
+      if(effStatus !== status) return false;
+    } else if(!showAllStatus && (effStatus === 'Done' || effStatus === 'Cancel')){
+      return false;
+    }
+    if(dept && m.dept !== dept) return false;
+    if(nature && m.natureOfChange !== nature) return false;
+    if(search){
+      const hay = [m.mocNo,m.nameOfChange,m.changeOwner,m.reasonOfChange,m.dept].join(' ').toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  }).sort((a,b)=> String(b.requestDate||'').localeCompare(String(a.requestDate||'')));
+}
+function renderMasterList(){
+  const rows = getMasterListFiltered();
+  document.getElementById('ml-count').textContent = rows.length;
+  const tbody = document.getElementById('ml-tbody');
+  if(!rows.length){
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Không có MoC nào khớp bộ lọc.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(m=>`
+    <tr class="row-clickable" data-id="${m.id}">
+      <td class="cell-mono">${Utils.escapeHtml(m.mocNo)}</td>
+      <td>${Utils.escapeHtml(m.requestDate)}</td>
+      <td>${Utils.escapeHtml(m.changeOwner)}</td>
+      <td>${Utils.escapeHtml(m.dept)}</td>
+      <td class="cell-ellipsis" title="${Utils.escapeHtml(m.nameOfChange)}">${Utils.escapeHtml(m.nameOfChange)}</td>
+      <td class="cell-ellipsis" title="${Utils.escapeHtml(m.natureOfChange)}">${Utils.escapeHtml(m.natureOfChange)}</td>
+      <td>${Utils.escapeHtml(m.typeOfChange)}</td>
+      <td><span class="badge ${statusBadgeClass(m.status)}">${Utils.escapeHtml(m.status||'On progress')}</span></td>
+      <td class="row-actions">
+        <button class="btn btn-sm btn-icon" data-view-moc="${m.id}" title="Xem">&#128065;</button>
+        ${canEditMoc(m) ? `<button class="btn btn-sm btn-icon" data-edit-moc="${m.id}" title="Sửa">&#9998;</button>` : ''}
+        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-moc="${m.id}" title="Xoá">&#128465;</button>` : ''}
+      </td>
+    </tr>`).join('');
+
+  tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
+    tr.addEventListener('click', e=>{
+      if(e.target.closest('[data-edit-moc]') || e.target.closest('[data-del-moc]') || e.target.closest('[data-view-moc]')) return;
+      openMocModal(tr.dataset.id, true);
+    });
+  });
+  tbody.querySelectorAll('[data-view-moc]').forEach(btn=>btn.addEventListener('click', ()=>openMocModal(btn.dataset.viewMoc, true)));
+  tbody.querySelectorAll('[data-edit-moc]').forEach(btn=>btn.addEventListener('click', ()=>openMocModal(btn.dataset.editMoc, false)));
+  tbody.querySelectorAll('[data-del-moc]').forEach(btn=>btn.addEventListener('click', ()=>deleteMoc(btn.dataset.delMoc)));
+}
+function deleteMoc(id){
+  if(!requireDelete()) return;
+  const rec = state.data.mocList.find(m=>m.id===id);
+  if(!rec) return;
+  if(!confirm('Xoá MoC "'+(rec.mocNo||rec.nameOfChange||'')+'"? Hành động này không thể hoàn tác.')) return;
+  state.data.mocList = state.data.mocList.filter(m=>m.id!==id);
+  markDirty(); renderMasterList(); renderDashboard();
+  showToast('Đã xoá MoC.', 'ok');
+}
+
+/* ================================================================================
+   PEOPLE SUGGESTIONS (Change Owner / Relevant people autocomplete)
+   Built from names already seen across MoC Change Owner + Relevant people, the
+   Attendant roster, and Action Plan PIC/Partner — so new MoCs can reuse names
+   already typed before instead of retyping from scratch.
+================================================================================ */
+function getKnownPeople(){
+  const set = new Set();
+  const add = v => { const t=(v||'').trim(); if(t) set.add(t); };
+  state.data.mocList.forEach(m=>{
+    add(m.changeOwner);
+    (m.relevantPeople||'').split(/[,\/\n]/).forEach(add);
+  });
+  state.data.attendant.forEach(p=> add(p.name));
+  state.data.actionPlan.forEach(a=>{ add(a.pic); add(a.partner); });
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'vi'));
+}
+function populatePeopleDatalist(){
+  const dl = document.getElementById('people-datalist');
+  dl.innerHTML = getKnownPeople().map(n=>`<option value="${Utils.escapeHtml(n)}"></option>`).join('');
+}
+
+/* ================================================================================
+   MOC FORM MODAL
+================================================================================ */
+function blankMocRecord(){
+  return {
+    id: Utils.uuid(), mocNo:'', mocNoAuto:true, requestDate: Utils.todayISO(),
+    relevantPeople:'', changeOwner:'', dept:'', nameOfChange:'', reasonOfChange:'', description:'',
+    risk:'', action:'', results:'', typeOfChange:'', validUntil:'', natureOfChange:'',
+    status:'On progress', remarks:'',
+    approvals: CONFIG.approvalCoreRoles.map(role=>({role, name:'', date:'', signOff:false})),
+    verification: { result:'', state:'', signatures: CONFIG.verificationRoles.map(role=>({role, date:'', signature:''})) },
+    createdAt: Utils.nowISO(), updatedAt: Utils.nowISO(), updatedBy:''
+  };
+}
+// Migrates any record (old schema or new) to the current shape. Old fields
+// (riskAssessment/implementation tables, Impacted KPI, Before/After change, MoC Form Y/N,
+// the old 10-role approval table, Verification status+progress) are simply left alone if
+// present on the object — they're just no longer read or rendered by the form — so no
+// data is destroyed by opening/re-saving an old record.
+function ensureMocShape(rec){
+  if(!rec.approvals || !rec.approvals.length){
+    rec.approvals = CONFIG.approvalCoreRoles.map(role=>({role, name:'', date:'', signOff:false}));
+  }
+  if(!rec.verification) rec.verification = {result:'', state:'', signatures:[]};
+  if(rec.verification.state === undefined){
+    rec.verification.state = rec.verification.status === 'Pass' ? 'Đạt - Hoàn tất'
+      : rec.verification.status === 'Fail' ? 'Không đạt - Cần làm lại' : '';
+  }
+  if(!rec.verification.signatures || !rec.verification.signatures.length){
+    rec.verification.signatures = CONFIG.verificationRoles.map(role=>({role, date:'', signature:''}));
+  }
+  return rec;
+}
+function suggestMocNo(dept, dateStr){
+  const year = (dateStr || Utils.todayISO()).slice(0,4);
+  const deptCode = (dept||'Dept').trim();
+  const prefix = 'MoC-'+deptCode+'.'+year+'.';
+  let max = 0;
+  state.data.mocList.forEach(m=>{
+    if(m.mocNo && m.mocNo.toLowerCase().startsWith(prefix.toLowerCase())){
+      const num = parseInt(m.mocNo.slice(prefix.length),10);
+      if(!isNaN(num) && num>max) max=num;
+    }
+  });
+  return prefix + String(max+1).padStart(3,'0');
+}
+
+function selectOptions(values, current){
+  let html = '<option value=""></option>';
+  if(current && !values.includes(current)){
+    html += `<option value="${Utils.escapeHtml(current)}" selected>${Utils.escapeHtml(current)} (giá trị cũ)</option>`;
+  }
+  html += values.map(v=>`<option value="${Utils.escapeHtml(v)}" ${v===current?'selected':''}>${Utils.escapeHtml(v)}</option>`).join('');
+  return html;
+}
+
+function openMocModal(id, viewOnly){
+  const isNew = !id;
+  const rec = isNew ? blankMocRecord() : ensureMocShape(JSON.parse(JSON.stringify(state.data.mocList.find(m=>m.id===id))));
+  state.mocEditing = rec;
+  state.mocEditingIsNew = isNew;
+  const titlePrefix = isNew ? 'Thêm MoC mới' : ((viewOnly ? 'Xem MoC: ' : 'Sửa MoC: ') + (rec.mocNo || '(chưa đặt số)'));
+  document.getElementById('moc-modal-title').textContent = titlePrefix;
+  document.getElementById('moc-modal-body').innerHTML = mocFormTemplate(rec);
+  bindMocFormEvents(rec, isNew);
+  const mocAllowEdit = !viewOnly && (isNew ? canEdit() : canEditMoc(rec));
+  const mocAllowDelete = !viewOnly && canDelete();
+  applyModalPermissions('moc-modal-body', 'btn-save-moc', 'btn-delete-moc', isNew, mocAllowEdit, mocAllowDelete);
+  state.modalOpen = true;
+  const mocOverlay = document.getElementById('modal-moc');
+  mocOverlay.classList.add('open');
+  mocOverlay.scrollTop = 0;
+}
+function closeMocModal(){
+  state.modalOpen = false;
+  document.getElementById('modal-moc').classList.remove('open');
+  state.mocEditing = null;
+}
+
+function mocFormTemplate(rec){
+  const showValidUntil = rec.typeOfChange === 'Temporary Change' || rec.typeOfChange === 'Emergency Change';
+  return `
+  <div class="form-section">
+    <div class="sec-title">Thông tin chung</div>
+    <div class="form-grid cols-3">
+      <div class="field"><label>MoC No</label><input id="f-mocNo" value="${Utils.escapeHtml(rec.mocNo)}" placeholder="MoC-Dept.2026.001"></div>
+      <div class="field"><label>Request Date</label><input id="f-requestDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.requestDate)}"></div>
+      <div class="field"><label>Change Owner <span class="req">*</span></label><input id="f-changeOwner" list="people-datalist" value="${Utils.escapeHtml(rec.changeOwner)}"></div>
+    </div>
+    <div class="form-grid" style="margin-top:12px;">
+      <div class="field"><label>Dept <span class="req">*</span></label>
+        <select id="f-dept">${selectOptions(CONFIG.depts, rec.dept)}</select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="f-status">${selectOptions(CONFIG.statuses, rec.status)}</select>
+      </div>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label>Relevant people</label>
+      <input id="f-relevantPeople" list="people-datalist" value="${Utils.escapeHtml(rec.relevantPeople)}" placeholder="Tên, cách nhau bởi dấu phẩy">
+      <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+        <select id="relevant-people-picker" style="max-width:220px;padding:6px 8px;border:1px solid var(--border-dark);border-radius:6px;"></select>
+        <button type="button" class="btn btn-sm" id="btn-add-relevant-person">+ Thêm vào Relevant people</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="sec-title">Step 1 — Definition and Request for Change</div>
+    <div class="field"><label>1.1 Name of change <span class="req">*</span></label><input id="f-nameOfChange" value="${Utils.escapeHtml(rec.nameOfChange)}"></div>
+    <div class="form-grid cols-3" style="margin-top:12px;">
+      <div class="field"><label>1.2 Type of change</label><select id="f-typeOfChange">${selectOptions(CONFIG.types, rec.typeOfChange)}</select></div>
+      <div class="field" id="field-validUntil" style="${showValidUntil?'':'display:none;'}"><label>Valid until</label><input id="f-validUntil" value="${Utils.escapeHtml(rec.validUntil)}" placeholder="dd/mm/yyyy"></div>
+      <div class="field"><label>1.3 Nature of Change</label><select id="f-natureOfChange">${selectOptions(CONFIG.natures, rec.natureOfChange)}</select></div>
+    </div>
+    <div class="field" style="margin-top:12px;"><label>1.4 Reason of change</label><textarea id="f-reasonOfChange">${Utils.escapeHtml(rec.reasonOfChange)}</textarea></div>
+    <div class="field" style="margin-top:12px;"><label>1.5 Description of proposed change</label><textarea id="f-description">${Utils.escapeHtml(rec.description)}</textarea></div>
+  </div>
+
+  <div class="form-section">
+    <div class="sec-title">Step 2 — Risk &amp; Action</div>
+    <div class="form-grid">
+      <div class="field"><label>Risk (SHE, Q, Volume, Regulation, Others)</label><textarea id="f-risk">${Utils.escapeHtml(rec.risk)}</textarea></div>
+      <div class="field"><label>Action (mitigate/eliminate/reduce risk)</label><textarea id="f-action">${Utils.escapeHtml(rec.action)}</textarea></div>
+    </div>
+    <div class="field" style="margin-top:12px;"><label>Results</label><textarea id="f-results">${Utils.escapeHtml(rec.results)}</textarea></div>
+  </div>
+
+  <div class="form-section">
+    <div class="sec-title">Step 3 — Approval</div>
+    <p class="help-text" style="margin-top:-4px;margin-bottom:10px;">Change owner + Area owner luôn bắt buộc. Thêm người duyệt khác chỉ khi thay đổi thực sự cần (rủi ro cao, liên quan tài chính/nhân sự...).</p>
+    <table class="mini-table" id="approval-table">
+      <thead><tr><th style="width:22%">Position</th><th>Full name</th><th style="width:150px">Date</th><th style="width:70px">Sign off</th><th style="width:30px"></th></tr></thead>
+      <tbody id="approval-tbody"></tbody>
+    </table>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+      <select id="approval-add-role" style="max-width:220px;padding:6px 8px;border:1px solid var(--border-dark);border-radius:6px;"></select>
+      <button class="btn btn-sm" id="btn-add-approval-role">+ Thêm người duyệt</button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="sec-title">Step 5 — Implementation</div>
+    <p class="help-text">Theo dõi từng hành động triển khai cụ thể ở tab <b>Action Plan</b> (gắn theo mã MoC này) thay vì lặp lại ở đây.</p>
+    <button type="button" class="btn btn-sm always-visible-btn" id="btn-goto-action-plan">Xem Action Plan của MoC này</button>
+  </div>
+
+  <div class="form-section">
+    <div class="sec-title">Step 6 — Verification (by Change owner/Area owner)</div>
+    <div class="field"><label>Implementation result</label><textarea id="f-verifResult">${Utils.escapeHtml(rec.verification.result)}</textarea></div>
+    <div class="field" style="margin-top:12px;max-width:320px;"><label>Kết quả xác nhận</label><select id="f-verifState">${selectOptions(CONFIG.verificationStates, rec.verification.state)}</select></div>
+    <table class="mini-table" id="verif-table" style="margin-top:12px;">
+      <thead><tr><th style="width:30%">Role</th><th style="width:150px">Date</th><th>Signature (ghi tên xác nhận)</th></tr></thead>
+      <tbody id="verif-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="form-section">
+    <div class="sec-title">Remarks</div>
+    <textarea id="f-remarks">${Utils.escapeHtml(rec.remarks)}</textarea>
+  </div>
+  `;
+}
+
+function renderMocSubTables(rec){
+  document.getElementById('approval-tbody').innerHTML = rec.approvals.map((a,idx)=>{
+    const isCore = CONFIG.approvalCoreRoles.includes(a.role);
+    return `<tr data-idx="${idx}">
+      <td>${Utils.escapeHtml(a.role)}</td>
+      <td><input class="appr-name" value="${Utils.escapeHtml(a.name)}"></td>
+      <td><input class="appr-date" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(a.date)}"></td>
+      <td style="text-align:center;"><input class="appr-signoff" type="checkbox" ${a.signOff?'checked':''}></td>
+      <td>${isCore ? '' : `<button class="row-del-btn" data-del-approval="${idx}" title="Bỏ vai trò này">&#128465;</button>`}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('verif-tbody').innerHTML = rec.verification.signatures.map((s,idx)=>`
+    <tr data-idx="${idx}">
+      <td>${Utils.escapeHtml(s.role)}</td>
+      <td><input class="verif-date" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(s.date)}"></td>
+      <td><input class="verif-sig" value="${Utils.escapeHtml(s.signature)}" placeholder="Tên xác nhận"></td>
+    </tr>`).join('');
+
+  const addRoleSel = document.getElementById('approval-add-role');
+  const usedRoles = rec.approvals.map(a=>a.role);
+  const remainingRoles = CONFIG.approvalOptionalRoles.filter(r=>!usedRoles.includes(r));
+  addRoleSel.innerHTML = remainingRoles.length
+    ? remainingRoles.map(r=>`<option value="${Utils.escapeHtml(r)}">${Utils.escapeHtml(r)}</option>`).join('')
+    : '<option value="">(đã thêm hết vai trò)</option>';
+  document.getElementById('btn-add-approval-role').disabled = !remainingRoles.length;
+
+  document.querySelectorAll('[data-del-approval]').forEach(btn=>btn.addEventListener('click', ()=>{
+    rec.approvals.splice(parseInt(btn.dataset.delApproval,10),1); renderMocSubTables(rec);
+  }));
+}
+
+function bindMocFormEvents(rec, isNew){
+  renderMocSubTables(rec);
+
+  populatePeopleDatalist();
+  const peoplePicker = document.getElementById('relevant-people-picker');
+  const knownPeople = getKnownPeople();
+  peoplePicker.innerHTML = knownPeople.length
+    ? knownPeople.map(n=>`<option value="${Utils.escapeHtml(n)}">${Utils.escapeHtml(n)}</option>`).join('')
+    : '<option value="">(chưa có dữ liệu người trước đó)</option>';
+  document.getElementById('btn-add-relevant-person').addEventListener('click', ()=>{
+    const name = peoplePicker.value;
+    if(!name) return;
+    const field = document.getElementById('f-relevantPeople');
+    const existing = field.value.split(/[,\/\n]/).map(s=>s.trim()).filter(Boolean);
+    if(existing.some(n=>n.toLowerCase()===name.toLowerCase())) return;
+    field.value = existing.concat(name).join(', ');
+  });
+
+  document.getElementById('btn-add-approval-role').addEventListener('click', ()=>{
+    const role = document.getElementById('approval-add-role').value;
+    if(!role) return;
+    rec.approvals.push({role, name:'', date:'', signOff:false});
+    renderMocSubTables(rec);
+  });
+
+  document.getElementById('btn-goto-action-plan').addEventListener('click', ()=>{
+    const mocNo = document.getElementById('f-mocNo').value.trim();
+    closeMocModal();
+    switchView('actionplan');
+    document.getElementById('ap-search').value = mocNo;
+    renderActionPlan();
+  });
+
+  const deptSel = document.getElementById('f-dept');
+  const dateInp = document.getElementById('f-requestDate');
+  const mocNoInp = document.getElementById('f-mocNo');
+  mocNoInp.addEventListener('input', ()=>{ rec.mocNoAuto = false; });
+  function maybeSuggest(){
+    if(isNew && rec.mocNoAuto !== false){
+      mocNoInp.value = suggestMocNo(deptSel.value, dateInp.value);
+    }
+  }
+  deptSel.addEventListener('change', maybeSuggest);
+  dateInp.addEventListener('change', maybeSuggest);
+  if(isNew && deptSel.value) maybeSuggest();
+
+  const typeSel = document.getElementById('f-typeOfChange');
+  const natureSel = document.getElementById('f-natureOfChange');
+  typeSel.addEventListener('change', ()=>{
+    const show = typeSel.value === 'Temporary Change' || typeSel.value === 'Emergency Change';
+    document.getElementById('field-validUntil').style.display = show ? '' : 'none';
+  });
+  natureSel.addEventListener('change', ()=>{
+    const role = CONFIG.natureFunctionalRole[natureSel.value];
+    if(role && !rec.approvals.some(a=>a.role===role)){
+      rec.approvals.push({role, name:'', date:'', signOff:false});
+      renderMocSubTables(rec);
+    }
+  });
+}
+
+function collectMocFormData(rec){
+  const val = id => document.getElementById(id).value;
+  rec.mocNo = val('f-mocNo').trim();
+  rec.requestDate = val('f-requestDate');
+  rec.changeOwner = val('f-changeOwner').trim();
+  rec.dept = val('f-dept');
+  rec.status = val('f-status');
+  rec.relevantPeople = val('f-relevantPeople');
+  rec.nameOfChange = val('f-nameOfChange').trim();
+  rec.typeOfChange = val('f-typeOfChange');
+  rec.validUntil = document.getElementById('field-validUntil').style.display === 'none' ? '' : val('f-validUntil');
+  rec.natureOfChange = val('f-natureOfChange');
+  rec.reasonOfChange = val('f-reasonOfChange');
+  rec.description = val('f-description');
+  rec.risk = val('f-risk');
+  rec.action = val('f-action');
+  rec.results = val('f-results');
+  rec.remarks = val('f-remarks');
+  rec.verification.result = val('f-verifResult');
+  rec.verification.state = val('f-verifState');
+
+  document.querySelectorAll('#approval-tbody tr[data-idx]').forEach((tr,i)=>{
+    rec.approvals[i].name = tr.querySelector('.appr-name').value;
+    rec.approvals[i].date = tr.querySelector('.appr-date').value;
+    rec.approvals[i].signOff = tr.querySelector('.appr-signoff').checked;
+  });
+  document.querySelectorAll('#verif-tbody tr[data-idx]').forEach((tr,i)=>{
+    rec.verification.signatures[i].date = tr.querySelector('.verif-date').value;
+    rec.verification.signatures[i].signature = tr.querySelector('.verif-sig').value;
+  });
+  return rec;
+}
+
+function validateMoc(rec){
+  const errors = [];
+  if(!rec.changeOwner) errors.push('Change Owner là bắt buộc.');
+  if(!rec.dept) errors.push('Dept là bắt buộc.');
+  if(!rec.nameOfChange) errors.push('Name of change là bắt buộc.');
+  return errors;
+}
+
+function saveMocFromModal(){
+  const persisted = state.mocEditingIsNew ? null : state.data.mocList.find(m=>m.id===state.mocEditing.id);
+  if(!requireEditMoc(persisted, state.mocEditingIsNew)) return;
+  const rec = collectMocFormData(state.mocEditing);
+  const errors = validateMoc(rec);
+  if(errors.length){ showToast(errors[0], 'err'); return; }
+  if(rec.mocNo){
+    const dup = state.data.mocList.find(m=>m.id!==rec.id && m.mocNo && m.mocNo.toLowerCase()===rec.mocNo.toLowerCase());
+    if(dup && !confirm('MoC No "'+rec.mocNo+'" đã tồn tại. Vẫn lưu?')) return;
+  }
+  rec.updatedAt = Utils.nowISO();
+  rec.updatedBy = state.currentUser.name;
+  delete rec.mocNoAuto;
+  const idx = state.data.mocList.findIndex(m=>m.id===rec.id);
+  if(idx>=0) state.data.mocList[idx] = rec; else state.data.mocList.push(rec);
+  markDirty();
+  closeMocModal();
+  renderMasterList(); renderDashboard();
+  showToast('Đã lưu MoC.', 'ok');
+}
+
+/* ================================================================================
+   ACTION PLAN
+================================================================================ */
+function getActionPlanFiltered(){
+  const search = document.getElementById('ap-search').value.trim().toLowerCase();
+  const fn = document.getElementById('ap-filter-function').value;
+  const status = document.getElementById('ap-filter-status').value;
+  const showAllStatus = document.getElementById('ap-show-all-status').checked;
+  return state.data.actionPlan.filter(a=>{
+    const effStatus = a.status || 'On progress';
+    if(status){
+      if(effStatus !== status) return false;
+    } else if(!showAllStatus && (effStatus === 'Done' || effStatus === 'Cancel')){
+      return false;
+    }
+    if(fn && a.function !== fn) return false;
+    if(search){
+      const hay = [a.issue,a.action,a.pic,a.mocCode].join(' ').toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  }).sort((a,b)=> String(b.date||'').localeCompare(String(a.date||'')));
+}
+function renderActionPlan(){
+  const rows = getActionPlanFiltered();
+  document.getElementById('ap-count').textContent = rows.length;
+  const tbody = document.getElementById('ap-tbody');
+  if(!rows.length){
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Không có hành động nào khớp bộ lọc.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(a=>{
+    const diff = (a.status!=='Done' && a.status!=='Cancel') ? Utils.daysDiffFromToday(a.dueDate) : null;
+    const overdue = diff!==null && diff<0;
+    return `<tr class="row-clickable" data-id="${a.id}">
+      <td>${Utils.escapeHtml(a.date)}</td>
+      <td class="cell-ellipsis" title="${Utils.escapeHtml(a.issue)}">${Utils.escapeHtml(a.issue)}</td>
+      <td class="cell-ellipsis" title="${Utils.escapeHtml(a.action)}">${Utils.escapeHtml(a.action)}</td>
+      <td>${Utils.escapeHtml(a.pic)}</td>
+      <td>${overdue?'<span class="badge badge-overdue">':''}${Utils.escapeHtml(a.dueDate)}${overdue?'</span>':''}</td>
+      <td><span class="badge ${statusBadgeClass(a.status)}">${Utils.escapeHtml(a.status||'On progress')}</span></td>
+      <td class="cell-ellipsis" title="${Utils.escapeHtml(a.remark)}">${Utils.escapeHtml(a.remark)}</td>
+      <td class="row-actions">
+        <button class="btn btn-sm btn-icon" data-view-action="${a.id}" title="Xem">&#128065;</button>
+        ${canEdit() ? `<button class="btn btn-sm btn-icon" data-edit-action="${a.id}" title="Sửa">&#9998;</button>` : ''}
+        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-action="${a.id}" title="Xoá">&#128465;</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
+    tr.addEventListener('click', e=>{
+      if(e.target.closest('[data-edit-action]') || e.target.closest('[data-del-action]') || e.target.closest('[data-view-action]')) return;
+      openActionModal(tr.dataset.id, true);
+    });
+  });
+  tbody.querySelectorAll('[data-view-action]').forEach(btn=>btn.addEventListener('click', ()=>openActionModal(btn.dataset.viewAction, true)));
+  tbody.querySelectorAll('[data-edit-action]').forEach(btn=>btn.addEventListener('click', ()=>openActionModal(btn.dataset.editAction, false)));
+  tbody.querySelectorAll('[data-del-action]').forEach(btn=>btn.addEventListener('click', ()=>deleteAction(btn.dataset.delAction)));
+}
+function deleteAction(id){
+  if(!requireDelete()) return;
+  if(!confirm('Xoá hành động này?')) return;
+  state.data.actionPlan = state.data.actionPlan.filter(a=>a.id!==id);
+  markDirty(); renderActionPlan(); renderDashboard();
+  showToast('Đã xoá hành động.', 'ok');
+}
+function blankAction(){
+  return { id:Utils.uuid(), date:Utils.todayISO(), mocCode:'', stt:'', issue:'', action:'', pic:'', partner:'',
+    function:'', dueDate:'', completeDate:'', status:'On progress', remark:'', createdAt:Utils.nowISO(), updatedAt:Utils.nowISO() };
+}
+function openActionModal(id, viewOnly){
+  const isNew = !id;
+  const rec = isNew ? blankAction() : JSON.parse(JSON.stringify(state.data.actionPlan.find(a=>a.id===id)));
+  state.actionEditing = rec;
+  document.getElementById('action-modal-title').textContent = isNew ? 'Thêm hành động' : (viewOnly ? 'Xem hành động' : 'Sửa hành động');
+  const mocOptions = '<datalist id="moc-code-list">' + state.data.mocList.map(m=>`<option value="${Utils.escapeHtml(m.mocNo)}">`).join('') + '</datalist>';
+  document.getElementById('action-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="field"><label>Date</label><input id="a-date" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.date)}"></div>
+      <div class="field"><label>MoC code</label><input id="a-mocCode" list="moc-code-list" value="${Utils.escapeHtml(rec.mocCode)}">${mocOptions}</div>
+    </div>
+    <div class="field" style="margin-top:12px;"><label>Issue</label><textarea id="a-issue">${Utils.escapeHtml(rec.issue)}</textarea></div>
+    <div class="field" style="margin-top:12px;"><label>Action <span class="req">*</span></label><textarea id="a-action">${Utils.escapeHtml(rec.action)}</textarea></div>
+    <div class="form-grid" style="margin-top:12px;">
+      <div class="field"><label>PIC</label><input id="a-pic" value="${Utils.escapeHtml(rec.pic)}"></div>
+      <div class="field"><label>Partner</label><input id="a-partner" value="${Utils.escapeHtml(rec.partner)}"></div>
+    </div>
+    <div class="form-grid" style="margin-top:12px;">
+      <div class="field"><label>Function</label><select id="a-function">${selectOptions(CONFIG.depts, rec.function)}</select></div>
+      <div class="field"><label>Status</label><select id="a-status">${selectOptions(CONFIG.statuses, rec.status)}</select></div>
+    </div>
+    <div class="form-grid" style="margin-top:12px;">
+      <div class="field"><label>Due date</label><input id="a-dueDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.dueDate)}"></div>
+      <div class="field"><label>Complete date</label><input id="a-completeDate" type="text" placeholder="yyyy-mm-dd" value="${Utils.escapeHtml(rec.completeDate)}"></div>
+    </div>
+    <div class="field" style="margin-top:12px;"><label>Remark</label><textarea id="a-remark">${Utils.escapeHtml(rec.remark)}</textarea></div>
+  `;
+  applyModalPermissions('action-modal-body', 'btn-save-action', 'btn-delete-action', isNew, !viewOnly && canEdit(), !viewOnly && canDelete());
+  state.modalOpen = true;
+  const actionOverlay = document.getElementById('modal-action');
+  actionOverlay.classList.add('open');
+  actionOverlay.scrollTop = 0;
+}
+function closeActionModal(){ state.modalOpen=false; document.getElementById('modal-action').classList.remove('open'); state.actionEditing=null; }
+function saveActionFromModal(){
+  if(!requireEdit()) return;
+  const rec = state.actionEditing;
+  const val = id => document.getElementById(id).value;
+  rec.date = val('a-date'); rec.mocCode = val('a-mocCode').trim(); rec.issue = val('a-issue');
+  rec.action = val('a-action').trim(); rec.pic = val('a-pic'); rec.partner = val('a-partner');
+  rec.function = val('a-function'); rec.status = val('a-status'); rec.dueDate = val('a-dueDate');
+  rec.completeDate = val('a-completeDate'); rec.remark = val('a-remark');
+  if(!rec.action){ showToast('Action là bắt buộc.', 'err'); return; }
+  rec.updatedAt = Utils.nowISO();
+  rec.updatedBy = state.currentUser.name;
+  const idx = state.data.actionPlan.findIndex(a=>a.id===rec.id);
+  if(idx>=0) state.data.actionPlan[idx]=rec; else state.data.actionPlan.push(rec);
+  markDirty(); closeActionModal(); renderActionPlan(); renderDashboard();
+  showToast('Đã lưu hành động.', 'ok');
+}
+
+/* ================================================================================
+   AGENDA
+================================================================================ */
+function renderAgenda(){
+  const rows = state.data.agenda;
+  const tbody = document.getElementById('agenda-tbody');
+  tbody.innerHTML = rows.length ? rows.map(a=>`
+    <tr>
+      <td>${Utils.escapeHtml(a.topic)}</td>
+      <td>${Utils.nl2br(a.content)}</td>
+      <td>${Utils.escapeHtml(a.time)}</td>
+      <td>${Utils.escapeHtml(a.pic)}</td>
+      <td class="row-actions">
+        <button class="btn btn-sm btn-icon" data-edit-agenda="${a.id}" title="Sửa">&#9998;</button>
+        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-agenda="${a.id}" title="Xoá">&#128465;</button>` : ''}
+      </td>
+    </tr>`).join('') : '<tr class="empty-row"><td colspan="5">Chưa có agenda.</td></tr>';
+  tbody.querySelectorAll('[data-edit-agenda]').forEach(btn=>btn.addEventListener('click', ()=>openAgendaModal(btn.dataset.editAgenda)));
+  tbody.querySelectorAll('[data-del-agenda]').forEach(btn=>btn.addEventListener('click', ()=>deleteAgenda(btn.dataset.delAgenda)));
+}
+function deleteAgenda(id){
+  if(!requireDelete()) return;
+  if(!confirm('Xoá mục agenda này?')) return;
+  state.data.agenda = state.data.agenda.filter(a=>a.id!==id);
+  markDirty(); renderAgenda();
+  showToast('Đã xoá.', 'ok');
+}
+function blankAgenda(){ return { id:Utils.uuid(), topic:'', content:'', time:'', pic:'' }; }
+function openAgendaModal(id){
+  const isNew = !id;
+  const rec = isNew ? blankAgenda() : JSON.parse(JSON.stringify(state.data.agenda.find(a=>a.id===id)));
+  state.agendaEditing = rec;
+  document.getElementById('agenda-modal-title').textContent = isNew ? 'Thêm agenda' : 'Sửa agenda';
+  document.getElementById('btn-delete-agenda').style.display = isNew ? 'none' : 'inline-flex';
+  document.getElementById('agenda-modal-body').innerHTML = `
+    <div class="field"><label>Topic <span class="req">*</span></label><input id="g-topic" value="${Utils.escapeHtml(rec.topic)}"></div>
+    <div class="field" style="margin-top:12px;"><label>Content</label><textarea id="g-content">${Utils.escapeHtml(rec.content)}</textarea></div>
+    <div class="form-grid" style="margin-top:12px;">
+      <div class="field"><label>Time</label><input id="g-time" value="${Utils.escapeHtml(rec.time)}" placeholder="30'"></div>
+      <div class="field"><label>PIC</label><input id="g-pic" value="${Utils.escapeHtml(rec.pic)}"></div>
+    </div>
+  `;
+  applyModalPermissions('agenda-modal-body', 'btn-save-agenda', 'btn-delete-agenda', isNew, canEdit(), canDelete());
+  state.modalOpen = true;
+  const agendaOverlay = document.getElementById('modal-agenda');
+  agendaOverlay.classList.add('open');
+  agendaOverlay.scrollTop = 0;
+}
+function closeAgendaModal(){ state.modalOpen=false; document.getElementById('modal-agenda').classList.remove('open'); state.agendaEditing=null; }
+function saveAgendaFromModal(){
+  if(!requireEdit()) return;
+  const rec = state.agendaEditing;
+  rec.topic = document.getElementById('g-topic').value.trim();
+  rec.content = document.getElementById('g-content').value;
+  rec.time = document.getElementById('g-time').value;
+  rec.pic = document.getElementById('g-pic').value;
+  if(!rec.topic){ showToast('Topic là bắt buộc.', 'err'); return; }
+  const idx = state.data.agenda.findIndex(a=>a.id===rec.id);
+  if(idx>=0) state.data.agenda[idx]=rec; else state.data.agenda.push(rec);
+  markDirty(); closeAgendaModal(); renderAgenda();
+  showToast('Đã lưu agenda.', 'ok');
+}
+
+/* ================================================================================
+   ATTENDANT
+================================================================================ */
+const WEEK_KEYS = Array.from({length:52}, (_,i)=>'W'+(i+1));
+function getCurrentWeekNumber(){
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const week = Math.ceil((((now - jan1) / 86400000) + jan1.getDay() + 1) / 7);
+  return Math.min(52, Math.max(1, week));
+}
+function scrollAttendantToCurrentWeek(){
+  const table = document.getElementById('attendant-table');
+  const wrap = table && table.closest('.table-wrap');
+  const cell = document.querySelector('#attendant-head-row th[data-week="W'+getCurrentWeekNumber()+'"]');
+  if(!wrap || !cell) return;
+  const stickyWidth = 160 + 120 + 100;
+  wrap.scrollLeft = Math.max(0, cell.offsetLeft - stickyWidth - 12);
+}
+function renderAttendant(){
+  const currentWeek = 'W' + getCurrentWeekNumber();
+  const head = document.getElementById('attendant-head-row');
+  head.innerHTML = '<th class="att-sticky-col att-col-name">Name</th><th class="att-sticky-col att-col-function">Function</th><th class="att-sticky-col att-col-requirement">Requirement</th>' +
+    WEEK_KEYS.map(w=>`<th data-week="${w}" style="text-align:center;${w===currentWeek?'background:var(--blue-light);color:var(--blue);':''}" title="${w===currentWeek?'Tuần hiện tại':''}">${w}</th>`).join('') + '<th></th>';
+
+  const tbody = document.getElementById('attendant-tbody');
+  const rows = state.data.attendant;
+  const editing = canEdit();
+  const deleting = canDelete();
+  const dis = editing ? '' : 'disabled';
+  tbody.innerHTML = rows.length ? rows.map(p=>`
+    <tr data-id="${p.id}">
+      <td class="att-sticky-col att-col-name"><input class="att-name" ${dis} value="${Utils.escapeHtml(p.name)}" style="border:none;background:transparent;width:100%;font-weight:600;"></td>
+      <td class="att-sticky-col att-col-function"><input class="att-function" ${dis} value="${Utils.escapeHtml(p.function)}" style="border:none;background:transparent;width:100%;"></td>
+      <td class="att-sticky-col att-col-requirement"><input class="att-requirement" ${dis} value="${Utils.escapeHtml(p.requirement)}" style="border:none;background:transparent;width:100%;"></td>
+      ${WEEK_KEYS.map(w=>`<td${w===currentWeek?' style="background:var(--blue-light);"':''}><div class="wk-cell" data-week="${w}" data-v="${Utils.escapeHtml((p.weeks&&p.weeks[w])||'')}">${Utils.escapeHtml((p.weeks&&p.weeks[w])||'')}</div></td>`).join('')}
+      <td>${deleting ? `<button class="btn btn-sm btn-icon btn-danger" data-del-attendant="${p.id}" title="Xoá">&#128465;</button>` : ''}</td>
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="${3+WEEK_KEYS.length+1}">Chưa có người tham dự.</td></tr>`;
+
+  tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
+    const id = tr.dataset.id;
+    const rec = rows.find(r=>r.id===id);
+    tr.querySelector('.att-name').addEventListener('change', e=>{ rec.name=e.target.value; markDirty(); });
+    tr.querySelector('.att-function').addEventListener('change', e=>{ rec.function=e.target.value; markDirty(); });
+    tr.querySelector('.att-requirement').addEventListener('change', e=>{ rec.requirement=e.target.value; markDirty(); });
+    tr.querySelectorAll('.wk-cell').forEach(cell=>{
+      cell.addEventListener('click', ()=>{
+        if(!requireEdit()) return;
+        const cur = cell.dataset.v || '';
+        const idx = CONFIG.weekValues.indexOf(cur);
+        const next = CONFIG.weekValues[(idx+1) % CONFIG.weekValues.length];
+        cell.dataset.v = next; cell.textContent = next;
+        rec.weeks = rec.weeks || {};
+        rec.weeks[cell.dataset.week] = next;
+        markDirty();
+      });
+    });
+  });
+  tbody.querySelectorAll('[data-del-attendant]').forEach(btn=>btn.addEventListener('click', ()=>{
+    if(!requireDelete()) return;
+    if(!confirm('Xoá người này khỏi danh sách điểm danh?')) return;
+    state.data.attendant = state.data.attendant.filter(p=>p.id!==btn.dataset.delAttendant);
+    markDirty(); renderAttendant();
+  }));
+}
+
+/* ================================================================================
+   EXPORT CSV
+================================================================================ */
+function exportMasterListCSV(){
+  const cols = [
+    {key:'mocNo',label:'MoC No'},{key:'requestDate',label:'Request Date'},{key:'changeOwner',label:'Change Owner'},
+    {key:'dept',label:'Dept'},{key:'nameOfChange',label:'Name of change'},{key:'reasonOfChange',label:'Reason of change'},
+    {key:'description',label:'Description'},{key:'risk',label:'Risk'},
+    {key:'action',label:'Action'},{key:'results',label:'Results'},{key:'typeOfChange',label:'Type of change'},
+    {key:'validUntil',label:'Valid until'},{key:'natureOfChange',label:'Nature of change'},{key:'status',label:'Status'},
+    {key:'remarks',label:'Remarks'}
+  ];
+  const csv = Utils.toCSV(getMasterListFiltered(), cols);
+  Utils.downloadBlob(csv, 'MoC_Master_List_'+Utils.todayISO()+'.csv', 'text/csv;charset=utf-8');
+}
+function exportActionPlanCSV(){
+  const cols = [
+    {key:'date',label:'Date'},{key:'mocCode',label:'MoC code'},{key:'issue',label:'Issue'},{key:'action',label:'Action'},
+    {key:'pic',label:'PIC'},{key:'partner',label:'Partner'},{key:'function',label:'Function'},{key:'dueDate',label:'Due date'},
+    {key:'completeDate',label:'Complete date'},{key:'status',label:'Status'},{key:'remark',label:'Remark'}
+  ];
+  const csv = Utils.toCSV(getActionPlanFiltered(), cols);
+  Utils.downloadBlob(csv, 'MoC_Action_Plan_'+Utils.todayISO()+'.csv', 'text/csv;charset=utf-8');
+}
+
+/* ================================================================================
+   EMAIL REPORT — composes a professional status email (stats + chart + MoC list +
+   pending actions) scoped to whatever filter is currently applied on Master List.
+   NOTE: a static page cannot send email itself (no mail server/API available here).
+   This builds the content and hands it to the user's own email client via mailto:
+   (plain text) and via a rich-HTML clipboard copy (paste into Outlook/Gmail keeps
+   the table formatting and chart image).
+================================================================================ */
+const EMAIL_CHART_COLORS = {
+  statusGradients: {
+    'On progress': ['#f59e0b','#fde047'],
+    'Done': ['#10b981','#6ee7b7'],
+    'Cancel': ['#94a3b8','#cbd5e1']
+  },
+  categorical: ['#6366f1','#ec4899','#14b8a6','#f59e0b','#8b5cf6','#06b6d4','#ef4444','#84cc16']
+};
+let lastEmailChartDataUri = '';
+
+function oneLine(str, maxLen){
+  const s = (str||'').replace(/\r?\n/g,' ').replace(/\s+/g,' ').trim();
+  if(maxLen && s.length > maxLen) return s.slice(0, maxLen-1)+'…';
+  return s;
+}
+function roundRectPath(ctx,x,y,w,h,r){
+  const rr = Math.min(r, h/2, Math.max(w,1)/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr,y);
+  ctx.arcTo(x+w,y,x+w,y+h,rr);
+  ctx.arcTo(x+w,y+h,x,y+h,rr);
+  ctx.arcTo(x,y+h,x,y,rr);
+  ctx.arcTo(x,y,x+w,y,rr);
+  ctx.closePath();
+}
+
+function drawEmailChart(filteredMocs){
+  const FONT = 'Segoe UI, Arial, sans-serif';
+  const statusCounts = {};
+  filteredMocs.forEach(m=>{ const s = m.status || 'On progress'; statusCounts[s] = (statusCounts[s]||0)+1; });
+  const statusEntries = Object.entries(statusCounts);
+  const total = filteredMocs.length || 1;
+
+  const natureCounts = {};
+  filteredMocs.forEach(m=>{ const n = (m.natureOfChange||'').trim() || 'Chưa xác định'; natureCounts[n] = (natureCounts[n]||0)+1; });
+  const natureEntries = Object.entries(natureCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxCount = Math.max(1, ...natureEntries.map(e=>e[1]));
+
+  // ---- Layout is computed from actual content first, so nothing is ever cut off ----
+  const W = 820;
+  const PAD = 28;
+  const titleBottom = 74;
+  const cx = 190, cy = titleBottom + 168, rOuter = 118, rInner = 68;
+  const donutBottom = cy + rOuter + PAD;
+
+  const rightX = 400;
+  const legendTop = titleBottom + 26;
+  const legendRowH = 36;
+  const legendBottom = legendTop + statusEntries.length*legendRowH;
+
+  const barTitleY = legendBottom + 40;
+  const barTop = barTitleY + 22;
+  const barH = 26, barGap = 18;
+  const barsHeight = natureEntries.length ? natureEntries.length*(barH+barGap)-barGap : 30;
+  const barsBottom = barTop + barsHeight + PAD;
+
+  const H = Math.max(donutBottom, barsBottom) + 6;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // background + outer card
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#f8fafc';
+  roundRectPath(ctx, 8, 8, W-16, H-16, 14); ctx.fill();
+
+  // title
+  ctx.fillStyle = '#1e293b'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.font = 'bold 23px '+FONT;
+  ctx.fillText('📊 Thống kê MoC theo Trạng thái & Nhóm thay đổi', PAD, 46);
+  ctx.strokeStyle = '#dbeafe'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(PAD, 58); ctx.lineTo(W-PAD, 58); ctx.stroke();
+
+  // ---- Donut: Status distribution ----
+  let angle = -Math.PI/2;
+  statusEntries.forEach(([label,count])=>{
+    const slice = (count/total)*Math.PI*2;
+    const colors = EMAIL_CHART_COLORS.statusGradients[label] || ['#6366f1','#a5b4fc'];
+    const grad = ctx.createLinearGradient(cx-rOuter,cy-rOuter,cx+rOuter,cy+rOuter);
+    grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,rOuter,angle,angle+slice);
+    ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    angle += slice;
+  });
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath(); ctx.arc(cx,cy,rInner,0,Math.PI*2); ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(cx,cy,rInner,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1e293b'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font = 'bold 38px '+FONT;
+  ctx.fillText(String(total), cx, cy-10);
+  ctx.font = '15px '+FONT; ctx.fillStyle = '#64748b';
+  ctx.fillText('Tổng số MoC', cx, cy+22);
+
+  // ---- Legend ----
+  let ly = legendTop;
+  statusEntries.forEach(([label,count])=>{
+    const colors = EMAIL_CHART_COLORS.statusGradients[label] || ['#6366f1','#a5b4fc'];
+    ctx.fillStyle = colors[0];
+    roundRectPath(ctx, rightX, ly, 18, 18, 5); ctx.fill();
+    ctx.fillStyle = '#1e293b'; ctx.font = 'bold 16px '+FONT;
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(label, rightX+26, ly+9);
+    ctx.fillStyle = '#64748b'; ctx.font = '15px '+FONT;
+    ctx.fillText(count+' MoC ('+Math.round(count/total*100)+'%)', rightX+26, ly+30);
+    ly += legendRowH;
+  });
+
+  // ---- Bar: Nature of change distribution ----
+  ctx.fillStyle = '#1e293b'; ctx.font = 'bold 16px '+FONT; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillText('Theo Nature of change', rightX, barTitleY);
+  const barMaxW = W - PAD - rightX - 12;
+  natureEntries.forEach(([label,count], i)=>{
+    const y = barTop + i*(barH+barGap);
+    const w = Math.max(8, (count/maxCount) * barMaxW);
+    ctx.fillStyle = '#e2e8f0';
+    roundRectPath(ctx, rightX, y, barMaxW, barH, 6); ctx.fill();
+    ctx.fillStyle = EMAIL_CHART_COLORS.categorical[i % EMAIL_CHART_COLORS.categorical.length];
+    roundRectPath(ctx, rightX, y, w, barH, 6); ctx.fill();
+    ctx.fillStyle = '#1e293b'; ctx.font = '14px '+FONT; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillText(oneLine(label,34)+' ('+count+')', rightX, y-5);
+  });
+  if(!natureEntries.length){
+    ctx.fillStyle = '#94a3b8'; ctx.font='14px '+FONT; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText('(chưa có dữ liệu Nature of change)', rightX, barTop+10);
+  }
+
+  return canvas.toDataURL('image/png');
+}
+
+function getEmailFilterDesc(){
+  const parts = [];
+  const dept = document.getElementById('ml-filter-dept').value;
+  const status = document.getElementById('ml-filter-status').value;
+  const nature = document.getElementById('ml-filter-nature').value;
+  const search = document.getElementById('ml-search').value.trim();
+  if(dept) parts.push('Bộ phận: '+dept);
+  if(status) parts.push('Trạng thái: '+status);
+  if(nature) parts.push('Nhóm: '+nature);
+  if(search) parts.push('Tìm: "'+search+'"');
+  return parts.length ? parts.join(' • ') : 'Toàn bộ Master List';
+}
+
+const ATTENDANT_STATUS_LABEL = { 'o':'Có mặt', 'a':'Vắng', 'l':'Trễ', 'n/a':'N/A', '-':'Không họp', '':'Chưa cập nhật' };
+const ATTENDANT_STATUS_STYLE = {
+  'o':  {bg:'#dcfce7', fg:'#16a34a'},
+  'a':  {bg:'#fee2e2', fg:'#dc2626'},
+  'l':  {bg:'#fef3c7', fg:'#d97706'},
+  'n/a':{bg:'#f1f5f9', fg:'#94a3b8'},
+  '-':  {bg:'#f8fafc', fg:'#94a3b8'},
+  '':   {bg:'#f1f5f9', fg:'#64748b'}
+};
+function getAttendantWeekInfo(){
+  const weekKey = 'W'+getCurrentWeekNumber();
+  const rows = state.data.attendant.map(p=>({
+    name: p.name, function: p.function, requirement: p.requirement,
+    status: (p.weeks && p.weeks[weekKey]) || ''
+  }));
+  return {
+    weekKey,
+    rows,
+    absent: rows.filter(r=>r.status==='a'),
+    late: rows.filter(r=>r.status==='l'),
+    present: rows.filter(r=>r.status==='o')
+  };
+}
+function buildAttendantSectionHTML(att){
+  if(!att.rows.length) return '';
+  const th = 'padding:11px 12px;text-align:left;color:#1e40af;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;';
+  const td = 'padding:11px 12px;font-size:15px;border-bottom:1px solid #eef2f7;';
+  const rowsHtml = att.rows.map((r,i)=>{
+    const style = ATTENDANT_STATUS_STYLE[r.status] || ATTENDANT_STATUS_STYLE[''];
+    return `<tr style="background:${i%2===0?'#ffffff':'#f8fafc'};">
+      <td style="${td}font-weight:700;">${Utils.escapeHtml(r.name)}</td>
+      <td style="${td}">${Utils.escapeHtml(r.function)}</td>
+      <td style="${td}">${Utils.escapeHtml(r.requirement)}</td>
+      <td style="${td}text-align:center;">
+        <span style="display:inline-block;padding:4px 13px;border-radius:20px;font-size:13px;font-weight:700;background:${style.bg};color:${style.fg};">${ATTENDANT_STATUS_LABEL[r.status]}</span>
+      </td>
+    </tr>`;
+  }).join('');
+  const reminderParts = [];
+  if(att.absent.length) reminderParts.push('<p style="background:#fee2e2;border-radius:10px;padding:14px 16px;margin:10px 0;font-size:15px;"><b style="color:#dc2626;">⚠️ Vắng mặt tuần '+att.weekKey+':</b> '+att.absent.map(r=>Utils.escapeHtml(r.name)).join(', ')+' — đề nghị tham gia đầy đủ các buổi họp Weekly Quality Review sắp tới.</p>');
+  if(att.late.length) reminderParts.push('<p style="background:#fef3c7;border-radius:10px;padding:14px 16px;margin:10px 0;font-size:15px;"><b style="color:#d97706;">⏰ Đi trễ tuần '+att.weekKey+':</b> '+att.late.map(r=>Utils.escapeHtml(r.name)).join(', ')+' — đề nghị tham gia đúng giờ.</p>');
+  return `
+    <h3 style="color:#1e293b;font-size:19px;margin:30px 0 14px;padding-left:12px;border-left:5px solid #2563eb;">Điểm danh họp tuần ${att.weekKey}</h3>
+    <table width="100%" style="border-collapse:collapse;margin-bottom:8px;">
+      <thead><tr style="background:#eff6ff;">
+        <th style="${th}">Name</th>
+        <th style="${th}">Function</th>
+        <th style="${th}">Requirement</th>
+        <th style="${th}text-align:center;">Trạng thái</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    ${reminderParts.join('') || '<p style="color:#16a34a;font-size:15px;">✅ Tất cả thành viên đã tham gia đầy đủ tuần này.</p>'}`;
+}
+function buildAttendantSectionText(att){
+  if(!att.rows.length) return '';
+  const lines = [];
+  lines.push('== ĐIỂM DANH HỌP TUẦN '+att.weekKey+' ==');
+  att.rows.forEach(r=>{
+    lines.push('- '+r.name+' ('+r.function+', '+r.requirement+'): '+ATTENDANT_STATUS_LABEL[r.status]);
+  });
+  if(att.absent.length) lines.push('⚠️ VẮNG MẶT: '+att.absent.map(r=>r.name).join(', ')+' — đề nghị tham gia đầy đủ các buổi họp sắp tới.');
+  if(att.late.length) lines.push('⏰ ĐI TRỄ: '+att.late.map(r=>r.name).join(', ')+' — đề nghị tham gia đúng giờ.');
+  if(!att.absent.length && !att.late.length) lines.push('✅ Tất cả thành viên đã tham gia đầy đủ tuần này.');
+  return lines.join('\n');
+}
+
+function buildEmailHTML(filteredMocs, pendingActions, chartDataUri, attendantInfo){
+  const today = new Date().toLocaleDateString('vi-VN');
+  const total = filteredMocs.length;
+  const done = filteredMocs.filter(m=>m.status==='Done').length;
+  const cancel = filteredMocs.filter(m=>m.status==='Cancel').length;
+  const progress = total - done - cancel;
+  const overdueCount = pendingActions.filter(a=>{
+    if(a.status==='Done' || a.status==='Cancel') return false;
+    const d=Utils.daysDiffFromToday(a.dueDate); return d!==null && d<0;
+  }).length;
+
+  const th = 'padding:11px 12px;text-align:left;color:#1e40af;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;';
+  const td = 'padding:11px 12px;font-size:15px;border-bottom:1px solid #eef2f7;';
+  const zebra = i => i%2===0 ? '#ffffff' : '#f8fafc';
+
+  const mocRows = filteredMocs.slice(0,20).map((m,i)=>`
+    <tr style="background:${zebra(i)};">
+      <td style="${td}font-family:Consolas,monospace;font-size:13.5px;white-space:nowrap;font-weight:700;color:#2563eb;">${Utils.escapeHtml(m.mocNo)}</td>
+      <td style="${td}">${Utils.escapeHtml(oneLine(m.nameOfChange,60))}</td>
+      <td style="${td}">${Utils.escapeHtml(m.changeOwner)}</td>
+      <td style="${td}">${Utils.escapeHtml(m.dept)}</td>
+      <td style="${td}text-align:center;">
+        <span style="display:inline-block;padding:4px 13px;border-radius:20px;font-size:13px;font-weight:700;
+          background:${m.status==='Done'?'#dcfce7':m.status==='Cancel'?'#f1f5f9':'#fef3c7'};
+          color:${m.status==='Done'?'#16a34a':m.status==='Cancel'?'#64748b':'#d97706'};">${Utils.escapeHtml(m.status||'On progress')}</span>
+      </td>
+    </tr>`).join('');
+
+  const actionRows = pendingActions.slice(0,20).map((a,i)=>{
+    const diff = (a.status!=='Done' && a.status!=='Cancel') ? Utils.daysDiffFromToday(a.dueDate) : null;
+    const overdue = diff!==null && diff<0;
+    return `<tr style="background:${zebra(i)};">
+      <td style="${td}">${Utils.escapeHtml(oneLine(a.issue||a.action,55))}</td>
+      <td style="${td}">${Utils.escapeHtml(a.pic)}</td>
+      <td style="${td}">${Utils.escapeHtml(a.function)}</td>
+      <td style="${td}text-align:center;">
+        <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:12.5px;font-weight:700;
+          background:${a.status==='Done'?'#dcfce7':a.status==='Cancel'?'#f1f5f9':'#fef3c7'};
+          color:${a.status==='Done'?'#16a34a':a.status==='Cancel'?'#64748b':'#d97706'};">${Utils.escapeHtml(a.status||'On progress')}</span>
+      </td>
+      <td style="${td}${overdue?'color:#dc2626;font-weight:700;':''}">${Utils.escapeHtml(a.dueDate)||'—'}${overdue?' (trễ '+Math.abs(diff)+'d)':''}</td>
+    </tr>`;
+  }).join('');
+
+  const sectionTitle = txt => `<h3 style="color:#1e293b;font-size:19px;margin:30px 0 14px;padding-left:12px;border-left:5px solid #2563eb;">${txt}</h3>`;
+  const kpiCard = (label,value,color) => `
+    <td style="padding:4px;">
+      <div style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:14px 10px;text-align:center;">
+        <div style="font-size:12.5px;color:#64748b;font-weight:600;margin-bottom:4px;">${label}</div>
+        <div style="font-size:28px;font-weight:800;color:${color};">${value}</div>
+      </div>
+    </td>`;
+
+  return `
+  <div style="font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;max-width:740px;line-height:1.65;font-size:15px;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
+    <table width="100%" style="border-collapse:collapse;background:#2563eb;">
+      <tr><td style="padding:26px 30px;">
+        <div style="font-size:24px;font-weight:800;color:#ffffff;">📋 Báo cáo tình hình Quản lý Thay đổi (MoC)</div>
+        <div style="font-size:14px;color:#dbeafe;margin-top:6px;">Cập nhật ngày ${today} &nbsp;•&nbsp; Phạm vi: ${Utils.escapeHtml(getEmailFilterDesc())}</div>
+      </td></tr>
+    </table>
+
+    <div style="padding:26px 30px;">
+      <p style="margin-top:0;">Kính gửi Quý Anh/Chị,</p>
+      <p>Bộ phận QA xin gửi báo cáo cập nhật tình hình Quản lý Thay đổi (Management of Change) tính đến ngày ${today}, nhằm giúp các bộ phận liên quan nắm bắt tiến độ và phối hợp xử lý các hành động còn tồn đọng.</p>
+
+      ${sectionTitle('Tổng quan số liệu')}
+      <table width="100%" style="border-collapse:collapse;margin-bottom:18px;">
+        <tr>
+          ${kpiCard('TỔNG SỐ MoC', total, '#1e293b')}
+          ${kpiCard('ĐANG XỬ LÝ', progress, '#d97706')}
+          ${kpiCard('HOÀN THÀNH', done, '#16a34a')}
+          ${kpiCard('ĐÃ HUỶ', cancel, '#64748b')}
+          ${kpiCard('ACTION QUÁ HẠN', overdueCount, '#dc2626')}
+        </tr>
+      </table>
+      <img src="${chartDataUri}" alt="Biểu đồ thống kê MoC" style="max-width:100%;border:1px solid #eef2f7;border-radius:12px;margin-bottom:8px;display:block;">
+
+      ${sectionTitle('Các MoC đang theo dõi ('+total+')')}
+      ${total ? `<table width="100%" style="border-collapse:collapse;margin-bottom:8px;">
+        <thead><tr style="background:#eff6ff;">
+          <th style="${th}">MoC No</th>
+          <th style="${th}">Tên thay đổi</th>
+          <th style="${th}">Change Owner</th>
+          <th style="${th}">Dept</th>
+          <th style="${th}text-align:center;">Trạng thái</th>
+        </tr></thead>
+        <tbody>${mocRows}</tbody>
+      </table>${filteredMocs.length>20?`<p style="font-size:13px;color:#94a3b8;">…và ${filteredMocs.length-20} MoC khác (xem đầy đủ trong app).</p>`:''}` : '<p style="color:#94a3b8;">Không có MoC nào trong phạm vi này.</p>'}
+
+      ${sectionTitle('Action đang theo dõi ('+pendingActions.length+')')}
+      ${pendingActions.length ? `<table width="100%" style="border-collapse:collapse;margin-bottom:8px;">
+        <thead><tr style="background:#eff6ff;">
+          <th style="${th}">Issue / Action</th>
+          <th style="${th}">PIC</th>
+          <th style="${th}">Function</th>
+          <th style="${th}text-align:center;">Status</th>
+          <th style="${th}">Due date</th>
+        </tr></thead>
+        <tbody>${actionRows}</tbody>
+      </table>${pendingActions.length>20?`<p style="font-size:13px;color:#94a3b8;">…và ${pendingActions.length-20} hành động khác.</p>`:''}` : '<p style="color:#94a3b8;">Không có Action nào trong phạm vi tab Action Plan hiện tại.</p>'}
+
+      ${buildAttendantSectionHTML(attendantInfo)}
+
+      <p style="margin-top:26px;">Rất mong nhận được sự phối hợp của Quý Anh/Chị để hoàn tất các hành động còn lại đúng tiến độ. Nếu có bất kỳ thắc mắc nào, vui lòng phản hồi qua email này.</p>
+      <p style="margin-bottom:0;">Trân trọng,<br><b>[Tên người gửi]</b><br><span style="color:#64748b;">[Bộ phận QA]</span></p>
+    </div>
+  </div>`;
+}
+
+function buildEmailPlainText(filteredMocs, pendingActions, attendantInfo){
+  const today = new Date().toLocaleDateString('vi-VN');
+  const total = filteredMocs.length;
+  const done = filteredMocs.filter(m=>m.status==='Done').length;
+  const cancel = filteredMocs.filter(m=>m.status==='Cancel').length;
+  const progress = total - done - cancel;
+  const lines = [];
+  lines.push('BÁO CÁO TÌNH HÌNH QUẢN LÝ THAY ĐỔI (MoC)');
+  lines.push('Cập nhật ngày '+today+' — Phạm vi: '+getEmailFilterDesc());
+  lines.push('');
+  lines.push('Kính gửi Quý Anh/Chị,');
+  lines.push('');
+  lines.push('Bộ phận QA xin gửi báo cáo cập nhật tình hình Quản lý Thay đổi (MoC) tính đến ngày '+today+', nhằm giúp các bộ phận liên quan nắm bắt tiến độ và phối hợp xử lý các hành động còn tồn đọng.');
+  lines.push('');
+  lines.push('TỔNG QUAN: Tổng '+total+' MoC | Đang xử lý '+progress+' | Hoàn thành '+done+' | Đã huỷ '+cancel);
+  lines.push('');
+  lines.push('== CÁC MoC ĐANG THEO DÕI ('+total+') ==');
+  if(filteredMocs.length){
+    filteredMocs.slice(0,20).forEach(m=>{
+      lines.push('- ['+m.mocNo+'] '+oneLine(m.nameOfChange,60)+' | Owner: '+m.changeOwner+' | '+m.dept+' | '+(m.status||'On progress'));
+    });
+    if(filteredMocs.length>20) lines.push('... và '+(filteredMocs.length-20)+' MoC khác.');
+  } else lines.push('(không có)');
+  lines.push('');
+  lines.push('== ACTION ĐANG THEO DÕI ('+pendingActions.length+') ==');
+  if(pendingActions.length){
+    pendingActions.slice(0,20).forEach(a=>{
+      const diff = (a.status!=='Done' && a.status!=='Cancel') ? Utils.daysDiffFromToday(a.dueDate) : null;
+      const overdue = diff!==null && diff<0;
+      lines.push('- '+oneLine(a.issue||a.action,55)+' | PIC: '+a.pic+' | '+(a.status||'On progress')+' | Due: '+(a.dueDate||'—')+(overdue?' (TRỄ '+Math.abs(diff)+' ngày)':''));
+    });
+    if(pendingActions.length>20) lines.push('... và '+(pendingActions.length-20)+' hành động khác.');
+  } else lines.push('(không có Action trong phạm vi tab Action Plan hiện tại)');
+  lines.push('');
+  const attText = buildAttendantSectionText(attendantInfo);
+  if(attText){ lines.push(attText); lines.push(''); }
+  lines.push('Rất mong nhận được sự phối hợp của Quý Anh/Chị để hoàn tất các hành động còn lại đúng tiến độ.');
+  lines.push('');
+  lines.push('Trân trọng,');
+  lines.push('[Tên người gửi]');
+  lines.push('[Bộ phận QA]');
+  return lines.join('\n');
+}
+
+let emailDraft = { subject:'', html:'', htmlForEml:'', text:'' };
+
+function openEmailModal(){
+  const filteredMocs = getMasterListFiltered();
+  // Action list comes straight from the Action Plan tab's own current filter/search —
+  // "danh sách Action đang theo dõi từ tab Action" — not a heuristic re-derivation.
+  const trackedActions = getActionPlanFiltered();
+  const attendantInfo = getAttendantWeekInfo();
+  const chartUri = drawEmailChart(filteredMocs);
+  lastEmailChartDataUri = chartUri;
+
+  const dept = document.getElementById('ml-filter-dept').value;
+  const subject = '[MoC Update] Báo cáo tình hình Quản lý Thay đổi'+(dept?' — '+dept:'')+' — '+Utils.todayISO();
+  const html = buildEmailHTML(filteredMocs, trackedActions, chartUri, attendantInfo);
+  const htmlForEml = buildEmailHTML(filteredMocs, trackedActions, 'cid:moc_chart', attendantInfo);
+  const text = buildEmailPlainText(filteredMocs, trackedActions, attendantInfo);
+  emailDraft = { subject, html, htmlForEml, text };
+
+  document.getElementById('email-scope-desc').textContent = getEmailFilterDesc()+' ('+filteredMocs.length+' MoC)';
+  document.getElementById('email-subject').value = subject;
+  document.getElementById('email-to').value = '';
+
+  const names = Array.from(new Set(filteredMocs.map(m=>m.changeOwner).filter(Boolean))).slice(0,10);
+  document.getElementById('email-recipient-hint').textContent = names.length
+    ? 'Gợi ý người nhận (Change Owner liên quan): ' + names.join(', ')
+    : '';
+
+  document.getElementById('email-preview').innerHTML = html;
+  document.getElementById('modal-email').classList.add('open');
+
+  // Ready-to-send draft, downloaded automatically as requested; re-download after
+  // editing To/Subject with "Tải lại file .eml".
+  downloadEmlFile();
+}
+function closeEmailModal(){ document.getElementById('modal-email').classList.remove('open'); }
+
+/* ---- .eml (RFC 822 draft) generation — opens directly as an editable draft in
+   Outlook/Thunderbird/Mail, with the chart embedded as an inline image (unlike mailto:,
+   which is plain-text only). ---- */
+function utf8ToBase64(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function wrapBase64Lines(b64){
+  return b64.replace(/(.{76})/g, '$1\r\n');
+}
+function rfc2822Date(){
+  return new Date().toUTCString().replace('GMT','+0000');
+}
+function buildEmlContent(to, subject, textBody, htmlBody, chartBase64Raw){
+  const boundaryRelated = 'MoCRelated_'+Date.now();
+  const boundaryAlt = 'MoCAlt_'+(Date.now()+1);
+  const encodedSubject = '=?UTF-8?B?'+utf8ToBase64(subject)+'?=';
+  const lines = [
+    'From: ',
+    'To: '+to,
+    'Subject: '+encodedSubject,
+    'Date: '+rfc2822Date(),
+    'MIME-Version: 1.0',
+    'X-Unsent: 1',
+    'Content-Type: multipart/related; boundary="'+boundaryRelated+'"',
+    '',
+    '--'+boundaryRelated,
+    'Content-Type: multipart/alternative; boundary="'+boundaryAlt+'"',
+    '',
+    '--'+boundaryAlt,
+    'Content-Type: text/plain; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrapBase64Lines(utf8ToBase64(textBody)),
+    '',
+    '--'+boundaryAlt,
+    'Content-Type: text/html; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrapBase64Lines(utf8ToBase64(htmlBody)),
+    '',
+    '--'+boundaryAlt+'--',
+    ''
+  ];
+  if(chartBase64Raw){
+    lines.push(
+      '--'+boundaryRelated,
+      'Content-Type: image/png; name="moc_chart.png"',
+      'Content-Transfer-Encoding: base64',
+      'Content-ID: <moc_chart>',
+      'Content-Disposition: inline; filename="moc_chart.png"',
+      '',
+      wrapBase64Lines(chartBase64Raw),
+      ''
+    );
+  }
+  lines.push('--'+boundaryRelated+'--');
+  return lines.join('\r\n');
+}
+function downloadEmlFile(){
+  const to = document.getElementById('email-to').value.trim();
+  const subject = document.getElementById('email-subject').value.trim();
+  const chartBase64Raw = (lastEmailChartDataUri.split(',')[1]) || '';
+  const emlContent = buildEmlContent(to, subject, emailDraft.text, emailDraft.htmlForEml, chartBase64Raw);
+  Utils.downloadBlob(emlContent, 'MoC_BaoCao_'+Utils.todayISO()+'.eml', 'message/rfc822');
+  showToast('Đã tải file .eml — mở file để hoàn tất và bấm Gửi trong Outlook/Mail.', 'ok');
+}
+
+function handleEmailOpenMailto(){
+  const to = encodeURIComponent(document.getElementById('email-to').value.trim());
+  const subject = encodeURIComponent(document.getElementById('email-subject').value.trim());
+  const body = encodeURIComponent(emailDraft.text);
+  const url = 'mailto:'+to+'?subject='+subject+'&body='+body;
+  if(url.length > 1800){
+    showToast('Nội dung khá dài — email client có thể cắt bớt phần cuối. Nên dùng "Sao chép nội dung" để dán đầy đủ.', 'err');
+  }
+  window.location.href = url;
+}
+async function handleEmailCopy(){
+  try{
+    if(!navigator.clipboard) throw new Error('Clipboard API không khả dụng trên trình duyệt/ngữ cảnh này.');
+    if(window.ClipboardItem){
+      const htmlBlob = new Blob([emailDraft.html], {type:'text/html'});
+      const textBlob = new Blob([emailDraft.text], {type:'text/plain'});
+      await navigator.clipboard.write([new ClipboardItem({'text/html':htmlBlob, 'text/plain':textBlob})]);
+    } else {
+      await navigator.clipboard.writeText(emailDraft.text);
+    }
+    showToast('Đã sao chép — dán trực tiếp (Ctrl+V) vào Outlook/Gmail để giữ bảng biểu và biểu đồ.', 'ok');
+  }catch(e){
+    console.error(e);
+    showToast('Không sao chép được (trình duyệt chặn quyền clipboard).', 'err');
+  }
+}
+function handleEmailDownloadChart(){
+  if(!lastEmailChartDataUri) return;
+  const a = document.createElement('a');
+  a.href = lastEmailChartDataUri;
+  a.download = 'MoC_bieu_do_'+Utils.todayISO()+'.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+/* ================================================================================
+   SETTINGS: connect / backup / restore / reset
+================================================================================ */
+async function handleCloudConnect(){
+  if(!canAccessSettings()){ showToast('Chỉ Admin mới truy cập được mục này.', 'err'); return; }
+  const url = document.getElementById('cloud-url').value;
+  const apiKey = document.getElementById('cloud-key').value;
+  await connectCloud(url, apiKey);
+}
+function handleCloudDisconnect(){
+  if(!canAccessSettings()){ showToast('Chỉ Admin mới truy cập được mục này.', 'err'); return; }
+  if(!confirm('Ngắt kết nối Cloudflare? Dữ liệu vẫn còn lưu cục bộ trên máy này.')) return;
+  disconnectCloud();
+  showToast('Đã ngắt kết nối.', 'ok');
+}
+async function handleReconnect(){
+  if(!canAccessSettings()){ showToast('Chỉ Admin mới truy cập được mục này.', 'err'); return; }
+  if(!state.cloud){ showToast('Chưa có cấu hình Cloudflare để kết nối lại.', 'err'); return; }
+  await connectCloud(state.cloud.url, state.cloud.apiKey);
+}
+function handleBackupExport(){
+  Utils.downloadBlob(JSON.stringify(state.data, null, 2), 'moc_backup_'+Utils.todayISO()+'.json', 'application/json');
+  showToast('Đã xuất file sao lưu.', 'ok');
+}
+function handleBackupImportFile(file){
+  if(!canAccessSettings()){ showToast('Chỉ Admin mới truy cập được mục này.', 'err'); return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!parsed || typeof parsed !== 'object') throw new Error('invalid');
+      if(!confirm('Nhập dữ liệu từ file sao lưu sẽ GHÉP với dữ liệu hiện tại (bản ghi mới hơn được giữ lại). Tiếp tục?')) return;
+      state.data = Storage.mergeData(state.data, normalizeData(parsed));
+      markDirty();
+      renderActiveView();
+      showToast('Đã nhập dữ liệu sao lưu.', 'ok');
+    }catch(e){
+      showToast('File JSON không hợp lệ hoặc bị hỏng.', 'err');
+    }
+  };
+  reader.onerror = () => showToast('Không đọc được file.', 'err');
+  reader.readAsText(file);
+}
+function handleResetSeed(){
+  if(!canAccessSettings()){ showToast('Chỉ Admin mới truy cập được mục này.', 'err'); return; }
+  if(!confirm('Reset sẽ XOÁ toàn bộ dữ liệu hiện tại và khôi phục dữ liệu mẫu gốc. Bạn chắc chắn?')) return;
+  state.data = cloneSeed();
+  markDirty();
+  renderActiveView();
+  renderAllFilterOptions();
+  showToast('Đã reset về dữ liệu mẫu.', 'ok');
+}
+
+/* ================================================================================
+   EVENT BINDING (static elements)
+================================================================================ */
+function bindStaticEvents(){
+  document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click', ()=>switchView(el.dataset.view)));
+
+  document.getElementById('btn-save-now').addEventListener('click', saveData);
+
+  // Presentation mode (font size / bold)
+  document.getElementById('btn-font-decrease').addEventListener('click', ()=>{
+    presentPrefs.scaleIdx = Math.max(0, presentPrefs.scaleIdx-1);
+    applyPresentPrefs(); savePresentPrefs();
+  });
+  document.getElementById('btn-font-increase').addEventListener('click', ()=>{
+    presentPrefs.scaleIdx = Math.min(FONT_SCALE_CLASSES.length-1, presentPrefs.scaleIdx+1);
+    applyPresentPrefs(); savePresentPrefs();
+  });
+  document.getElementById('btn-bold-toggle').addEventListener('click', ()=>{
+    presentPrefs.bold = !presentPrefs.bold;
+    applyPresentPrefs(); savePresentPrefs();
+  });
+
+  // Master list
+  document.getElementById('btn-add-moc').addEventListener('click', ()=>openMocModal(null));
+  document.getElementById('ml-search').addEventListener('input', renderMasterList);
+  document.getElementById('ml-filter-dept').addEventListener('change', renderMasterList);
+  document.getElementById('ml-filter-status').addEventListener('change', renderMasterList);
+  document.getElementById('ml-filter-nature').addEventListener('change', renderMasterList);
+  document.getElementById('ml-show-all-status').addEventListener('change', renderMasterList);
+  document.getElementById('btn-export-ml').addEventListener('click', exportMasterListCSV);
+  document.getElementById('btn-open-email').addEventListener('click', openEmailModal);
+  document.getElementById('btn-email-open').addEventListener('click', handleEmailOpenMailto);
+  document.getElementById('btn-email-copy').addEventListener('click', handleEmailCopy);
+  document.getElementById('btn-email-download-chart').addEventListener('click', handleEmailDownloadChart);
+  document.getElementById('btn-email-download-eml').addEventListener('click', downloadEmlFile);
+  document.getElementById('btn-save-moc').addEventListener('click', saveMocFromModal);
+  document.getElementById('btn-delete-moc').addEventListener('click', ()=>{
+    if(!state.mocEditing) return;
+    deleteMoc(state.mocEditing.id);
+    closeMocModal();
+  });
+
+  // Action plan
+  document.getElementById('btn-add-action').addEventListener('click', ()=>openActionModal(null));
+  document.getElementById('ap-search').addEventListener('input', renderActionPlan);
+  document.getElementById('ap-filter-function').addEventListener('change', renderActionPlan);
+  document.getElementById('ap-filter-status').addEventListener('change', renderActionPlan);
+  document.getElementById('ap-show-all-status').addEventListener('change', renderActionPlan);
+  document.getElementById('btn-export-ap').addEventListener('click', exportActionPlanCSV);
+  document.getElementById('btn-save-action').addEventListener('click', saveActionFromModal);
+  document.getElementById('btn-delete-action').addEventListener('click', ()=>{
+    if(!state.actionEditing) return;
+    deleteAction(state.actionEditing.id);
+    closeActionModal();
+  });
+
+  // Agenda
+  document.getElementById('btn-add-agenda').addEventListener('click', ()=>openAgendaModal(null));
+  document.getElementById('btn-save-agenda').addEventListener('click', saveAgendaFromModal);
+  document.getElementById('btn-delete-agenda').addEventListener('click', ()=>{
+    if(!state.agendaEditing) return;
+    deleteAgenda(state.agendaEditing.id);
+    closeAgendaModal();
+  });
+
+  // Attendant
+  document.getElementById('btn-add-attendant').addEventListener('click', ()=>{
+    if(!requireEdit()) return;
+    state.data.attendant.push({id:Utils.uuid(), name:'', function:'', requirement:'Mandatory', weeks:{}});
+    markDirty(); renderAttendant();
+  });
+
+  // Login
+  document.getElementById('btn-open-login-banner').addEventListener('click', openLoginModal);
+  document.getElementById('btn-do-login').addEventListener('click', doLogin);
+  document.getElementById('login-role').addEventListener('change', e=>{
+    const isAdmin = e.target.value === 'admin';
+    document.getElementById('login-admin-field').style.display = isAdmin ? '' : 'none';
+    document.getElementById('login-leader-field').style.display = isAdmin ? 'none' : '';
+    document.getElementById('login-leader-password-field').style.display = isAdmin ? 'none' : '';
+  });
+  document.getElementById('login-leader-password').addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); doLogin(); }
+  });
+  document.getElementById('btn-do-changepw').addEventListener('click', doChangePassword);
+  document.getElementById('cp-confirm').addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); doChangePassword(); }
+  });
+  document.getElementById('login-password').addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); doLogin(); }
+  });
+
+  // Modal generic close
+  document.querySelectorAll('[data-close-modal]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.closeModal;
+      if(id==='modal-moc') closeMocModal();
+      else if(id==='modal-action') closeActionModal();
+      else if(id==='modal-agenda') closeAgendaModal();
+      else if(id==='modal-login') closeLoginModal();
+      else if(id==='modal-changepw') closeChangePasswordModal();
+      else if(id==='modal-email') closeEmailModal();
+    });
+  });
+  document.querySelectorAll('.modal-overlay').forEach(ov=>{
+    ov.addEventListener('click', e=>{
+      if(e.target === ov){
+        if(ov.id==='modal-moc') closeMocModal();
+        else if(ov.id==='modal-action') closeActionModal();
+        else if(ov.id==='modal-agenda') closeAgendaModal();
+        else if(ov.id==='modal-login') closeLoginModal();
+        else if(ov.id==='modal-changepw') closeChangePasswordModal();
+        else if(ov.id==='modal-email') closeEmailModal();
+      }
+    });
+  });
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Escape'){
+      closeMocModal(); closeActionModal(); closeAgendaModal(); closeLoginModal(); closeChangePasswordModal(); closeEmailModal();
+    }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){
+      e.preventDefault(); saveData();
+    }
+  });
+
+  // Settings
+  document.getElementById('btn-cloud-connect').addEventListener('click', handleCloudConnect);
+  document.getElementById('btn-cloud-disconnect').addEventListener('click', handleCloudDisconnect);
+  document.getElementById('btn-reconnect').addEventListener('click', handleReconnect);
+  document.getElementById('btn-backup-export').addEventListener('click', handleBackupExport);
+  document.getElementById('btn-backup-import').addEventListener('click', ()=>document.getElementById('input-backup-file').click());
+  document.getElementById('input-backup-file').addEventListener('change', e=>{
+    if(e.target.files && e.target.files[0]) handleBackupImportFile(e.target.files[0]);
+    e.target.value = '';
+  });
+  document.getElementById('btn-reset-seed').addEventListener('click', handleResetSeed);
+}
+
+/* ================================================================================
+   INIT
+================================================================================ */
+async function init(){
+  bindStaticEvents();
+  renderAllFilterOptions();
+  loadCurrentUser();
+  renderAuthArea();
+  loadPresentPrefs();
+  applyPresentPrefs();
+  await initStorage();
+  updateFileStatusUI();
+  applyPermissionsUI();
+  renderActiveView();
+}
+document.addEventListener('DOMContentLoaded', init);
+
+/* ================================================================================
+   SEED DATA — imported from 2026_MoC Master List - Simplify.xlsx
+================================================================================ */
+const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"attendant":[],"users":{}};
+</script>
+</body>
+</html>

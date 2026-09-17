@@ -1,0 +1,17 @@
+name = "moc-data-api"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# Restrict which site is allowed to call the API (your GitHub Pages URL).
+# Example: "https://yourusername.github.io"
+[vars]
+ALLOWED_ORIGIN = "https://ngocthanhthien.github.io/MoC/"
+
+# Create with:  npx wrangler kv namespace create MOC_KV
+# then paste the returned id below.
+[[kv_namespaces]]
+binding = "MOC_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# The actual secret value is NOT stored here — set it with:
+#   npx wrangler secret put API_KEY

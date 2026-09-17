@@ -1,0 +1,9 @@
+node_modules/
+.wrangler/
+cloudflare/.dev.vars
+moc_data.json
+
+# Internal source data — not meant for a public repo (see HANDOFF.md section 10)
+2026_MoC Master List - Simplify.xlsx
+MoC_Tom_tat_kien_thuc_co_ban.txt
+.claude/
