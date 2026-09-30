@@ -86,19 +86,25 @@ a{color:var(--blue);}
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
 }
 
-/* ============================== LAYOUT SHELL ============================== */
-#app{display:flex;min-height:100vh;}
+/* ============================== LAYOUT SHELL ==============================
+   Nav is a horizontal tab bar stacked above the topbar (not a vertical side
+   column). #app is a column flex: [#sidebar tab-bar] -> [#main: topbar+content].
+   Both bars are sticky so the header stays visible on scroll; --header-h below
+   is the tab-bar's own height, used to offset the topbar's sticky position so
+   the two stack without overlapping. */
+:root{ --header-h:48px; }
+#app{display:flex;flex-direction:column;min-height:100vh;}
 /* Login is mandatory: the whole shell stays hidden until a session is confirmed —
    see restoreSession()/lockApp()/unlockApp() in AUTH / PERMISSIONS. */
 body.auth-locked #app{display:none;}
 body.auth-locked #modal-login .modal-close,
 body.auth-locked #modal-login [data-close-modal]{display:none;}
 #sidebar{
-  width:var(--sidebar-w);flex-shrink:0;background:var(--surface);color:var(--muted);
-  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;transition:width var(--dur) var(--ease);
-  border-right:1px solid var(--border);
+  width:100%;flex-shrink:0;background:var(--surface);color:var(--muted);
+  display:flex;flex-direction:row;align-items:center;position:sticky;top:0;z-index:25;
+  border-bottom:1px solid var(--border);
 }
-#sidebar .brand{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+#sidebar .brand{padding:10px 18px;border-right:1px solid var(--border);display:flex;align-items:center;gap:11px;flex-shrink:0;}
 /* Logo always sits on a literal white chip, in every theme — see brief §4. */
 .ild-theme-logo-box{
   background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 9px;flex-shrink:0;
@@ -108,41 +114,37 @@ body.auth-locked #modal-login [data-close-modal]{display:none;}
 #sidebar .brand-text{min-width:0;overflow:hidden;}
 #sidebar .brand-title{font-weight:var(--fw-strong);font-size:14.5px;color:var(--text);white-space:nowrap;line-height:1.25;}
 #sidebar .brand-subtitle{font-size:10.5px;color:var(--muted);white-space:nowrap;margin-top:1px;letter-spacing:.02em;}
-#sidebar nav{padding:14px 12px;display:flex;flex-direction:column;gap:2px;}
+#sidebar nav{padding:0 8px;display:flex;flex-direction:row;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;height:100%;}
 .nav-item{
-  padding:10px 12px;display:flex;align-items:center;gap:11px;color:var(--muted);position:relative;
-  cursor:pointer;font-size:14px;border-radius:9px;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);
+  padding:9px 14px;display:flex;align-items:center;gap:9px;color:var(--muted);position:relative;
+  cursor:pointer;font-size:14px;border-radius:9px;white-space:nowrap;flex-shrink:0;
+  transition:background var(--dur) var(--ease),color var(--dur) var(--ease);
 }
 .nav-item:hover{background:rgba(42,32,24,.06);color:var(--text);}
 .nav-item.active{background:var(--blue-light);color:var(--text);font-weight:var(--fw-label);}
 .nav-item.active::before{
-  content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:18px;
-  border-radius:0 3px 3px 0;background:var(--ild-red);
+  content:'';position:absolute;left:12px;right:12px;bottom:-9px;height:2px;
+  border-radius:2px 2px 0 0;background:var(--ild-red);
 }
-.nav-item .icon{width:18px;text-align:center;flex-shrink:0;font-size:14.5px;}
-.nav-item .nav-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.nav-divider{height:1px;background:var(--border);margin:10px 14px;}
-#sidebar .spacer{flex:1;}
-#sidebar .footer-note{padding:14px 20px;font-size:10.5px;color:var(--muted-light);border-top:1px solid var(--border);line-height:1.5;}
+.nav-item .icon{width:16px;text-align:center;flex-shrink:0;font-size:14.5px;}
+.nav-item .nav-label{white-space:nowrap;}
+.nav-divider{width:1px;height:22px;background:var(--border);margin:0 6px;flex-shrink:0;}
+#sidebar .spacer{display:none;}
+#sidebar .footer-note{padding:0 18px;font-size:10.5px;color:var(--muted-light);border-left:1px solid var(--border);line-height:1.3;white-space:nowrap;flex-shrink:0;}
 @media (max-width:1024px){
   .ild-theme-logo{height:20px;}
   .ild-theme-logo-box{padding:4px 6px;}
+  #sidebar .footer-note{display:none;}
 }
-
-@media (max-width:1024px){
-  #sidebar{width:var(--sidebar-w-collapsed);}
-  #sidebar .brand{padding:18px 0;justify-content:center;}
-  #sidebar .brand-text,#sidebar .footer-note{display:none;}
-  #sidebar nav{padding:14px 8px;}
-  .nav-item{justify-content:center;padding:11px 0;}
-  .nav-item .nav-label{display:none;}
-  .nav-item.active::before{left:-8px;}
+@media (max-width:640px){
+  #sidebar .brand-subtitle{display:none;}
+  #sidebar .brand{padding:8px 12px;}
 }
 
 #main{flex:1;min-width:0;display:flex;flex-direction:column;}
 #topbar{
   background:var(--card);border-bottom:1px solid var(--border);padding:11px 24px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:var(--header-h);z-index:20;
 }
 .topbar-left{min-width:0;flex-shrink:1;}
 .topbar-eyebrow{font-size:11px;color:var(--muted-light);font-weight:600;letter-spacing:.03em;text-transform:uppercase;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -692,6 +694,59 @@ thead .att-sticky-col{z-index:3;background:var(--surface);}
     --border:#E6D6BA !important; --border-dark:#99897A !important;
   }
 }
+
+/* ============================== USER GUIDE TAB ============================== */
+.guide-wrap{display:flex;gap:24px;align-items:flex-start;}
+.guide-nav{
+  flex-shrink:0;width:200px;position:sticky;top:calc(var(--header-h) + 74px);
+  display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px;
+}
+.guide-nav a{
+  padding:7px 10px;border-radius:7px;font-size:12.5px;color:var(--muted);text-decoration:none;
+  transition:background var(--dur) var(--ease),color var(--dur) var(--ease);
+}
+.guide-nav a:hover{background:var(--surface);color:var(--text);}
+.guide-content{flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;}
+.guide-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;scroll-margin-top:calc(var(--header-h) + 74px);}
+.guide-section h3{margin:0 0 10px;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px;}
+.guide-section p{margin:0 0 8px;font-size:13px;color:var(--muted);line-height:1.6;}
+.guide-section ol,.guide-section ul{margin:6px 0 8px;padding-left:20px;font-size:13px;color:var(--muted);line-height:1.7;}
+.guide-section li strong{color:var(--text);}
+.guide-callout{border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.55;margin:10px 0;display:flex;gap:8px;}
+.guide-callout.tip{background:var(--green-bg);color:var(--green);}
+.guide-callout.warn{background:var(--amber-bg);color:var(--amber);}
+.guide-callout .gc-icon{flex-shrink:0;}
+.guide-role-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px;}
+.guide-role-table th,.guide-role-table td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:left;}
+.guide-role-table th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;}
+.guide-faq details{border:1px solid var(--border);border-radius:9px;padding:10px 14px;margin-bottom:8px;background:var(--surface);}
+.guide-faq summary{cursor:pointer;font-size:13px;font-weight:var(--fw-label);color:var(--text);}
+.guide-faq details p{margin-top:8px;}
+@media (max-width:900px){
+  .guide-wrap{flex-direction:column;}
+  .guide-nav{position:static;width:100%;flex-direction:row;flex-wrap:wrap;}
+}
+
+/* ============================== MASTER LIST — EXPAND ROW ============================== */
+.exp-toggle-btn{
+  background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;border-radius:6px;transition:transform var(--dur) var(--ease),background var(--dur) var(--ease);
+}
+.exp-toggle-btn:hover{background:var(--surface);color:var(--text);}
+.exp-toggle-btn.open{transform:rotate(90deg);}
+tr.exp-row{background:var(--surface);}
+tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border);}
+.exp-row-title{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;}
+.exp-row-empty{font-size:12.5px;color:var(--muted-light);padding:4px 0;}
+
+/* ============================== STATUS BADGE — LATE (SLA) ============================== */
+.badge-late{background:var(--red-bg);color:var(--red);}
+
+/* ============================== USERS — INLINE ENABLE/DISABLE TOGGLE ============================== */
+.user-toggle-btn{background:none;border:1px solid var(--border-dark);border-radius:6px;width:26px;height:26px;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted);}
+.user-toggle-btn:hover{background:var(--surface);color:var(--text);}
 </style>
 </head>
 <body class="auth-locked">
@@ -711,6 +766,7 @@ thead .att-sticky-col{z-index:3;background:var(--surface);}
       <div class="nav-item" data-view="actionplan" title="Action Plan"><span class="icon">&#10003;</span><span class="nav-label">Action Plan</span></div>
       <div class="nav-item" data-view="meeting" title="Agenda &amp; Attendant"><span class="icon">&#128197;</span><span class="nav-label">Agenda &amp; Attendant</span></div>
       <div class="nav-item active" data-view="dashboard" title="Dashboard"><span class="icon">&#9635;</span><span class="nav-label">Dashboard</span></div>
+      <div class="nav-item" data-view="guide" title="Hướng dẫn sử dụng"><span class="icon">&#128214;</span><span class="nav-label">Hướng dẫn</span></div>
       <div class="nav-divider"></div>
       <div class="nav-item" data-view="users" title="Người dùng"><span class="icon">&#128101;</span><span class="nav-label">Người dùng</span></div>
       <div class="nav-item" data-view="settings" title="Dữ liệu &amp; Cài đặt"><span class="icon">&#9881;</span><span class="nav-label">Dữ liệu &amp; Cài đặt</span></div>
@@ -824,6 +880,7 @@ thead .att-sticky-col{z-index:3;background:var(--surface);}
         <div class="table-wrap">
           <table>
             <thead><tr>
+              <th style="width:26px;"></th>
               <th data-sort="mocNo">MoC No<span class="sort-arrow"></span></th>
               <th data-sort="requestDate">Request Date<span class="sort-arrow"></span></th>
               <th data-sort="changeOwner">Change Owner<span class="sort-arrow"></span></th>
@@ -831,6 +888,7 @@ thead .att-sticky-col{z-index:3;background:var(--surface);}
               <th data-sort="nameOfChange">Name of change<span class="sort-arrow"></span></th>
               <th data-sort="natureOfChange">Nature<span class="sort-arrow"></span></th>
               <th data-sort="typeOfChange">Type<span class="sort-arrow"></span></th>
+              <th data-sort="classification">Mức độ<span class="sort-arrow"></span></th>
               <th data-sort="status">Status<span class="sort-arrow"></span></th>
               <th></th>
             </tr></thead>
@@ -898,6 +956,96 @@ thead .att-sticky-col{z-index:3;background:var(--surface);}
             <thead><tr id="attendant-head-row"></tr></thead>
             <tbody id="attendant-tbody"></tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- ---------- USER GUIDE VIEW ---------- -->
+      <section class="view" id="view-guide">
+        <div class="section-title-row">
+          <div>
+            <h2>Hướng dẫn sử dụng</h2>
+            <p class="section-subtitle">Cách dùng app MoC Management — đăng nhập, tạo MoC, theo dõi Action Plan, xuất báo cáo.</p>
+          </div>
+        </div>
+        <div class="guide-wrap">
+          <nav class="guide-nav">
+            <a href="#guide-tongquan">Tổng quan</a>
+            <a href="#guide-dangnhap">Đăng nhập &amp; phân quyền</a>
+            <a href="#guide-moc">Tạo &amp; quản lý MoC</a>
+            <a href="#guide-action">Action Plan</a>
+            <a href="#guide-locsort">Lọc / Sắp xếp / Tìm kiếm</a>
+            <a href="#guide-xuat">Xuất báo cáo / Email / In</a>
+            <a href="#guide-giaodien">Giao diện (Theme)</a>
+            <a href="#guide-faq">Câu hỏi thường gặp</a>
+          </nav>
+          <div class="guide-content">
+            <div class="guide-section" id="guide-tongquan">
+              <h3>&#8505; Tổng quan</h3>
+              <p>App MoC Management dùng để theo dõi toàn bộ yêu cầu thay đổi (Management of Change) theo QA.P.035: từ lúc đề xuất, phê duyệt, triển khai hành động, đến xác nhận hoàn tất. Dữ liệu được đồng bộ tự động qua Cloudflare — mọi máy đăng nhập cùng tài khoản sẽ thấy cùng một bộ dữ liệu.</p>
+              <p>Thanh điều hướng nằm ngang phía trên: <strong>Master List</strong> (danh sách MoC), <strong>Action Plan</strong> (hành động cần làm), <strong>Agenda &amp; Attendant</strong> (lịch họp/điểm danh), <strong>Dashboard</strong> (tổng quan số liệu), và tab Hướng dẫn này.</p>
+            </div>
+
+            <div class="guide-section" id="guide-dangnhap">
+              <h3>&#128100; Đăng nhập &amp; phân quyền</h3>
+              <p>App yêu cầu đăng nhập trước khi dùng. Có 2 vai trò:</p>
+              <table class="guide-role-table">
+                <thead><tr><th>Vai trò</th><th>Cách đăng nhập</th><th>Được phép</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Admin</strong></td><td>Username + Mật khẩu</td><td>Toàn quyền: thêm/sửa/xoá mọi MoC &amp; Action, quản lý người dùng, cài đặt dữ liệu</td></tr>
+                  <tr><td><strong>Leader / User</strong></td><td>Chọn Tên + nhập Mã NV (Admin cấp)</td><td>Xem tất cả, tạo MoC/Action mới; chỉ <strong>sửa</strong> được MoC nếu là Change Owner hoặc có tên trong "Người liên quan"; không xoá được</td></tr>
+                </tbody>
+              </table>
+              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Admin tạo tài khoản ở tab <strong>Người dùng</strong>: bấm "+ Thêm người dùng", nhập Tên + Bộ phận — hệ thống tự sinh Mã NV, gửi mã này cho người dùng để họ đăng nhập.</div>
+              <div class="guide-callout warn"><span class="gc-icon">&#9888;</span>Quên Mã NV? Admin mở lại hồ sơ người dùng đó và bấm "Tạo Mã NV mới" — mã cũ sẽ ngừng hoạt động ngay lập tức.</div>
+            </div>
+
+            <div class="guide-section" id="guide-moc">
+              <h3>&#128203; Tạo &amp; quản lý MoC</h3>
+              <ol>
+                <li>Vào <strong>Master List</strong> → bấm "+ Thêm MoC mới".</li>
+                <li>Điền thông tin: Change Owner, Bộ phận, Tên thay đổi, Loại/Nhóm thay đổi, Lý do, Mô tả, Rủi ro/Hành động giảm thiểu, và bảng Phê duyệt.</li>
+                <li>Chọn <strong>Mức độ (Classification)</strong> — Nhẹ/Trung bình/Nghiêm trọng — để app tự tính hạn xử lý và tự chuyển trạng thái sang <span class="badge badge-late" style="display:inline;">Trễ hạn</span> nếu quá hạn mà vẫn "Đang xử lý".</li>
+                <li>Bấm mũi tên &#9656; đầu mỗi dòng trong Master List để xem nhanh các Action đang gắn với MoC đó mà không cần mở popup.</li>
+              </ol>
+              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Trạng thái "Trễ hạn" là tự động tính theo Ngày yêu cầu + số ngày cho phép của Mức độ — không cần tự tay đổi Status, chỉ cần đổi sang "Done"/"Cancel" khi MoC thực sự kết thúc.</div>
+            </div>
+
+            <div class="guide-section" id="guide-action">
+              <h3>&#9989; Action Plan</h3>
+              <p>Mỗi hành động gắn với 1 MoC qua "Mã MoC". Điền PIC, Hạn xử lý, và cập nhật Trạng thái/Ngày hoàn thành khi xong. Action quá hạn (chưa Done/Cancel mà đã qua Hạn xử lý) sẽ tự hiển thị nổi bật trên Dashboard.</p>
+            </div>
+
+            <div class="guide-section" id="guide-locsort">
+              <h3>&#128269; Lọc / Sắp xếp / Tìm kiếm</h3>
+              <p>Mỗi bộ lọc (Bộ phận, Trạng thái, Nhóm, Loại...) cho phép chọn nhiều giá trị cùng lúc — bấm vào ô lọc để mở danh sách checkbox. Bấm vào tiêu đề cột trong bảng để sắp xếp tăng/giảm dần. Ô tìm kiếm quét trên MoC No, tên, Change Owner cùng lúc.</p>
+            </div>
+
+            <div class="guide-section" id="guide-xuat">
+              <h3>&#128231; Xuất báo cáo / Email / In</h3>
+              <p>Nút "Xuất CSV" tải toàn bộ danh sách đang lọc ra file CSV mở được bằng Excel. Nút "Gửi Email báo cáo" tạo sẵn 1 file .eml có kèm biểu đồ — chỉ cần mở file này để Outlook soạn sẵn thư, bấm Gửi. Xem chi tiết 1 MoC và bấm In để xuất PDF theo mẫu.</p>
+            </div>
+
+            <div class="guide-section" id="guide-giaodien">
+              <h3>&#127912; Giao diện (Theme)</h3>
+              <p>Bấm nút "Giao diện" trên thanh trên cùng để đổi giữa các cấu hình dựng sẵn (Sáng/Tối/Tương phản cao/Đậm), hoặc tự chọn riêng Chế độ hiển thị, Độ tương phản, Độ đậm. Lựa chọn được lưu riêng trên từng trình duyệt.</p>
+            </div>
+
+            <div class="guide-section guide-faq" id="guide-faq">
+              <h3>&#10067; Câu hỏi thường gặp</h3>
+              <details>
+                <summary>Vì sao tôi không sửa được 1 MoC dù đã đăng nhập?</summary>
+                <p>Chỉ Admin, Change Owner, hoặc người có tên trong "Người liên quan" của MoC đó mới được sửa. Nhờ Change Owner thêm tên bạn vào "Người liên quan", hoặc nhờ Admin chỉnh giúp.</p>
+              </details>
+              <details>
+                <summary>MoC bị tự chuyển sang "Trễ hạn" — sửa lại được không?</summary>
+                <p>Được — "Trễ hạn" chỉ là hiển thị tự động khi MoC còn "Đang xử lý" mà đã quá hạn theo Mức độ. Chuyển Status sang "Done" hoặc "Cancel" khi hoàn tất, trạng thái Trễ hạn sẽ biến mất.</p>
+              </details>
+              <details>
+                <summary>Dữ liệu có bị mất khi mất mạng không?</summary>
+                <p>Không — app luôn lưu 1 bản trên trình duyệt (localStorage) và tự đồng bộ lại với Cloudflare ngay khi có mạng trở lại.</p>
+              </details>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1145,6 +1293,14 @@ const CONFIG = {
   types: ['Permanent Change','Temporary Change','Emergency Change','Like for Like Change','One for One Change'],
   natures: ['Materials & Ingredients','Manufacturing process','Equipment','Infrastructure','Regulatory & Internal compliance'],
   statuses: ['On progress','Done','Cancel'],
+  // Master List status filter also offers the auto-computed "Late" state (see
+  // mocEffectiveStatus) — kept separate from `statuses` so the MoC edit form's
+  // Status <select> never lets someone set "Late" by hand.
+  mlStatusFilters: ['On progress','Late','Done','Cancel'],
+  classifications: ['Minor','Major','Critical'],
+  // Days allowed from Request Date to complete a MoC before it's auto-flagged
+  // "Late" (mocEffectiveStatus) — same SLA-by-severity pattern as the RCA app.
+  classificationSlaDays: { Minor:14, Major:7, Critical:3 },
   weekValues: ['','o','a','l','n/a','-'],
   // Approval: only Change owner + Area owner are mandatory on every MoC. All other roles
   // (incl. the nature-based functional reviewer) are optional, added on demand — Lean
@@ -1467,7 +1623,8 @@ const state = {
   agendaEditing: null,
   currentUser: null,     // { role:'admin'|'leader', name:string, function:string }
   mlSort: { field:'requestDate', dir:'desc' },
-  apSort: { field:'date', dir:'desc' }
+  apSort: { field:'date', dir:'desc' },
+  mlExpanded: new Set()  // MoC ids currently expanded (▸/▾) in Master List
 };
 
 function cloneSeed(){
@@ -1879,7 +2036,7 @@ async function initStorage(){
 ================================================================================ */
 const VIEW_TITLES = {
   dashboard:'Dashboard', masterlist:'MoC Master List', actionplan:'MoC Action Plan',
-  meeting:'Agenda & Attendant', users:'Người dùng', settings:'Dữ liệu & Cài đặt'
+  meeting:'Agenda & Attendant', guide:'Hướng dẫn sử dụng', users:'Người dùng', settings:'Dữ liệu & Cài đặt'
 };
 function switchView(view){
   state.activeView = view;
@@ -1956,7 +2113,7 @@ const MultiSelect = (()=>{
 
 function renderAllFilterOptions(){
   MultiSelect.init('ml-filter-dept', CONFIG.depts, 'Tất cả bộ phận', renderMasterList);
-  MultiSelect.init('ml-filter-status', CONFIG.statuses, 'Tất cả trạng thái', renderMasterList);
+  MultiSelect.init('ml-filter-status', CONFIG.mlStatusFilters, 'Tất cả trạng thái', renderMasterList);
   MultiSelect.init('ml-filter-nature', CONFIG.natures, 'Tất cả nhóm', renderMasterList);
   MultiSelect.init('ml-filter-type', CONFIG.types, 'Tất cả loại', renderMasterList);
   MultiSelect.init('ap-filter-function', CONFIG.depts, 'Tất cả function', renderActionPlan);
@@ -2002,6 +2159,7 @@ function updateSortIndicators(tableViewId, sortState){
 function statusBadgeClass(status){
   if(status==='Done') return 'badge-done';
   if(status==='Cancel') return 'badge-cancel';
+  if(status==='Late') return 'badge-late';
   return 'badge-progress';
 }
 function renderDashboard(){
@@ -2016,12 +2174,14 @@ function renderDashboard(){
     const diff = Utils.daysDiffFromToday(a.dueDate);
     return diff !== null && diff < 0;
   }).length;
+  const lateMocs = moc.filter(m=>mocEffectiveStatus(m)==='Late').length;
 
   document.getElementById('kpi-cards').innerHTML = [
     {label:'Tổng số MoC', value: total, sub:'Tất cả yêu cầu thay đổi', icon:'&#9671;', tone:'blue'},
     {label:'Đang xử lý', value: progress, sub:'Đang triển khai', icon:'&#9202;', tone:'amber'},
     {label:'Hoàn thành', value: done, sub: total ? Math.round(done/total*100)+'% hoàn thành' : 'Chưa có dữ liệu', icon:'&#10003;', tone:'green'},
     {label:'Đã huỷ', value: cancel, sub:'Không tiếp tục triển khai', icon:'&#10005;', tone:'slate'},
+    {label:'MoC trễ hạn (SLA)', value: lateMocs, sub: lateMocs>0 ? 'Quá hạn theo Mức độ' : 'Ổn định', icon:'&#9200;', tone: lateMocs>0 ? 'red' : 'green'},
     {label:'Action quá hạn', value: overdueActions, sub: overdueActions>0 ? 'Cần xử lý ngay' : 'Ổn định', icon:'&#9888;', tone: overdueActions>0 ? 'red' : 'green'}
   ].map(k=>`
     <div class="card kpi-card kpi-${k.tone}">
@@ -2114,7 +2274,7 @@ function getMasterListFiltered(){
   const types = MultiSelect.getSelected('ml-filter-type');
   const showAllStatus = document.getElementById('ml-show-all-status').checked;
   const rows = state.data.mocList.filter(m=>{
-    const effStatus = m.status || 'On progress';
+    const effStatus = mocEffectiveStatus(m);
     if(statuses.length){
       if(!statuses.includes(effStatus)) return false;
     } else if(!showAllStatus && (effStatus === 'Done' || effStatus === 'Cancel')){
@@ -2137,7 +2297,7 @@ function renderMasterList(){
   const tbody = document.getElementById('ml-tbody');
   if(!rows.length){
     const totalEmpty = !state.data.mocList.length;
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="9"><div class="empty-state">
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="11"><div class="empty-state">
       <div class="empty-state-icon">&#9671;</div>
       <div class="empty-state-title">${totalEmpty ? 'Chưa có MoC nào' : 'Không có kết quả khớp bộ lọc'}</div>
       <div class="empty-state-desc">${totalEmpty ? 'Tạo yêu cầu thay đổi đầu tiên để bắt đầu theo dõi.' : 'Thử điều chỉnh bộ lọc hoặc từ khoá tìm kiếm.'}</div>
@@ -2145,8 +2305,26 @@ function renderMasterList(){
     </div></td></tr>`;
     return;
   }
-  tbody.innerHTML = rows.map(m=>`
+  tbody.innerHTML = rows.map(m=>{
+    const linkedActions = state.data.actionPlan.filter(a=>a.mocCode && m.mocNo && a.mocCode===m.mocNo);
+    const isOpen = state.mlExpanded.has(m.id);
+    const effStatus = mocEffectiveStatus(m);
+    const expRow = `
+    <tr class="exp-row" data-exp-for="${m.id}" style="${isOpen?'':'display:none;'}">
+      <td colspan="11">
+        <div class="exp-row-title">Action đang gắn với ${Utils.escapeHtml(m.mocNo)} (${linkedActions.length})</div>
+        ${linkedActions.length ? `
+        <table class="mini-table">
+          <thead><tr><th>Hành động</th><th style="width:16%">PIC</th><th style="width:14%">Hạn xử lý</th><th style="width:16%">Trạng thái</th></tr></thead>
+          <tbody>
+            ${linkedActions.map(a=>`<tr><td>${Utils.escapeHtml(a.action)}</td><td>${Utils.escapeHtml(a.pic)}</td><td>${Utils.escapeHtml(Utils.formatDateVN(a.dueDate))}</td><td><span class="badge ${statusBadgeClass(a.status)}">${Utils.escapeHtml(a.status||'On progress')}</span></td></tr>`).join('')}
+          </tbody>
+        </table>` : '<div class="exp-row-empty">Chưa có action nào gắn với MoC này.</div>'}
+      </td>
+    </tr>`;
+    return `
     <tr class="row-clickable" data-id="${m.id}">
+      <td><button type="button" class="exp-toggle-btn${isOpen?' open':''}" data-toggle-exp="${m.id}" title="Xem action liên quan">&#9656;</button></td>
       <td class="cell-mono cell-link">${Utils.escapeHtml(m.mocNo)}</td>
       <td>${Utils.escapeHtml(Utils.formatDateVN(m.requestDate))}</td>
       <td>${Utils.escapeHtml(m.changeOwner)}</td>
@@ -2154,23 +2332,34 @@ function renderMasterList(){
       <td class="cell-ellipsis" title="${Utils.escapeHtml(m.nameOfChange)}">${Utils.escapeHtml(m.nameOfChange)}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(m.natureOfChange)}">${Utils.escapeHtml(m.natureOfChange)}</td>
       <td>${Utils.escapeHtml(m.typeOfChange)}</td>
-      <td><span class="badge ${statusBadgeClass(m.status)}">${Utils.escapeHtml(m.status||'On progress')}</span></td>
+      <td>${m.classification ? Utils.escapeHtml(m.classification) : ''}</td>
+      <td><span class="badge ${statusBadgeClass(effStatus)}">${Utils.escapeHtml(effStatus)}</span></td>
       <td class="row-actions">
         <button class="btn btn-sm btn-icon" data-view-moc="${m.id}" title="Xem">&#128065;</button>
         ${canEditMoc(m) ? `<button class="btn btn-sm btn-icon" data-edit-moc="${m.id}" title="Sửa">&#9998;</button>` : ''}
         ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-moc="${m.id}" title="Xoá">&#128465;</button>` : ''}
       </td>
-    </tr>`).join('');
+    </tr>` + expRow;
+  }).join('');
 
-  tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
+  tbody.querySelectorAll('tr.row-clickable[data-id]').forEach(tr=>{
     tr.addEventListener('click', e=>{
-      if(e.target.closest('[data-edit-moc]') || e.target.closest('[data-del-moc]') || e.target.closest('[data-view-moc]')) return;
+      if(e.target.closest('[data-edit-moc]') || e.target.closest('[data-del-moc]') || e.target.closest('[data-view-moc]') || e.target.closest('[data-toggle-exp]')) return;
       openMocModal(tr.dataset.id, true);
     });
   });
   tbody.querySelectorAll('[data-view-moc]').forEach(btn=>btn.addEventListener('click', ()=>openMocModal(btn.dataset.viewMoc, true)));
   tbody.querySelectorAll('[data-edit-moc]').forEach(btn=>btn.addEventListener('click', ()=>openMocModal(btn.dataset.editMoc, false)));
   tbody.querySelectorAll('[data-del-moc]').forEach(btn=>btn.addEventListener('click', ()=>deleteMoc(btn.dataset.delMoc)));
+  tbody.querySelectorAll('[data-toggle-exp]').forEach(btn=>btn.addEventListener('click', e=>{
+    e.stopPropagation();
+    const id = btn.dataset.toggleExp;
+    const expRow = tbody.querySelector(`tr.exp-row[data-exp-for="${id}"]`);
+    const nowOpen = state.mlExpanded.has(id);
+    if(nowOpen){ state.mlExpanded.delete(id); } else { state.mlExpanded.add(id); }
+    btn.classList.toggle('open', !nowOpen);
+    if(expRow) expRow.style.display = nowOpen ? 'none' : '';
+  }));
 }
 function deleteMoc(id){
   if(!requireDelete()) return;
@@ -2213,7 +2402,7 @@ function blankMocRecord(){
     id: Utils.uuid(), mocNo:'', mocNoAuto:true, requestDate: Utils.todayISO(),
     relevantPeople:'', changeOwner:'', dept:'', nameOfChange:'', reasonOfChange:'', description:'',
     risk:'', action:'', results:'', typeOfChange:'', validUntil:'', natureOfChange:'',
-    status:'On progress', remarks:'',
+    status:'On progress', classification:'', remarks:'',
     approvals: CONFIG.approvalCoreRoles.map(role=>({role, name:'', date:'', signOff:false})),
     verification: { result:'', state:'', signatures: CONFIG.verificationRoles.map(role=>({role, date:'', signature:''})) },
     createdAt: Utils.nowISO(), updatedAt: Utils.nowISO(), updatedBy:''
@@ -2280,6 +2469,23 @@ const NATURE_LABEL_VI = {
   'Equipment':'Thiết bị', 'Infrastructure':'Cơ sở hạ tầng',
   'Regulatory & Internal compliance':'Tuân thủ quy định & nội bộ'
 };
+const CLASSIFICATION_LABEL_VI = { 'Minor':'Nhẹ (Minor)', 'Major':'Trung bình (Major)', 'Critical':'Nghiêm trọng (Critical)' };
+
+// Auto-derived status for a MoC record: mirrors the stored `status` unless it's
+// still "On progress" and past its SLA due date (Request Date + days allowed for
+// its Classification), in which case it shows as "Late" — computed live so it
+// never goes stale, same pattern as Action Plan's overdue-date display. Records
+// with no Classification set (old data, or "not applicable") never auto-flip.
+function mocEffectiveStatus(m){
+  const base = m.status || 'On progress';
+  if(base !== 'On progress') return base;
+  if(!m.classification || !m.requestDate) return base;
+  const slaDays = CONFIG.classificationSlaDays[m.classification];
+  if(!slaDays) return base;
+  const diff = Utils.daysDiffFromToday(m.requestDate);
+  if(diff === null) return base;
+  return (-diff) > slaDays ? 'Late' : base;
+}
 
 function openMocModal(id, viewOnly){
   const isNew = !id;
@@ -2315,12 +2521,15 @@ function mocFormTemplate(rec){
       <div class="field"><label>Ngày yêu cầu</label><input id="f-requestDate" type="date" value="${Utils.escapeHtml(rec.requestDate)}"></div>
       <div class="field"><label>Change Owner <span class="req">*</span></label><input id="f-changeOwner" list="people-datalist" value="${Utils.escapeHtml(rec.changeOwner)}"></div>
     </div>
-    <div class="form-grid" style="margin-top:12px;">
+    <div class="form-grid cols-3" style="margin-top:12px;">
       <div class="field"><label>Bộ phận <span class="req">*</span></label>
         <select id="f-dept">${selectOptions(CONFIG.depts, rec.dept)}</select>
       </div>
       <div class="field"><label>Trạng thái</label>
         <select id="f-status">${selectOptions(CONFIG.statuses, rec.status, STATUS_LABEL_VI)}</select>
+      </div>
+      <div class="field"><label>Mức độ (SLA)</label>
+        <select id="f-classification">${selectOptions(CONFIG.classifications, rec.classification, CLASSIFICATION_LABEL_VI)}</select>
       </div>
     </div>
     <div class="field" style="margin-top:12px;">
@@ -2492,6 +2701,7 @@ function collectMocFormData(rec){
   rec.changeOwner = val('f-changeOwner').trim();
   rec.dept = val('f-dept');
   rec.status = val('f-status');
+  rec.classification = val('f-classification');
   rec.relevantPeople = val('f-relevantPeople');
   rec.nameOfChange = val('f-nameOfChange').trim();
   rec.typeOfChange = val('f-typeOfChange');
@@ -2821,7 +3031,8 @@ function exportMasterListCSV(){
     {key:'dept',label:'Dept'},{key:'nameOfChange',label:'Name of change'},{key:'reasonOfChange',label:'Reason of change'},
     {key:'description',label:'Description'},{key:'risk',label:'Risk'},
     {key:'action',label:'Action'},{key:'results',label:'Results'},{key:'typeOfChange',label:'Type of change'},
-    {key:'validUntil',label:'Valid until',format:Utils.formatDateVN},{key:'natureOfChange',label:'Nature of change'},{key:'status',label:'Status'},
+    {key:'validUntil',label:'Valid until',format:Utils.formatDateVN},{key:'natureOfChange',label:'Nature of change'},
+    {key:'classification',label:'Classification'},{key:'status',label:'Status'},
     {key:'remarks',label:'Remarks'}
   ];
   const csv = Utils.toCSV(getMasterListFiltered(), cols);
@@ -3429,10 +3640,27 @@ async function renderUsers(){
       <td>${Utils.escapeHtml(u.function||'')}</td>
       <td><span class="badge ${u.enabled?'badge-y':'badge-n'}">${u.enabled?'Enabled':'Disabled'}</span></td>
       <td class="row-actions">
+        <button class="user-toggle-btn" data-toggle-user="${u.id}" title="${u.enabled?'Vô hiệu hoá ngay':'Kích hoạt ngay'}">${u.enabled?'&#128274;':'&#128275;'}</button>
         <button class="btn btn-sm btn-icon" data-edit-user="${u.id}" title="Sửa">&#9998;</button>
       </td>
     </tr>`).join('');
   tbody.querySelectorAll('[data-edit-user]').forEach(btn=>btn.addEventListener('click', ()=>openUserModal(btn.dataset.editUser)));
+  tbody.querySelectorAll('[data-toggle-user]').forEach(btn=>btn.addEventListener('click', ()=>toggleUserEnabled(btn.dataset.toggleUser)));
+}
+// Quick lock/unlock straight from the table row — same permission model as the
+// edit modal's "enabled" checkbox, just one click instead of opening the modal.
+async function toggleUserEnabled(id){
+  const u = usersCache.find(x=>x.id===id);
+  if(!u) return;
+  const next = !u.enabled;
+  if(!confirm((next?'Kích hoạt':'Vô hiệu hoá')+' tài khoản "'+u.name+'"?')) return;
+  try{
+    await Api.updateUser(id, { enabled: next });
+    showToast(next?'Đã kích hoạt tài khoản.':'Đã vô hiệu hoá tài khoản.', 'ok');
+    await renderUsers();
+  }catch(e){
+    showToast('Không cập nhật được — thử lại.', 'err');
+  }
 }
 let userEditingId = null;
 function openUserModal(id){
