@@ -5,13 +5,19 @@ compatibility_date = "2026-09-01"
 # Restrict which site is allowed to call the API (your GitHub Pages URL).
 # Example: "https://yourusername.github.io"
 [vars]
-ALLOWED_ORIGIN = "https://ngocthanhthien.github.io/MoC/"
+ALLOWED_ORIGIN = "https://ngocthanhthien.github.io"
 
 # Create with:  npx wrangler kv namespace create MOC_KV
 # then paste the returned id below.
 [[kv_namespaces]]
 binding = "MOC_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "2ac174b863454d97bf4210848934c20d"
 
-# The actual secret value is NOT stored here — set it with:
-#   npx wrangler secret put API_KEY
+# Admin login credentials — NOT stored here, set as secrets (never shipped to the
+# frontend, verified only inside the Worker):
+#   npx wrangler secret put ADMIN_USER
+#   npx wrangler secret put ADMIN_PASS
+#
+# NOTE: the old API_KEY secret from the previous single-shared-key version is no
+# longer used — every request now authenticates via a per-user login session
+# instead. You can remove it with:  npx wrangler secret delete API_KEY
