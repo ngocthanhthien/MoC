@@ -15,6 +15,8 @@ lịch sử hội thoại** — quyết định quan trọng và lý do đều g
   `{loginId, password}`, không tương thích với Worker trước đó; đừng rollback riêng một phía.
 - **Đợt 2 cùng ngày, cũng đã deploy cả hai phía** (Worker hiện tại version `9b488b1c`, đã gồm cả quyền xoá tài khoản): gộp "Danh sách
   Change Owner & PIC" vào tab Quản lý người dùng (mục 4).
+- **Đợt 3 cùng ngày (đã push):** làm mới giao diện (mục 5, "UI refresh") — chỉ đổi `index.html`,
+  không đụng Worker.
 - **Worker production:** `https://moc-data-api.dangthanhbinh53.workers.dev` (tài khoản
   Cloudflare của người dùng, KV `MOC_KV` id nằm trong `cloudflare/wrangler.toml`).
 - **Frontend production:** GitHub Pages của repo trên (origin được phép CORS:
@@ -185,6 +187,27 @@ Thêm tab mới: thêm `.nav-item[data-view=x]`, `<section class="view" id="view
 - In ấn: `@media print` ép token sáng và ẩn nút/dialog Theme (chưa test bằng print preview thật).
 - Logo là ảnh base64 trên **một dòng rất dài** trong `.brand` — dùng `Grep`/`sed`, đừng `Read`
   vùng đó (tool đọc file sẽ báo vượt giới hạn token).
+
+### UI refresh (2026-10-08)
+- Khối CSS **`UI REFRESH (2026-10)`** nằm cuối `<style>` chính, **ghi đè** các luật gốc phía trên
+  (không sửa tại chỗ). Muốn chỉnh giao diện header/nút/thẻ KPI/bảng/login thì tìm ở khối này
+  trước. Chỉ dùng token màu nên các theme tối/tương phản cao vẫn đúng.
+- **Icon:** một sprite SVG ở đầu `<body>` (`<symbol id="i-…">`, nét mảnh kiểu outline). Dùng
+  `svgIcon('ten')` trong JS hoặc `<svg class="svg-ico"><use href="#i-ten"/></svg>` trong HTML;
+  thêm icon mới = thêm một `<symbol>`. Không còn dùng emoji/ký tự Unicode cho nav, KPI, nút
+  thao tác trên dòng. (Còn emoji ở tiêu đề tab Hướng dẫn và tiêu đề mục trong popup — chưa đổi.)
+- **Header:** thanh tab nền trắng; topbar thành thanh tiện ích mảnh, tiêu đề dạng
+  "MoC Management / <tên tab>" (không lặp tiêu đề lớn 2 lần nữa).
+- **Bảng:** nút thao tác trên dòng là icon "ghost" (không viền); `td.row-actions` trở lại
+  `display:table-cell` (trước là `flex`, làm lệch đường kẻ); MoC No/ngày/owner không xuống dòng;
+  cột Type hiển thị bỏ hậu tố " Change" (chỉ hiển thị — giá trị lưu/lọc/CSV không đổi); Dept là
+  nhãn `.dept-tag`; Mức độ là `.cls-tag` có chấm màu (Minor xám / Major vàng / Critical đỏ).
+- **Popup:** `.modal` giới hạn trong viewport, chỉ `.modal-body` cuộn; header/footer đứng yên
+  (sửa lỗi nội dung form lộ ra dưới footer sticky khi cuộn). Popup có `<form>` bọc body+footer
+  (login, user) dựa vào luật `.modal > form`.
+- **Login:** nền kem có gradient nhẹ + thẻ có logo; ảnh logo lấy lại `src` từ logo header lúc
+  `init()` (không nhúng base64 lần hai).
+- **Email báo cáo:** đổi các màu xanh dương cũ sang nâu thương hiệu (header `#382E28`, nhấn `#8A5A2F`).
 
 ## 6. Sort, filter, ngày, Việt hoá popup
 

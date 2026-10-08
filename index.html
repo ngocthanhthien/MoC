@@ -753,9 +753,154 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
 .user-flag-cell input{width:16px;height:16px;cursor:pointer;accent-color:var(--blue);}
 .check-inline{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:var(--text);cursor:pointer;}
 .check-inline input{width:auto;min-height:0;}
+
+/* ============================== UI REFRESH (2026-10) ==============================
+   Visual polish layered over the base rules above: one icon style (SVG sprite, see the
+   top of <body>), a lighter two-bar header, calmer tables, tidier KPI cards and a branded
+   login. Only token-based colours are used, so every theme (dark / high contrast /
+   emphasis) keeps working; the font-scale and emphasis rules above still win where they
+   are more specific. */
+.svg-ico{width:1.15em;height:1.15em;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em;}
+
+/* ---- header: white tab bar on top, quiet utility bar underneath ---- */
+#sidebar{background:var(--card);}
+.nav-item{font-weight:500;padding:8px 13px;}
+.nav-item .icon{width:auto;display:inline-flex;font-size:15px;color:var(--muted-light);}
+.nav-item:hover .icon{color:var(--muted);}
+.nav-item.active .icon{color:var(--blue-bright);}
+#topbar{background:var(--bg);padding:8px 26px;}
+.topbar-left{display:flex;align-items:center;gap:8px;}
+.topbar-eyebrow{margin:0;text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:500;}
+.topbar-eyebrow::after{content:'/';margin-left:8px;color:var(--border-dark);}
+#topbar h1{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0;}
+.present-controls,.sync-status,.sync-save-btn{background:var(--card);}
+.sync-save-btn{font-size:15px;color:var(--muted);}
+.ild-theme-btn .ico{display:inline-flex;font-size:14px;}
+
+/* ---- buttons ---- */
+.btn{border-radius:9px;font-weight:500;border-color:var(--border);box-shadow:0 1px 0 rgba(42,32,24,.03);}
+.btn:hover{border-color:var(--border-dark);}
+.btn-primary{font-weight:600;border-color:var(--blue);box-shadow:0 1px 2px rgba(42,32,24,.18);}
+.btn-primary:hover{border-color:var(--blue-dark);}
+.btn-danger{border-color:var(--red-bg);}
+.btn-danger:hover{border-color:var(--red);}
+.btn-sm{border-radius:7px;}
+:root[data-ild-contrast="high"] .btn:not(.btn-primary):not(.btn-danger){border-color:var(--border-dark);}
+
+/* ---- cards / KPI ---- */
+.card{border-radius:14px;padding:20px;}
+.kpi-row{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
+.kpi-card{display:grid;grid-template-columns:1fr auto;column-gap:10px;align-content:start;padding:18px 18px 16px;}
+.kpi-card::after{display:none;}
+.kpi-card .kpi-icon{grid-column:2;grid-row:1 / span 2;margin:0;width:38px;height:38px;border-radius:11px;font-size:17px;}
+.kpi-card .label{grid-column:1;grid-row:1;font-size:11.5px;letter-spacing:.04em;margin-bottom:10px;align-self:center;}
+.kpi-card .value{grid-column:1;grid-row:2;font-size:32px;font-variant-numeric:tabular-nums;}
+.kpi-card .sub{grid-column:1 / -1;grid-row:3;margin-top:6px;font-size:12px;}
+.card-icon-chip{width:32px;height:32px;font-size:15px;}
+.bar-track{height:8px;}
+/* status donut fills its card instead of floating in the top-left corner */
+.dash-grid > .card{display:flex;flex-direction:column;}
+.donut-wrap{flex:1;justify-content:center;gap:44px;padding:8px 0;}
+.donut-outer{width:168px;height:168px;}
+.donut::after{inset:30px;}
+.donut-center .num{font-size:30px;}
+.donut-legend{flex:none;}
+.donut-legend .legend-item{font-size:13.5px;margin-bottom:12px;}
+@media (max-width:520px){ .donut-wrap{gap:22px;} .donut-outer{width:128px;height:128px;} .donut::after{inset:22px;} }
+.filter-bar{border-radius:14px;padding:10px 12px;box-shadow:none;}
+
+/* ---- tables ---- */
+.table-wrap{border-radius:14px;}
+thead th{padding:10px 14px;}
+tbody td{padding:11px 14px;vertical-align:middle;border-bottom:1px solid var(--border);
+  border-bottom-color:color-mix(in srgb,var(--border) 60%,transparent);}
+tbody tr:last-child > td{border-bottom:none;}
+thead th,tbody td{padding-left:12px;padding-right:12px;}
+#ml-tbody > tr.row-clickable > td:nth-child(7){max-width:170px;}
+.cell-mono,.cell-nowrap{white-space:nowrap;}
+.cell-dash{color:var(--muted-light);}
+#ml-tbody > tr.row-clickable > td:nth-child(3),#ml-tbody > tr.row-clickable > td:nth-child(4),
+#ap-tbody td:nth-child(1),#ap-tbody td:nth-child(4){white-space:nowrap;}
+/* a <td> must stay a table cell (display:flex on it broke the row's bottom border) */
+td.row-actions{display:table-cell;white-space:nowrap;text-align:right;width:1%;}
+td.row-actions .btn{margin-left:4px;vertical-align:middle;}
+td.row-actions .btn-icon{border-color:transparent;background:transparent;box-shadow:none;color:var(--muted);
+  padding:6px;border-radius:8px;font-size:15px;}
+td.row-actions .btn-icon:hover{background:var(--blue-light);color:var(--text);}
+td.row-actions .btn-icon.btn-danger{color:var(--muted-light);}
+td.row-actions .btn-icon.btn-danger:hover{background:var(--red-bg);color:var(--red);}
+.exp-toggle-btn{width:26px;height:26px;font-size:14px;border-radius:7px;color:var(--muted-light);}
+.dept-tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--border);
+  font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap;}
+.cls-tag{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap;}
+.cls-tag::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--gray);flex-shrink:0;}
+.cls-major::before{background:var(--amber);}
+.cls-critical{color:var(--red);}
+.cls-critical::before{background:var(--red);}
+.row-del-btn{font-size:15px;border-radius:6px;cursor:pointer;}
+.date-field .date-icon{font-size:15px;display:inline-flex;}
+
+.view > .help-text{max-width:920px;line-height:1.55;}
+
+/* ---- overlays ---- */
+.modal-overlay{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+/* The dialog itself stays inside the viewport and only its body scrolls, so the header and
+   the Save/Close footer are always visible (the old sticky footer let form content show
+   through underneath it while scrolling). */
+.modal{display:flex;flex-direction:column;max-height:calc(100vh - 60px);overflow:hidden;}
+.modal > form{display:flex;flex-direction:column;flex:1;min-height:0;}
+.modal-header,.modal-footer{position:static;flex-shrink:0;}
+.modal-body{flex:1;min-height:0;overflow-y:auto;}
+.toast{border-radius:10px;padding:11px 16px;}
+
+/* ---- login: a branded page instead of a dialog over a grey scrim ---- */
+body.auth-locked #modal-login{background:radial-gradient(900px 480px at 50% -5%,var(--blue-light),transparent 70%),var(--bg);
+  -webkit-backdrop-filter:none;backdrop-filter:none;}
+#modal-login .modal{max-width:400px;border:1px solid var(--border);}
+#modal-login .modal-header{border-bottom:none;padding:28px 28px 0;position:static;align-items:flex-start;}
+#modal-login .modal-body{padding:18px 28px 4px;}
+#modal-login .modal-footer{border-top:none;padding:16px 28px 28px;position:static;}
+.login-brand{display:flex;align-items:center;gap:12px;}
+.login-brand .ild-theme-logo{height:30px;}
+.login-title{font-size:18px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-.01em;}
+.login-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+#modal-login .login-lead{margin:0 0 18px;font-size:13px;}
+#modal-login .field input{min-height:44px;}
+#btn-do-login{min-height:44px;font-size:14px;}
 </style>
 </head>
 <body class="auth-locked">
+<!-- Icon sprite: one stroke style for every icon in the app. Use via svgIcon(name) in JS
+     or <svg class="svg-ico"><use href="#i-name"/></svg> in markup. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-tasks" viewBox="0 0 24 24"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></symbol>
+  <symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></symbol>
+  <symbol id="i-alarm" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
+  <symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 7.5h6.5M12 12h8.5M12 16.5h6.5"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+</svg>
 <div id="app">
 
   <!-- ============================== SIDEBAR ============================== -->
@@ -768,14 +913,14 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
       </div>
     </div>
     <nav>
-      <div class="nav-item" data-view="masterlist" title="Master List"><span class="icon">&#9776;</span><span class="nav-label">Master List</span></div>
-      <div class="nav-item" data-view="actionplan" title="Action Plan"><span class="icon">&#10003;</span><span class="nav-label">Action Plan</span></div>
-      <div class="nav-item" data-view="meeting" title="Agenda &amp; Attendant"><span class="icon">&#128197;</span><span class="nav-label">Agenda &amp; Attendant</span></div>
-      <div class="nav-item active" data-view="dashboard" title="Dashboard"><span class="icon">&#9635;</span><span class="nav-label">Dashboard</span></div>
-      <div class="nav-item" data-view="guide" title="Hướng dẫn sử dụng"><span class="icon">&#128214;</span><span class="nav-label">Hướng dẫn</span></div>
+      <div class="nav-item" data-view="masterlist" title="Master List"><span class="icon"><svg class="svg-ico" aria-hidden="true"><use href="#i-list"/></svg></span><span class="nav-label">Master List</span></div>
+      <div class="nav-item" data-view="actionplan" title="Action Plan"><span class="icon"><svg class="svg-ico" aria-hidden="true"><use href="#i-tasks"/></svg></span><span class="nav-label">Action Plan</span></div>
+      <div class="nav-item" data-view="meeting" title="Agenda &amp; Attendant"><span class="icon"><svg class="svg-ico" aria-hidden="true"><use href="#i-calendar"/></svg></span><span class="nav-label">Agenda &amp; Attendant</span></div>
+      <div class="nav-item active" data-view="dashboard" title="Dashboard"><span class="icon"><svg class="svg-ico" aria-hidden="true"><use href="#i-dashboard"/></svg></span><span class="nav-label">Dashboard</span></div>
+      <div class="nav-item" data-view="guide" title="Hướng dẫn sử dụng"><span class="icon"><svg class="svg-ico" aria-hidden="true"><use href="#i-book"/></svg></span><span class="nav-label">Hướng dẫn</span></div>
       <div class="nav-divider"></div>
-      <div class="nav-item" data-view="users" title="Người dùng"><span class="icon">&#128101;</span><span class="nav-label">Người dùng</span></div>
-      <div class="nav-item" data-view="settings" title="Dữ liệu &amp; Cài đặt"><span class="icon">&#9881;</span><span class="nav-label">Dữ liệu &amp; Cài đặt</span></div>
+      <div class="nav-item" data-view="users" title="Người dùng"><span class="icon"><svg class="svg-ico" aria-hidden="true"><use href="#i-users"/></svg></span><span class="nav-label">Người dùng</span></div>
+      <div class="nav-item" data-view="settings" title="Dữ liệu &amp; Cài đặt"><span class="icon"><svg class="svg-ico" aria-hidden="true"><use href="#i-settings"/></svg></span><span class="nav-label">Dữ liệu &amp; Cài đặt</span></div>
     </nav>
     <div class="spacer"></div>
     <div class="footer-note">QA.P.035<br>Management of Change</div>
@@ -798,10 +943,10 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
         <div class="topbar-sep"></div>
         <div class="topbar-group">
           <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Đang tải...</span></div>
-          <button class="btn btn-icon sync-save-btn" id="btn-save-now" title="Lưu ngay (Ctrl+S)">&#128190;</button>
+          <button class="btn btn-icon sync-save-btn" id="btn-save-now" title="Lưu ngay (Ctrl+S)" aria-label="Lưu ngay"><svg class="svg-ico" aria-hidden="true"><use href="#i-save"/></svg></button>
         </div>
         <div class="topbar-sep"></div>
-        <button class="btn btn-sm ild-theme-btn" id="ild-theme-open-btn" title="Tuỳ chỉnh giao diện" aria-label="Tuỳ chỉnh giao diện" aria-haspopup="dialog"><span class="ico">&#127912;</span><span>Giao diện</span></button>
+        <button class="btn btn-sm ild-theme-btn" id="ild-theme-open-btn" title="Tuỳ chỉnh giao diện" aria-label="Tuỳ chỉnh giao diện" aria-haspopup="dialog"><span class="ico"><svg class="svg-ico" aria-hidden="true"><use href="#i-theme"/></svg></span><span>Giao diện</span></button>
         <div class="topbar-sep"></div>
         <div id="auth-area"></div>
       </div>
@@ -823,7 +968,7 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
           <div class="card">
             <div class="card-title-row">
               <div class="card-title-lead">
-                <span class="card-icon-chip" style="--chip-bg:var(--blue-light);--chip-fg:var(--blue);">&#9673;</span>
+                <span class="card-icon-chip" style="--chip-bg:var(--blue-light);--chip-fg:var(--blue);"><svg class="svg-ico" aria-hidden="true"><use href="#i-pie"/></svg></span>
                 <div><h3>Trạng thái MoC</h3><p class="card-subtitle">Tình trạng triển khai hiện tại</p></div>
               </div>
             </div>
@@ -832,7 +977,7 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
           <div class="card">
             <div class="card-title-row">
               <div class="card-title-lead">
-                <span class="card-icon-chip" style="--chip-bg:var(--red-bg);--chip-fg:var(--red);">&#9888;</span>
+                <span class="card-icon-chip" style="--chip-bg:var(--red-bg);--chip-fg:var(--red);"><svg class="svg-ico" aria-hidden="true"><use href="#i-alert"/></svg></span>
                 <div><h3>Cần chú ý</h3><p class="card-subtitle">Action sắp đến hạn hoặc đã trễ hạn</p></div>
               </div>
             </div>
@@ -843,7 +988,7 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
           <div class="card">
             <div class="card-title-row">
               <div class="card-title-lead">
-                <span class="card-icon-chip" style="--chip-bg:var(--indigo-bg);--chip-fg:var(--indigo);">&#127970;</span>
+                <span class="card-icon-chip" style="--chip-bg:var(--indigo-bg);--chip-fg:var(--indigo);"><svg class="svg-ico" aria-hidden="true"><use href="#i-building"/></svg></span>
                 <div><h3>MoC theo Bộ phận</h3><p class="card-subtitle">Phân bổ theo Dept</p></div>
               </div>
             </div>
@@ -852,7 +997,7 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
           <div class="card">
             <div class="card-title-row">
               <div class="card-title-lead">
-                <span class="card-icon-chip" style="--chip-bg:var(--teal-bg);--chip-fg:var(--teal);">&#128295;</span>
+                <span class="card-icon-chip" style="--chip-bg:var(--teal-bg);--chip-fg:var(--teal);"><svg class="svg-ico" aria-hidden="true"><use href="#i-wrench"/></svg></span>
                 <div><h3>MoC theo Nhóm thay đổi</h3><p class="card-subtitle">Phân bổ theo Nature of change</p></div>
               </div>
             </div>
@@ -880,8 +1025,8 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
             <input type="checkbox" id="ml-show-all-status"> Hiện cả Done/Cancel
           </label>
           <div class="spacer"></div>
-          <button class="btn btn-sm" id="btn-export-ml">&#8681; Xuất CSV</button>
-          <button class="btn btn-sm btn-primary" id="btn-open-email">&#128231; Gửi Email báo cáo</button>
+          <button class="btn btn-sm" id="btn-export-ml"><svg class="svg-ico" aria-hidden="true"><use href="#i-download"/></svg> Xuất CSV</button>
+          <button class="btn btn-sm btn-primary" id="btn-open-email"><svg class="svg-ico" aria-hidden="true"><use href="#i-mail"/></svg> Gửi Email báo cáo</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -920,7 +1065,7 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
             <input type="checkbox" id="ap-show-all-status"> Hiện cả Done/Cancel
           </label>
           <div class="spacer"></div>
-          <button class="btn btn-sm" id="btn-export-ap">&#8681; Xuất CSV</button>
+          <button class="btn btn-sm" id="btn-export-ap"><svg class="svg-ico" aria-hidden="true"><use href="#i-download"/></svg> Xuất CSV</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -1064,10 +1209,10 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
             <p class="section-subtitle" id="users-account-info">Quản lý tài khoản, vai trò và trạng thái hoạt động — chỉ Admin thấy được mục này</p>
           </div>
           <div class="users-toolbar">
-            <button class="btn btn-sm" id="btn-users-refresh">&#8635; Tải lại</button>
-            <button class="btn btn-sm" id="btn-users-export">&#8681; Xuất CSV</button>
-            <button class="btn btn-sm" id="btn-users-template">&#8681; Tải Template CSV</button>
-            <button class="btn btn-sm" id="btn-users-import">&#8679; Nhập từ CSV</button>
+            <button class="btn btn-sm" id="btn-users-refresh"><svg class="svg-ico" aria-hidden="true"><use href="#i-refresh"/></svg> Tải lại</button>
+            <button class="btn btn-sm" id="btn-users-export"><svg class="svg-ico" aria-hidden="true"><use href="#i-download"/></svg> Xuất CSV</button>
+            <button class="btn btn-sm" id="btn-users-template"><svg class="svg-ico" aria-hidden="true"><use href="#i-download"/></svg> Tải Template CSV</button>
+            <button class="btn btn-sm" id="btn-users-import"><svg class="svg-ico" aria-hidden="true"><use href="#i-upload"/></svg> Nhập từ CSV</button>
             <input type="file" id="input-users-file" accept=".csv,text/csv" style="display:none;">
             <button class="btn btn-primary" id="btn-add-user">+ Thêm người dùng</button>
           </div>
@@ -1257,12 +1402,18 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
 <div class="modal-overlay" id="modal-login">
   <div class="modal modal-sm">
     <div class="modal-header">
-      <h2>Chào mừng đến MoC Management</h2>
+      <div class="login-brand">
+        <span class="ild-theme-logo-box"><img class="ild-theme-logo" id="login-logo" alt="ILD"></span>
+        <div>
+          <div class="login-title">MoC Management</div>
+          <div class="login-sub">QA Management System · QA.P.035</div>
+        </div>
+      </div>
       <button type="button" class="modal-close" data-close-modal="modal-login">&times;</button>
     </div>
     <form id="login-form">
       <div class="modal-body">
-        <p class="modal-subtitle">Đăng nhập bằng tài khoản được cấp để quản lý các yêu cầu thay đổi.</p>
+        <p class="modal-subtitle login-lead">Đăng nhập bằng tài khoản được cấp để quản lý các yêu cầu thay đổi.</p>
         <div class="field">
           <label for="login-username">Tên đăng nhập</label>
           <input type="text" id="login-username" placeholder="Tên đăng nhập hoặc email" autocomplete="username" autocapitalize="none" spellcheck="false">
@@ -1453,7 +1604,7 @@ function wireDateField(nativeInput){
 
   const icon = document.createElement('span');
   icon.className = 'date-icon';
-  icon.textContent = '\u{1F4C5}';
+  icon.innerHTML = svgIcon('calendar');
   wrap.appendChild(icon);
 
   const openPicker = () => {
@@ -1476,6 +1627,10 @@ function wireDateField(nativeInput){
 }
 function wireAllDateFields(root){
   (root||document).querySelectorAll('input[type="date"]:not(.date-native)').forEach(wireDateField);
+}
+
+function svgIcon(name){
+  return '<svg class="svg-ico" aria-hidden="true"><use href="#i-'+name+'"/></svg>';
 }
 
 function showToast(msg, type){
@@ -2188,15 +2343,15 @@ function renderDashboard(){
   const lateMocs = moc.filter(m=>mocEffectiveStatus(m)==='Late').length;
 
   document.getElementById('kpi-cards').innerHTML = [
-    {label:'Tổng số MoC', value: total, sub:'Tất cả yêu cầu thay đổi', icon:'&#9671;', tone:'blue'},
-    {label:'Đang xử lý', value: progress, sub:'Đang triển khai', icon:'&#9202;', tone:'amber'},
-    {label:'Hoàn thành', value: done, sub: total ? Math.round(done/total*100)+'% hoàn thành' : 'Chưa có dữ liệu', icon:'&#10003;', tone:'green'},
-    {label:'Đã huỷ', value: cancel, sub:'Không tiếp tục triển khai', icon:'&#10005;', tone:'slate'},
-    {label:'MoC trễ hạn (SLA)', value: lateMocs, sub: lateMocs>0 ? 'Quá hạn theo Mức độ' : 'Ổn định', icon:'&#9200;', tone: lateMocs>0 ? 'red' : 'green'},
-    {label:'Action quá hạn', value: overdueActions, sub: overdueActions>0 ? 'Cần xử lý ngay' : 'Ổn định', icon:'&#9888;', tone: overdueActions>0 ? 'red' : 'green'}
+    {label:'Tổng số MoC', value: total, sub:'Tất cả yêu cầu thay đổi', icon:'layers', tone:'blue'},
+    {label:'Đang xử lý', value: progress, sub:'Đang triển khai', icon:'clock', tone:'amber'},
+    {label:'Hoàn thành', value: done, sub: total ? Math.round(done/total*100)+'% hoàn thành' : 'Chưa có dữ liệu', icon:'check-circle', tone:'green'},
+    {label:'Đã huỷ', value: cancel, sub:'Không tiếp tục triển khai', icon:'x-circle', tone:'slate'},
+    {label:'MoC trễ hạn (SLA)', value: lateMocs, sub: lateMocs>0 ? 'Quá hạn theo Mức độ' : 'Ổn định', icon:'alarm', tone: lateMocs>0 ? 'red' : 'green'},
+    {label:'Action quá hạn', value: overdueActions, sub: overdueActions>0 ? 'Cần xử lý ngay' : 'Ổn định', icon:'alert', tone: overdueActions>0 ? 'red' : 'green'}
   ].map(k=>`
     <div class="card kpi-card kpi-${k.tone}">
-      <div class="kpi-icon">${k.icon}</div>
+      <div class="kpi-icon">${svgIcon(k.icon)}</div>
       <div class="label">${k.label}</div>
       <div class="value">${k.value}</div>
       <div class="sub">${k.sub}</div>
@@ -2335,20 +2490,20 @@ function renderMasterList(){
     </tr>`;
     return `
     <tr class="row-clickable" data-id="${m.id}">
-      <td><button type="button" class="exp-toggle-btn${isOpen?' open':''}" data-toggle-exp="${m.id}" title="Xem action liên quan">&#9656;</button></td>
+      <td><button type="button" class="exp-toggle-btn${isOpen?' open':''}" data-toggle-exp="${m.id}" title="Xem action liên quan"><svg class="svg-ico" aria-hidden="true"><use href="#i-chevron"/></svg></button></td>
       <td class="cell-mono cell-link">${Utils.escapeHtml(m.mocNo)}</td>
       <td>${Utils.escapeHtml(Utils.formatDateVN(m.requestDate))}</td>
       <td>${Utils.escapeHtml(m.changeOwner)}</td>
-      <td>${Utils.escapeHtml(m.dept)}</td>
+      <td>${m.dept ? `<span class="dept-tag">${Utils.escapeHtml(m.dept)}</span>` : ''}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(m.nameOfChange)}">${Utils.escapeHtml(m.nameOfChange)}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(m.natureOfChange)}">${Utils.escapeHtml(m.natureOfChange)}</td>
-      <td>${Utils.escapeHtml(m.typeOfChange)}</td>
-      <td>${m.classification ? Utils.escapeHtml(m.classification) : ''}</td>
+      <td class="cell-nowrap" title="${Utils.escapeHtml(m.typeOfChange)}">${Utils.escapeHtml((m.typeOfChange||'').replace(/ Change$/,''))}</td>
+      <td>${m.classification ? `<span class="cls-tag cls-${Utils.escapeHtml(m.classification.toLowerCase())}">${Utils.escapeHtml(m.classification)}</span>` : '<span class="cell-dash">—</span>'}</td>
       <td><span class="badge ${statusBadgeClass(effStatus)}">${Utils.escapeHtml(effStatus)}</span></td>
       <td class="row-actions">
-        <button class="btn btn-sm btn-icon" data-view-moc="${m.id}" title="Xem">&#128065;</button>
-        ${canEditMoc(m) ? `<button class="btn btn-sm btn-icon" data-edit-moc="${m.id}" title="Sửa">&#9998;</button>` : ''}
-        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-moc="${m.id}" title="Xoá">&#128465;</button>` : ''}
+        <button class="btn btn-sm btn-icon" data-view-moc="${m.id}" title="Xem"><svg class="svg-ico" aria-hidden="true"><use href="#i-eye"/></svg></button>
+        ${canEditMoc(m) ? `<button class="btn btn-sm btn-icon" data-edit-moc="${m.id}" title="Sửa"><svg class="svg-ico" aria-hidden="true"><use href="#i-pencil"/></svg></button>` : ''}
+        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-moc="${m.id}" title="Xoá"><svg class="svg-ico" aria-hidden="true"><use href="#i-trash"/></svg></button>` : ''}
       </td>
     </tr>` + expRow;
   }).join('');
@@ -2532,6 +2687,7 @@ function openMocModal(id, viewOnly){
   const mocOverlay = document.getElementById('modal-moc');
   mocOverlay.classList.add('open');
   mocOverlay.scrollTop = 0;
+  document.getElementById('moc-modal-body').scrollTop = 0;
 }
 function closeMocModal(){
   state.modalOpen = false;
@@ -2640,7 +2796,7 @@ function renderMocSubTables(rec){
       <td><input class="appr-name" value="${Utils.escapeHtml(a.name)}"></td>
       <td><input class="appr-date" type="date" value="${Utils.escapeHtml(a.date)}"></td>
       <td style="text-align:center;"><input class="appr-signoff" type="checkbox" ${a.signOff?'checked':''}></td>
-      <td>${isCore ? '' : `<button class="row-del-btn" data-del-approval="${idx}" title="Bỏ vai trò này">&#128465;</button>`}</td>
+      <td>${isCore ? '' : `<button class="row-del-btn" data-del-approval="${idx}" title="Bỏ vai trò này"><svg class="svg-ico" aria-hidden="true"><use href="#i-trash"/></svg></button>`}</td>
     </tr>`;
   }).join('');
   document.getElementById('verif-tbody').innerHTML = rec.verification.signatures.map((s,idx)=>`
@@ -2847,9 +3003,9 @@ function renderActionPlan(){
       <td><span class="badge ${statusBadgeClass(a.status)}">${Utils.escapeHtml(a.status||'On progress')}</span></td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(a.remark)}">${Utils.escapeHtml(a.remark)}</td>
       <td class="row-actions">
-        <button class="btn btn-sm btn-icon" data-view-action="${a.id}" title="Xem">&#128065;</button>
-        ${canEdit() ? `<button class="btn btn-sm btn-icon" data-edit-action="${a.id}" title="Sửa">&#9998;</button>` : ''}
-        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-action="${a.id}" title="Xoá">&#128465;</button>` : ''}
+        <button class="btn btn-sm btn-icon" data-view-action="${a.id}" title="Xem"><svg class="svg-ico" aria-hidden="true"><use href="#i-eye"/></svg></button>
+        ${canEdit() ? `<button class="btn btn-sm btn-icon" data-edit-action="${a.id}" title="Sửa"><svg class="svg-ico" aria-hidden="true"><use href="#i-pencil"/></svg></button>` : ''}
+        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-action="${a.id}" title="Xoá"><svg class="svg-ico" aria-hidden="true"><use href="#i-trash"/></svg></button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -2917,6 +3073,7 @@ function openActionModal(id, viewOnly){
   const actionOverlay = document.getElementById('modal-action');
   actionOverlay.classList.add('open');
   actionOverlay.scrollTop = 0;
+  document.getElementById('action-modal-body').scrollTop = 0;
 }
 function closeActionModal(){ state.modalOpen=false; document.getElementById('modal-action').classList.remove('open'); state.actionEditing=null; }
 function saveActionFromModal(){
@@ -2949,8 +3106,8 @@ function renderAgenda(){
       <td>${Utils.escapeHtml(a.time)}</td>
       <td>${Utils.escapeHtml(a.pic)}</td>
       <td class="row-actions">
-        <button class="btn btn-sm btn-icon" data-edit-agenda="${a.id}" title="Sửa">&#9998;</button>
-        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-agenda="${a.id}" title="Xoá">&#128465;</button>` : ''}
+        <button class="btn btn-sm btn-icon" data-edit-agenda="${a.id}" title="Sửa"><svg class="svg-ico" aria-hidden="true"><use href="#i-pencil"/></svg></button>
+        ${canDelete() ? `<button class="btn btn-sm btn-icon btn-danger" data-del-agenda="${a.id}" title="Xoá"><svg class="svg-ico" aria-hidden="true"><use href="#i-trash"/></svg></button>` : ''}
       </td>
     </tr>`).join('') : '<tr class="empty-row"><td colspan="5">Chưa có agenda.</td></tr>';
   tbody.querySelectorAll('[data-edit-agenda]').forEach(btn=>btn.addEventListener('click', ()=>openAgendaModal(btn.dataset.editAgenda)));
@@ -3035,7 +3192,7 @@ function renderAttendant(){
       <td class="att-sticky-col att-col-function"><input class="att-function" ${dis} value="${Utils.escapeHtml(p.function)}" style="border:none;background:transparent;width:100%;"></td>
       <td class="att-sticky-col att-col-requirement"><input class="att-requirement" ${dis} value="${Utils.escapeHtml(p.requirement)}" style="border:none;background:transparent;width:100%;"></td>
       ${WEEK_KEYS.map(w=>`<td${w===currentWeek?' style="background:var(--blue-light);"':''}><div class="wk-cell" data-week="${w}" data-v="${Utils.escapeHtml((p.weeks&&p.weeks[w])||'')}">${Utils.escapeHtml((p.weeks&&p.weeks[w])||'')}</div></td>`).join('')}
-      <td>${deleting ? `<button class="btn btn-sm btn-icon btn-danger" data-del-attendant="${p.id}" title="Xoá">&#128465;</button>` : ''}</td>
+      <td>${deleting ? `<button class="btn btn-sm btn-icon btn-danger" data-del-attendant="${p.id}" title="Xoá"><svg class="svg-ico" aria-hidden="true"><use href="#i-trash"/></svg></button>` : ''}</td>
     </tr>`).join('') : `<tr class="empty-row"><td colspan="${3+WEEK_KEYS.length+1}">Chưa có người tham dự.</td></tr>`;
 
   tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
@@ -3171,7 +3328,7 @@ function drawEmailChart(filteredMocs){
   ctx.fillStyle = '#1e293b'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   ctx.font = 'bold 23px '+FONT;
   ctx.fillText('📊 Thống kê MoC theo Trạng thái & Nhóm thay đổi', PAD, 46);
-  ctx.strokeStyle = '#dbeafe'; ctx.lineWidth = 2;
+  ctx.strokeStyle = '#E6D6BA'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(PAD, 58); ctx.lineTo(W-PAD, 58); ctx.stroke();
 
   // ---- Donut: Status distribution ----
@@ -3273,7 +3430,7 @@ function getAttendantWeekInfo(){
 }
 function buildAttendantSectionHTML(att){
   if(!att.rows.length) return '';
-  const th = 'padding:11px 12px;text-align:left;color:#1e40af;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;';
+  const th = 'padding:11px 12px;text-align:left;color:#514135;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;';
   const td = 'padding:11px 12px;font-size:15px;border-bottom:1px solid #eef2f7;';
   const rowsHtml = att.rows.map((r,i)=>{
     const style = ATTENDANT_STATUS_STYLE[r.status] || ATTENDANT_STATUS_STYLE[''];
@@ -3290,9 +3447,9 @@ function buildAttendantSectionHTML(att){
   if(att.absent.length) reminderParts.push('<p style="background:#fee2e2;border-radius:10px;padding:14px 16px;margin:10px 0;font-size:15px;"><b style="color:#dc2626;">⚠️ Vắng mặt tuần '+att.weekKey+':</b> '+att.absent.map(r=>Utils.escapeHtml(r.name)).join(', ')+' — đề nghị tham gia đầy đủ các buổi họp Weekly Quality Review sắp tới.</p>');
   if(att.late.length) reminderParts.push('<p style="background:#fef3c7;border-radius:10px;padding:14px 16px;margin:10px 0;font-size:15px;"><b style="color:#d97706;">⏰ Đi trễ tuần '+att.weekKey+':</b> '+att.late.map(r=>Utils.escapeHtml(r.name)).join(', ')+' — đề nghị tham gia đúng giờ.</p>');
   return `
-    <h3 style="color:#1e293b;font-size:19px;margin:30px 0 14px;padding-left:12px;border-left:5px solid #2563eb;">Điểm danh họp tuần ${att.weekKey}</h3>
+    <h3 style="color:#1e293b;font-size:19px;margin:30px 0 14px;padding-left:12px;border-left:5px solid #8A5A2F;">Điểm danh họp tuần ${att.weekKey}</h3>
     <table width="100%" style="border-collapse:collapse;margin-bottom:8px;">
-      <thead><tr style="background:#eff6ff;">
+      <thead><tr style="background:#F6E8CF;">
         <th style="${th}">Name</th>
         <th style="${th}">Function</th>
         <th style="${th}">Requirement</th>
@@ -3326,13 +3483,13 @@ function buildEmailHTML(filteredMocs, pendingActions, chartDataUri, attendantInf
     const d=Utils.daysDiffFromToday(a.dueDate); return d!==null && d<0;
   }).length;
 
-  const th = 'padding:11px 12px;text-align:left;color:#1e40af;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;';
+  const th = 'padding:11px 12px;text-align:left;color:#514135;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;';
   const td = 'padding:11px 12px;font-size:15px;border-bottom:1px solid #eef2f7;';
   const zebra = i => i%2===0 ? '#ffffff' : '#f8fafc';
 
   const mocRows = filteredMocs.slice(0,20).map((m,i)=>`
     <tr style="background:${zebra(i)};">
-      <td style="${td}font-family:Consolas,monospace;font-size:13.5px;white-space:nowrap;font-weight:700;color:#2563eb;">${Utils.escapeHtml(m.mocNo)}</td>
+      <td style="${td}font-family:Consolas,monospace;font-size:13.5px;white-space:nowrap;font-weight:700;color:#8A5A2F;">${Utils.escapeHtml(m.mocNo)}</td>
       <td style="${td}">${Utils.escapeHtml(oneLine(m.nameOfChange,60))}</td>
       <td style="${td}">${Utils.escapeHtml(m.changeOwner)}</td>
       <td style="${td}">${Utils.escapeHtml(m.dept)}</td>
@@ -3359,7 +3516,7 @@ function buildEmailHTML(filteredMocs, pendingActions, chartDataUri, attendantInf
     </tr>`;
   }).join('');
 
-  const sectionTitle = txt => `<h3 style="color:#1e293b;font-size:19px;margin:30px 0 14px;padding-left:12px;border-left:5px solid #2563eb;">${txt}</h3>`;
+  const sectionTitle = txt => `<h3 style="color:#1e293b;font-size:19px;margin:30px 0 14px;padding-left:12px;border-left:5px solid #8A5A2F;">${txt}</h3>`;
   const kpiCard = (label,value,color) => `
     <td style="padding:4px;">
       <div style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:14px 10px;text-align:center;">
@@ -3370,10 +3527,10 @@ function buildEmailHTML(filteredMocs, pendingActions, chartDataUri, attendantInf
 
   return `
   <div style="font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;max-width:740px;line-height:1.65;font-size:15px;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
-    <table width="100%" style="border-collapse:collapse;background:#2563eb;">
+    <table width="100%" style="border-collapse:collapse;background:#382E28;">
       <tr><td style="padding:26px 30px;">
         <div style="font-size:24px;font-weight:800;color:#ffffff;">📋 Báo cáo tình hình Quản lý Thay đổi (MoC)</div>
-        <div style="font-size:14px;color:#dbeafe;margin-top:6px;">Cập nhật ngày ${today} &nbsp;•&nbsp; Phạm vi: ${Utils.escapeHtml(getEmailFilterDesc())}</div>
+        <div style="font-size:14px;color:#E6D6BA;margin-top:6px;">Cập nhật ngày ${today} &nbsp;•&nbsp; Phạm vi: ${Utils.escapeHtml(getEmailFilterDesc())}</div>
       </td></tr>
     </table>
 
@@ -3395,7 +3552,7 @@ function buildEmailHTML(filteredMocs, pendingActions, chartDataUri, attendantInf
 
       ${sectionTitle('Các MoC đang theo dõi ('+total+')')}
       ${total ? `<table width="100%" style="border-collapse:collapse;margin-bottom:8px;">
-        <thead><tr style="background:#eff6ff;">
+        <thead><tr style="background:#F6E8CF;">
           <th style="${th}">MoC No</th>
           <th style="${th}">Tên thay đổi</th>
           <th style="${th}">Change Owner</th>
@@ -3407,7 +3564,7 @@ function buildEmailHTML(filteredMocs, pendingActions, chartDataUri, attendantInf
 
       ${sectionTitle('Action đang theo dõi ('+pendingActions.length+')')}
       ${pendingActions.length ? `<table width="100%" style="border-collapse:collapse;margin-bottom:8px;">
-        <thead><tr style="background:#eff6ff;">
+        <thead><tr style="background:#F6E8CF;">
           <th style="${th}">Issue / Action</th>
           <th style="${th}">PIC</th>
           <th style="${th}">Function</th>
@@ -3746,8 +3903,8 @@ async function renderUsers(){
       <td class="row-actions">
         <button class="btn btn-sm" data-role-user="${id}">${isAdmin?'Hạ xuống User':'Nâng lên Admin'}</button>
         <button class="btn btn-sm${u.enabled?' btn-danger':''}" data-toggle-user="${id}" ${isSelf ? 'disabled title="Không thể khoá tài khoản của chính bạn"' : ''}>${u.enabled?'Vô hiệu hoá':'Kích hoạt'}</button>
-        <button class="btn btn-sm btn-icon" data-edit-user="${id}" title="Sửa / đặt lại mật khẩu">&#9998;</button>
-        <button class="btn btn-sm btn-icon btn-danger" data-del-user="${id}" ${isSelf ? 'disabled title="Không thể xoá tài khoản của chính bạn"' : 'title="Xoá tài khoản"'}>&#128465;</button>
+        <button class="btn btn-sm btn-icon" data-edit-user="${id}" title="Sửa / đặt lại mật khẩu"><svg class="svg-ico" aria-hidden="true"><use href="#i-pencil"/></svg></button>
+        <button class="btn btn-sm btn-icon btn-danger" data-del-user="${id}" ${isSelf ? 'disabled title="Không thể xoá tài khoản của chính bạn"' : 'title="Xoá tài khoản"'}><svg class="svg-ico" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </td>
     </tr>`;
   }).join('');
@@ -4155,6 +4312,8 @@ function bindStaticEvents(){
    INIT
 ================================================================================ */
 async function init(){
+  // the login card reuses the header logo instead of embedding the image a second time
+  document.getElementById('login-logo').src = document.querySelector('#sidebar .ild-theme-logo').src;
   bindStaticEvents();
   renderAllFilterOptions();
   bindSortableHeaders('view-masterlist', 'mlSort', renderMasterList);
