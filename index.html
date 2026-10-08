@@ -852,12 +852,13 @@ tbody td{padding:11px 14px;vertical-align:middle;border-bottom:1px solid var(--b
   border-bottom-color:color-mix(in srgb,var(--border) 60%,transparent);}
 tbody tr:last-child > td{border-bottom:none;}
 thead th,tbody td{padding-left:12px;padding-right:12px;}
-#ml-tbody > tr.row-clickable > td:nth-child(7){max-width:170px;}
+#ml-tbody > tr.row-clickable > td:nth-child(7){max-width:150px;}
 .cell-mono,.cell-nowrap{white-space:nowrap;}
 .cell-dash{color:var(--muted-light);}
+.due-manual{color:var(--muted-light);font-size:11px;}
 /* Name of change / Issue / Action: always readable in full — the cell wraps and the row grows
    with the text instead of cutting it off with an ellipsis. */
-.cell-wrap{white-space:normal;overflow-wrap:break-word;min-width:240px;line-height:1.5;}
+.cell-wrap{white-space:normal;overflow-wrap:break-word;min-width:200px;line-height:1.5;}
 #ml-tbody > tr.row-clickable > td:nth-child(3),#ml-tbody > tr.row-clickable > td:nth-child(4),
 #ap-tbody td:nth-child(1),#ap-tbody td:nth-child(4){white-space:nowrap;}
 /* a <td> must stay a table cell (display:flex on it broke the row's bottom border) */
@@ -1078,6 +1079,7 @@ body.auth-locked #modal-login{background:radial-gradient(900px 480px at 50% -5%,
               <th data-sort="natureOfChange">Nature<span class="sort-arrow"></span></th>
               <th data-sort="typeOfChange">Type<span class="sort-arrow"></span></th>
               <th data-sort="classification">Mức độ<span class="sort-arrow"></span></th>
+              <th>Hạn</th>
               <th data-sort="status">Status<span class="sort-arrow"></span></th>
               <th></th>
             </tr></thead>
@@ -1194,10 +1196,10 @@ body.auth-locked #modal-login{background:radial-gradient(900px 480px at 50% -5%,
               <ol>
                 <li>Vào <strong>Master List</strong> → bấm "+ Thêm MoC mới".</li>
                 <li>Điền thông tin: Change Owner, Bộ phận, Tên thay đổi, Loại/Nhóm thay đổi, Lý do, Mô tả, Rủi ro/Hành động giảm thiểu, và bảng Phê duyệt.</li>
-                <li>Chọn <strong>Mức độ (Classification)</strong> — Nhẹ/Trung bình/Nghiêm trọng — để app tự tính hạn xử lý và tự chuyển trạng thái sang <span class="badge badge-late" style="display:inline;">Trễ hạn</span> nếu quá hạn mà vẫn "Đang xử lý".</li>
+                <li>Chọn <strong>Mức độ (Classification)</strong> — Nhẹ/Trung bình/Nghiêm trọng — để app tự tính <strong>Hạn hoàn thành</strong> (Ngày yêu cầu + số ngày của Mức độ, Admin chỉnh số ngày này ở tab Cài đặt) và tự chuyển trạng thái sang <span class="badge badge-late" style="display:inline;">Trễ hạn</span> nếu quá hạn mà vẫn "Đang xử lý".</li>
                 <li>Bấm mũi tên &#9656; đầu mỗi dòng trong Master List để xem nhanh các Action đang gắn với MoC đó mà không cần mở popup.</li>
               </ol>
-              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Trạng thái "Trễ hạn" là tự động tính theo Ngày yêu cầu + số ngày cho phép của Mức độ — không cần tự tay đổi Status, chỉ cần đổi sang "Done"/"Cancel" khi MoC thực sự kết thúc.</div>
+              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Trạng thái "Trễ hạn" (Late) tự hiện khi MoC còn "Đang xử lý" mà đã qua Hạn hoàn thành (cột <strong>Hạn</strong> trong Master List) — không cần tự tay đổi Status, chỉ cần đổi sang "Done"/"Cancel" khi MoC thực sự kết thúc. MoC cần thêm thời gian thì nhờ Admin nhập <strong>Hạn hoàn thành</strong> riêng trong popup MoC để gia hạn.</div>
             </div>
 
             <div class="guide-section" id="guide-action">
@@ -1292,6 +1294,20 @@ body.auth-locked #modal-login{background:radial-gradient(900px 480px at 50% -5%,
               </div>
               <button class="btn btn-sm" id="btn-cloud-refresh">Làm mới</button>
             </div>
+          </div>
+
+          <div class="card">
+            <div class="settings-card-head">
+              <span class="sch-icon"><svg class="svg-ico" aria-hidden="true"><use href="#i-alarm"/></svg></span>
+              <h3>Hạn hoàn thành theo Mức độ (SLA)</h3>
+            </div>
+            <div class="desc" style="margin-bottom:12px;">Số ngày kể từ <strong>Ngày yêu cầu</strong> đến hạn hoàn thành mặc định của MoC, theo từng Mức độ. Quá hạn mà MoC vẫn "On progress" thì hiện <strong>Late</strong>. Áp dụng cho mọi người dùng và mọi MoC không có Hạn hoàn thành riêng.</div>
+            <div class="form-grid cols-3" style="max-width:540px;">
+              <div class="field"><label for="sla-minor">Minor (ngày)</label><input type="number" id="sla-minor" min="1" max="3650" step="1"></div>
+              <div class="field"><label for="sla-major">Major (ngày)</label><input type="number" id="sla-major" min="1" max="3650" step="1"></div>
+              <div class="field"><label for="sla-critical">Critical (ngày)</label><input type="number" id="sla-critical" min="1" max="3650" step="1"></div>
+            </div>
+            <div style="margin-top:12px;"><button type="button" class="btn btn-sm btn-primary" id="btn-sla-save">Lưu số ngày</button></div>
           </div>
 
           <div class="card">
@@ -1516,8 +1532,9 @@ const CONFIG = {
   // Status <select> never lets someone set "Late" by hand.
   mlStatusFilters: ['On progress','Late','Done','Cancel'],
   classifications: ['Minor','Major','Critical'],
-  // Days allowed from Request Date to complete a MoC before it's auto-flagged
-  // "Late" (mocEffectiveStatus) — same SLA-by-severity pattern as the RCA app.
+  // DEFAULT days from Request Date to a MoC's due date, per Classification — used only
+  // until the Admin's own numbers arrive from the Worker (state.data.settings, edited
+  // in the Settings tab). Always read through slaDaysFor(), never directly.
   classificationSlaDays: { Minor:14, Major:7, Critical:3 },
   weekValues: ['','o','a','l','n/a','-'],
   // Approval: only Change owner + Area owner are mandatory on every MoC. All other roles
@@ -1750,8 +1767,9 @@ const Api = (()=>{
 
   const getData = () => request('/data', { auth:true });
   const putData = (dataObj) => request('/data', { method:'PUT', body: dataObj, auth:true });
+  const putSettings = (settings) => request('/settings', { method:'PUT', body: settings, auth:true });
 
-  return { login, me, logout, listUsers, createUser, updateUser, deleteUser, clearLegacyPeople, getData, putData };
+  return { login, me, logout, listUsers, createUser, updateUser, deleteUser, clearLegacyPeople, getData, putData, putSettings };
 })();
 
 /* ================================================================================
@@ -1815,7 +1833,9 @@ const Storage = (()=>{
       agenda: mergeCollections(local.agenda, remote.agenda),
       attendant: mergeCollections(local.attendant, remote.attendant),
       // derived by the Worker from user accounts — the server copy replaces ours outright
-      people: remote.people !== undefined ? remote.people : (local.people || [])
+      people: remote.people !== undefined ? remote.people : (local.people || []),
+      // admin-set app settings (SLA days) — also the server's to decide
+      settings: remote.settings !== undefined ? remote.settings : (local.settings || null)
     };
   }
 
@@ -1831,7 +1851,7 @@ const Storage = (()=>{
    STATE
 ================================================================================ */
 const state = {
-  data: { schemaVersion:1, mocList:[], actionPlan:[], agenda:[], attendant:[], people:[] },
+  data: { schemaVersion:1, mocList:[], actionPlan:[], agenda:[], attendant:[], people:[], settings:null },
   // ids queued for a tombstoned (soft) delete on the next save — see deleteMoc() etc.
   // and buildOutgoingPayload(). Kept out of state.data so every existing render
   // function keeps working against a "clean" collection with no deleted rows in it.
@@ -1869,7 +1889,9 @@ function normalizeData(d){
     attendant: clean(d && d.attendant),
     // Change Owner / PIC pick-lists, read-only here — the Worker derives them from the
     // accounts ticked in the Users tab: {id, kind:'owner'|'pic', name, updatedAt}
-    people: clean(d && d.people)
+    people: clean(d && d.people),
+    // { slaDays:{Minor,Major,Critical} } set by the Admin in Settings; null until first sync
+    settings: (d && d.settings) || null
   };
 }
 
@@ -2257,7 +2279,7 @@ function renderActiveView(){
   else if(state.activeView==='actionplan') renderActionPlan();
   else if(state.activeView==='meeting'){ renderAgenda(); renderAttendant(); }
   else if(state.activeView==='users') renderUsers();
-  else if(state.activeView==='settings') updateFileStatusUI();
+  else if(state.activeView==='settings'){ updateFileStatusUI(); renderSlaSettings(); }
 }
 
 /* ================================================================================
@@ -2385,7 +2407,7 @@ function renderDashboard(){
     {label:'Đang xử lý', value: progress, sub:'Đang triển khai', icon:'clock', tone:'amber'},
     {label:'Hoàn thành', value: done, sub: total ? Math.round(done/total*100)+'% hoàn thành' : 'Chưa có dữ liệu', icon:'check-circle', tone:'green'},
     {label:'Đã huỷ', value: cancel, sub:'Không tiếp tục triển khai', icon:'x-circle', tone:'slate'},
-    {label:'MoC trễ hạn (SLA)', value: lateMocs, sub: lateMocs>0 ? 'Quá hạn theo Mức độ' : 'Ổn định', icon:'alarm', tone: lateMocs>0 ? 'red' : 'green'},
+    {label:'MoC trễ hạn (SLA)', value: lateMocs, sub: lateMocs>0 ? 'Đã qua Hạn hoàn thành' : 'Ổn định', icon:'alarm', tone: lateMocs>0 ? 'red' : 'green'},
     {label:'Action quá hạn', value: overdueActions, sub: overdueActions>0 ? 'Cần xử lý ngay' : 'Ổn định', icon:'alert', tone: overdueActions>0 ? 'red' : 'green'}
   ].map(k=>`
     <div class="card kpi-card kpi-${k.tone}">
@@ -2501,7 +2523,7 @@ function renderMasterList(){
   const tbody = document.getElementById('ml-tbody');
   if(!rows.length){
     const totalEmpty = !state.data.mocList.length;
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="11"><div class="empty-state">
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="12"><div class="empty-state">
       <div class="empty-state-icon">&#9671;</div>
       <div class="empty-state-title">${totalEmpty ? 'Chưa có MoC nào' : 'Không có kết quả khớp bộ lọc'}</div>
       <div class="empty-state-desc">${totalEmpty ? 'Tạo yêu cầu thay đổi đầu tiên để bắt đầu theo dõi.' : 'Thử điều chỉnh bộ lọc hoặc từ khoá tìm kiếm.'}</div>
@@ -2513,9 +2535,14 @@ function renderMasterList(){
     const linkedActions = state.data.actionPlan.filter(a=>a.mocCode && m.mocNo && a.mocCode===m.mocNo);
     const isOpen = state.mlExpanded.has(m.id);
     const effStatus = mocEffectiveStatus(m);
+    const due = mocDueDate(m);
+    const dueDiff = effStatus === 'Done' || effStatus === 'Cancel' ? null : Utils.daysDiffFromToday(due);
+    let dueSub = '';
+    if(dueDiff !== null && dueDiff < 0) dueSub = `<div class="due-sub is-overdue">${Math.abs(dueDiff)} ngày trễ</div>`;
+    else if(dueDiff !== null && dueDiff <= 3) dueSub = `<div class="due-sub is-soon">${dueDiff===0 ? 'Đến hạn hôm nay' : 'còn '+dueDiff+' ngày'}</div>`;
     const expRow = `
     <tr class="exp-row" data-exp-for="${m.id}" style="${isOpen?'':'display:none;'}">
-      <td colspan="11">
+      <td colspan="12">
         <div class="exp-row-title">Action đang gắn với ${Utils.escapeHtml(m.mocNo)} (${linkedActions.length})</div>
         ${linkedActions.length ? `
         <table class="mini-table">
@@ -2537,6 +2564,9 @@ function renderMasterList(){
       <td class="cell-ellipsis" title="${Utils.escapeHtml(m.natureOfChange)}">${Utils.escapeHtml(m.natureOfChange)}</td>
       <td class="cell-nowrap" title="${Utils.escapeHtml(m.typeOfChange)}">${Utils.escapeHtml((m.typeOfChange||'').replace(/ Change$/,''))}</td>
       <td>${m.classification ? `<span class="cls-tag cls-${Utils.escapeHtml(m.classification.toLowerCase())}">${Utils.escapeHtml(m.classification)}</span>` : '<span class="cell-dash">—</span>'}</td>
+      <td class="due-cell"${m.dueDate ? ' title="Hạn do Admin đặt riêng cho MoC này"' : ''}>
+        <div class="due-date">${due ? Utils.escapeHtml(Utils.formatDateVN(due)) : '<span class="cell-dash">—</span>'}${m.dueDate ? ' <span class="due-manual">'+svgIcon('pencil')+'</span>' : ''}</div>${dueSub}
+      </td>
       <td><span class="badge ${statusBadgeClass(effStatus)}">${Utils.escapeHtml(effStatus)}</span></td>
       <td class="row-actions">
         <button class="btn btn-sm btn-icon" data-view-moc="${m.id}" title="Xem"><svg class="svg-ico" aria-hidden="true"><use href="#i-eye"/></svg></button>
@@ -2623,7 +2653,7 @@ function blankMocRecord(){
     id: Utils.uuid(), mocNo:'', mocNoAuto:true, requestDate: Utils.todayISO(),
     relevantPeople:'', changeOwner:'', dept:'', nameOfChange:'', reasonOfChange:'', description:'',
     risk:'', action:'', results:'', typeOfChange:'', validUntil:'', natureOfChange:'',
-    status:'On progress', classification:'', remarks:'',
+    status:'On progress', classification:'', dueDate:'', remarks:'',
     approvals: CONFIG.approvalCoreRoles.map(role=>({role, name:'', date:'', signOff:false})),
     verification: { result:'', state:'', signatures: CONFIG.verificationRoles.map(role=>({role, date:'', signature:''})) },
     createdAt: Utils.nowISO(), updatedAt: Utils.nowISO(), updatedBy:''
@@ -2693,20 +2723,33 @@ const NATURE_LABEL_VI = {
 const CLASSIFICATION_LABEL_VI = { 'Minor':'Nhẹ (Minor)', 'Major':'Trung bình (Major)', 'Critical':'Nghiêm trọng (Critical)' };
 
 // Auto-derived status for a MoC record: mirrors the stored `status` unless it's
-// still "On progress" and past its SLA due date (Request Date + days allowed for
-// its Classification), in which case it shows as "Late" — computed live so it
-// never goes stale, same pattern as Action Plan's overdue-date display. Records
-// with no Classification set (old data, or "not applicable") never auto-flip.
+// still "On progress" and past its due date (mocDueDate), in which case it shows as
+// "Late" — computed live so it never goes stale, same pattern as Action Plan's
+// overdue-date display. A record with neither a Classification nor its own due date
+// has no due date at all and never auto-flips.
 function mocEffectiveStatus(m){
   const base = m.status || 'On progress';
   if(base !== 'On progress') return base;
-  if(!m.classification || !m.requestDate) return base;
-  const slaDays = CONFIG.classificationSlaDays[m.classification];
-  if(!slaDays) return base;
-  const diff = Utils.daysDiffFromToday(m.requestDate);
-  if(diff === null) return base;
-  return (-diff) > slaDays ? 'Late' : base;
+  const diff = Utils.daysDiffFromToday(mocDueDate(m));
+  return (diff !== null && diff < 0) ? 'Late' : base;
 }
+// Days allowed for a Classification: the Admin's numbers (Settings tab, synced through
+// the Worker) when available, otherwise the built-in defaults.
+function slaDaysFor(classification){
+  const custom = state.data.settings && state.data.settings.slaDays;
+  return (custom && custom[classification]) || CONFIG.classificationSlaDays[classification] || 0;
+}
+function addDaysISO(iso, days){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+  return m ? new Date(Date.UTC(+m[1], +m[2]-1, +m[3] + days)).toISOString().slice(0,10) : '';
+}
+// Default due date = Request Date + SLA days of the Classification ('' when either is missing).
+function mocAutoDueDate(m){
+  const days = slaDaysFor(m.classification);
+  return (days && m.requestDate) ? addDaysISO(m.requestDate, days) : '';
+}
+// The date a MoC is actually held to: its own dueDate when an Admin set one, else the default.
+function mocDueDate(m){ return m.dueDate || mocAutoDueDate(m); }
 
 function openMocModal(id, viewOnly){
   const isNew = !id;
@@ -2721,6 +2764,13 @@ function openMocModal(id, viewOnly){
   const mocAllowEdit = !viewOnly && (isNew ? canEdit() : canEditMoc(rec));
   const mocAllowDelete = !viewOnly && canDelete();
   applyModalPermissions('moc-modal-body', 'btn-save-moc', 'btn-delete-moc', isNew, mocAllowEdit, mocAllowDelete);
+  if(!canAccessSettings()){
+    // a MoC's own due date is the Admin's call (the Worker enforces it too)
+    const dueInp = document.getElementById('f-dueDate');
+    dueInp.disabled = true;
+    const dueDisp = dueInp.parentNode.querySelector('.date-display');
+    if(dueDisp) dueDisp.disabled = true;
+  }
   state.modalOpen = true;
   const mocOverlay = document.getElementById('modal-moc');
   mocOverlay.classList.add('open');
@@ -2757,6 +2807,10 @@ function mocFormTemplate(rec){
       <div class="field"><label>Mức độ (SLA)</label>
         <select id="f-classification">${selectOptions(CONFIG.classifications, rec.classification, CLASSIFICATION_LABEL_VI)}</select>
       </div>
+    </div>
+    <div class="form-grid cols-3" style="margin-top:12px;">
+      <div class="field"><label>Hạn hoàn thành</label><input id="f-dueDate" type="date" value="${Utils.escapeHtml(rec.dueDate||'')}"></div>
+      <div class="field" style="grid-column:span 2;align-self:end;"><div class="help-text" id="f-dueDate-hint" style="margin:0 0 10px;"></div></div>
     </div>
     <div class="field" style="margin-top:12px;">
       <label>Người liên quan</label>
@@ -2908,6 +2962,20 @@ function bindMocFormEvents(rec, isNew){
   dateInp.addEventListener('change', maybeSuggest);
   if(isNew && deptSel.value) maybeSuggest();
 
+  // "Hạn hoàn thành": empty = follow the Classification's SLA; only an Admin types one in
+  const clsSel = document.getElementById('f-classification');
+  const dueHint = document.getElementById('f-dueDate-hint');
+  function updateDueHint(){
+    const auto = mocAutoDueDate({ classification: clsSel.value, requestDate: dateInp.value });
+    dueHint.textContent = (auto
+        ? 'Để trống = tự tính theo Mức độ: ' + Utils.formatDateVN(auto) + '.'
+        : 'Để trống và chưa chọn Mức độ = không có hạn (không bao giờ bị Late).')
+      + (canAccessSettings() ? ' Nhập ngày khác để đặt/gia hạn riêng cho MoC này.' : ' Chỉ Admin đặt hoặc gia hạn được.');
+  }
+  clsSel.addEventListener('change', updateDueHint);
+  dateInp.addEventListener('change', updateDueHint);
+  updateDueHint();
+
   const typeSel = document.getElementById('f-typeOfChange');
   const natureSel = document.getElementById('f-natureOfChange');
   typeSel.addEventListener('change', ()=>{
@@ -2931,6 +2999,7 @@ function collectMocFormData(rec){
   rec.dept = val('f-dept');
   rec.status = val('f-status');
   rec.classification = val('f-classification');
+  rec.dueDate = val('f-dueDate');
   rec.relevantPeople = val('f-relevantPeople');
   rec.nameOfChange = val('f-nameOfChange').trim();
   rec.typeOfChange = val('f-typeOfChange');
@@ -3271,10 +3340,10 @@ function exportMasterListCSV(){
     {key:'description',label:'Description'},{key:'risk',label:'Risk'},
     {key:'action',label:'Action'},{key:'results',label:'Results'},{key:'typeOfChange',label:'Type of change'},
     {key:'validUntil',label:'Valid until',format:Utils.formatDateVN},{key:'natureOfChange',label:'Nature of change'},
-    {key:'classification',label:'Classification'},{key:'status',label:'Status'},
+    {key:'classification',label:'Classification'},{key:'dueDate',label:'Due date',format:Utils.formatDateVN},{key:'status',label:'Status'},
     {key:'remarks',label:'Remarks'}
   ];
-  const csv = Utils.toCSV(getMasterListFiltered(), cols);
+  const csv = Utils.toCSV(getMasterListFiltered().map(m=>({ ...m, dueDate: mocDueDate(m) })), cols);
   Utils.downloadBlob(csv, 'MoC_Master_List_'+Utils.todayISO()+'.csv', 'text/csv;charset=utf-8');
 }
 function exportActionPlanCSV(){
@@ -3810,6 +3879,27 @@ async function handleCloudRefresh(){
   updateFileStatusUI();
   showToast(state.cloudOk ? 'Đã đồng bộ mới nhất.' : 'Không kết nối được — kiểm tra mạng.', state.cloudOk ? 'ok' : 'err');
 }
+function renderSlaSettings(){
+  // sync polling re-renders the active view — don't overwrite a number being typed
+  if(/^sla-/.test((document.activeElement && document.activeElement.id) || '')) return;
+  CONFIG.classifications.forEach(c=>{ document.getElementById('sla-'+c.toLowerCase()).value = slaDaysFor(c); });
+}
+async function saveSlaSettings(){
+  if(!canAccessSettings()){ showToast('Chỉ Admin mới truy cập được mục này.', 'err'); return; }
+  const slaDays = {};
+  for(const c of CONFIG.classifications){
+    const n = Number(document.getElementById('sla-'+c.toLowerCase()).value);
+    if(!Number.isInteger(n) || n < 1 || n > 3650){ showToast('Số ngày của '+c+' phải là số nguyên từ 1 đến 3650.', 'err'); return; }
+    slaDays[c] = n;
+  }
+  try{
+    await Api.putSettings({ slaDays });
+    await refreshFromCloud(true);
+    showToast('Đã lưu số ngày SLA — áp dụng cho mọi người dùng.', 'ok');
+  }catch(e){
+    showToast(e.status === 403 ? 'Chỉ Admin mới đổi được số ngày SLA.' : 'Không lưu được — kiểm tra mạng rồi thử lại.', 'err');
+  }
+}
 function handleBackupExport(){
   Utils.downloadBlob(JSON.stringify(state.data, null, 2), 'moc_backup_'+Utils.todayISO()+'.json', 'application/json');
   showToast('Đã xuất file sao lưu.', 'ok');
@@ -3822,9 +3912,10 @@ function handleBackupImportFile(file){
       const parsed = JSON.parse(reader.result);
       if(!parsed || typeof parsed !== 'object') throw new Error('invalid');
       if(!confirm('Nhập dữ liệu từ file sao lưu sẽ GHÉP với dữ liệu hiện tại (bản ghi mới hơn được giữ lại). Tiếp tục?')) return;
-      const people = state.data.people; // comes from user accounts, never from a backup file
+      // people come from user accounts and settings from the Worker — never from a backup file
+      const people = state.data.people, settings = state.data.settings;
       state.data = Storage.mergeData(state.data, normalizeData(parsed));
-      state.data.people = people;
+      state.data.people = people; state.data.settings = settings;
       markDirty();
       renderActiveView();
       showToast('Đã nhập dữ liệu sao lưu.', 'ok');
@@ -3844,9 +3935,9 @@ function handleResetSeed(){
     state.data[col].forEach(rec=>queueDelete(col, rec.id));
   });
   // the Change Owner / PIC pick-lists are configuration, not MoC data — keep them
-  const keepPeople = state.data.people;
+  const keepPeople = state.data.people, keepSettings = state.data.settings;
   state.data = cloneSeed();
-  state.data.people = keepPeople;
+  state.data.people = keepPeople; state.data.settings = keepSettings;
   markDirty();
   renderActiveView();
   renderAllFilterOptions();
@@ -4332,6 +4423,7 @@ function bindStaticEvents(){
     e.target.value = '';
   });
   document.getElementById('btn-reset-seed').addEventListener('click', handleResetSeed);
+  document.getElementById('btn-sla-save').addEventListener('click', saveSlaSettings);
 
   // User Management
   document.getElementById('btn-add-user').addEventListener('click', ()=>openUserModal(null));

@@ -34,6 +34,13 @@
  *                                             from the User Directory (accounts ticked
  *                                             Change Owner / PIC), never written via /data
  *
+ *  4. App settings — PUT /settings  (admin only; everyone reads them inside GET /data)
+ *     Stored at KV key `moc_settings`: { slaDays: { Minor, Major, Critical } } — days
+ *     from a MoC's Request Date to its default due date, per Classification.
+ *
+ * A MoC's own `dueDate` (overrides the default above) may only be set or changed by an
+ * admin — enforced in assertWriteAllowed.
+ *
  * Bindings expected (see wrangler.toml):
  *   KV namespace  MOC_KV
  *   secrets       ADMIN_USER, ADMIN_PASS
@@ -42,6 +49,7 @@
 
 const DATA_KEY = 'moc_data';
 const USERS_KEY = 'moc_users';
+const SETTINGS_KEY = 'moc_settings';
 const SESSION_PREFIX = 'session:';
 const SESSION_TTL_SECONDS = 12 * 60 * 60; // 12h shift-length session
 
@@ -297,7 +305,13 @@ function assertWriteAllowed(collectionName, incomingArr, storedArr, session){
   // edits (only records that actually changed content)
   for(const [id, incomingRec] of incomingMap){
     const storedRec = storedMap.get(id);
-    if(!storedRec) continue; // brand-new record — anyone enabled may create
+    if(!storedRec){
+      // brand-new record — anyone enabled may create, but not with a hand-set due date
+      if(collectionName === 'mocList' && !isAdmin && incomingRec.dueDate){
+        throw { status: 403, body: { error: 'forbidden', reason: 'due_date_admin_only', collection: collectionName, id } };
+      }
+      continue;
+    }
     if(JSON.stringify(incomingRec) === JSON.stringify(storedRec)) continue; // unchanged passthrough
 
     const isDeleteTransition = !storedRec.deleted && !!incomingRec.deleted;
@@ -307,6 +321,9 @@ function assertWriteAllowed(collectionName, incomingArr, storedArr, session){
     }
     if(isAdmin) continue;
     if(collectionName === 'mocList'){
+      if((incomingRec.dueDate || '') !== (storedRec.dueDate || '')){
+        throw { status: 403, body: { error: 'forbidden', reason: 'due_date_admin_only', collection: collectionName, id } };
+      }
       if(!isPersonInRecord(nameKey, storedRec)){
         throw { status: 403, body: { error: 'forbidden', reason: 'not_owner', collection: collectionName, id } };
       }
@@ -396,9 +413,32 @@ async function loadData(env, users){
   }
   return stored;
 }
-function clientData(stored, users){
+function clientData(stored, users, settings){
   const { peopleMigrated, ...rest } = stored;
-  return { ...rest, people: derivedPeople(users) };
+  return { ...rest, people: derivedPeople(users), settings };
+}
+
+/* -------------------------------------------------------------------------- */
+/* app settings (SLA days per Classification) */
+/* -------------------------------------------------------------------------- */
+const DEFAULT_SLA_DAYS = { Minor: 14, Major: 7, Critical: 3 };
+async function loadSettings(env){
+  const s = (await env.MOC_KV.get(SETTINGS_KEY, 'json')) || {};
+  return { slaDays: { ...DEFAULT_SLA_DAYS, ...(s.slaDays || {}) } };
+}
+async function handleSettingsPut(request, env){
+  const { error } = await requireAdmin(request, env);
+  if(error) return error;
+  let body;
+  try{ body = await request.json(); }catch(e){ return json({ error: 'invalid_json' }, 400, env); }
+  const slaDays = {};
+  for(const key of Object.keys(DEFAULT_SLA_DAYS)){
+    const n = body.slaDays && body.slaDays[key];
+    if(!Number.isInteger(n) || n < 1 || n > 3650) return json({ error: 'sla_invalid' }, 400, env);
+    slaDays[key] = n;
+  }
+  await env.MOC_KV.put(SETTINGS_KEY, JSON.stringify({ slaDays }));
+  return json({ slaDays }, 200, env);
 }
 
 async function handleUsersList(request, env){
@@ -511,7 +551,7 @@ async function handleDataGet(request, env){
   const { error } = await requireAuth(request, env);
   if(error) return error;
   const users = await loadUsers(env);
-  return json(clientData(await loadData(env, users), users), 200, env);
+  return json(clientData(await loadData(env, users), users, await loadSettings(env)), 200, env);
 }
 
 async function handleDataPut(request, env){
@@ -535,7 +575,7 @@ async function handleDataPut(request, env){
 
   const merged = mergeData(incoming, stored);
   await env.MOC_KV.put(DATA_KEY, JSON.stringify(merged));
-  return json(clientData(merged, users), 200, env);
+  return json(clientData(merged, users, await loadSettings(env)), 200, env);
 }
 
 export default {
@@ -560,6 +600,7 @@ export default {
 
     if(path === '/data' && request.method === 'GET') return handleDataGet(request, env);
     if(path === '/data' && request.method === 'PUT') return handleDataPut(request, env);
+    if(path === '/settings' && request.method === 'PUT') return handleSettingsPut(request, env);
 
     return json({ error: 'not_found' }, 404, env);
   }

@@ -18,6 +18,8 @@ lịch sử hội thoại** — quyết định quan trọng và lý do đều g
 - **Đợt 3 cùng ngày (đã push):** làm mới giao diện (mục 5, "UI refresh") — chỉ đổi `index.html`,
   không đụng Worker.
 - **Đợt 4 cùng ngày (đã push):** thêm chọn Màu nền trong "Tuỳ chỉnh giao diện" (mục 5) — chỉ `index.html`.
+- **Đợt 5 cùng ngày (đã deploy cả hai phía, Worker version `ca979c82`):** số ngày SLA do Admin
+  chỉnh + "Hạn hoàn thành" riêng từng MoC (mục 4, "SLA / trạng thái tự động").
 - **Worker production:** `https://moc-data-api.dangthanhbinh53.workers.dev` (tài khoản
   Cloudflare của người dùng, KV `MOC_KV` id nằm trong `cloudflare/wrangler.toml`).
 - **Frontend production:** GitHub Pages của repo trên (origin được phép CORS:
@@ -120,12 +122,23 @@ Thêm tab mới: thêm `.nav-item[data-view=x]`, `<section class="view" id="view
   sort cột + filter nhiều lựa chọn (mục 6), cột **Mức độ** (Classification), **dòng mở rộng ▸/▾**
   hiện nhanh Action gắn với MoC (khớp `action.mocCode === moc.mocNo`; trạng thái mở lưu ở
   `state.mlExpanded`), nút Xuất CSV, nút Gửi Email báo cáo (mục 7).
-- **SLA / trạng thái tự động:** MoC có trường `classification` (`Minor|Major|Critical`).
-  `mocEffectiveStatus(m)` trả `'Late'` nếu status gốc là `On progress` **và** số ngày từ
-  `requestDate` > `CONFIG.classificationSlaDays[classification]` (mặc định 14/7/3). Tính **live**,
-  **không ghi đè** `status` lưu trữ. Không có classification → không bao giờ tự thành Late.
-  `Late` chỉ là trạng thái hiển thị/lọc (`CONFIG.mlStatusFilters`), **không** nằm trong
-  `CONFIG.statuses` nên form không cho đặt tay. CSV xuất `status` gốc.
+- **SLA / trạng thái tự động:** mỗi MoC có một **Hạn hoàn thành** = `mocDueDate(m)`:
+  `m.dueDate` nếu Admin đã nhập riêng cho MoC đó, nếu không thì `mocAutoDueDate(m)` =
+  `requestDate` + `slaDaysFor(classification)` ngày; thiếu cả hai → không có hạn.
+  `mocEffectiveStatus(m)` trả `'Late'` khi status gốc là `On progress` **và** hôm nay đã qua hạn.
+  Tính **live**, **không ghi đè** `status` lưu trữ. `Late` chỉ là trạng thái hiển thị/lọc
+  (`CONFIG.mlStatusFilters`), **không** nằm trong `CONFIG.statuses` nên form không cho đặt tay.
+  - **Số ngày SLA** (mặc định Minor 14 / Major 7 / Critical 3 trong `CONFIG.classificationSlaDays`)
+    do Admin chỉnh ở tab Cài đặt → `PUT /settings` → KV `moc_settings` `{slaDays}`. Mọi client
+    nhận qua trường `settings` của `GET /data` (chỉ-đọc, giống `people`: `Storage.mergeData` lấy
+    nguyên bản server, không nằm trong payload gửi lên, không nằm trong `moc_data`). **Luôn đọc
+    qua `slaDaysFor()`**, đừng đọc thẳng `CONFIG`.
+  - **`dueDate` riêng của MoC** (ô "Hạn hoàn thành" trong popup, ISO): **chỉ Admin** đặt/đổi/xoá.
+    Frontend khoá ô với User; Worker chặn trong `assertWriteAllowed` (403 `due_date_admin_only`
+    nếu non-admin tạo MoC có `dueDate` hoặc gửi `dueDate` khác bản đang lưu).
+  - Master List có cột **Hạn** (không sort được vì là giá trị tính; có dòng phụ "N ngày trễ" /
+    "còn N ngày" khi ≤3 ngày; biểu tượng bút = hạn do Admin đặt). CSV có cột `Due date` (hạn hiệu
+    lực) và vẫn xuất `status` gốc.
 - **Action Plan** — theo dõi hành động, sort/filter, hạn tô màu theo tình trạng.
 - **Agenda & Attendant** — agenda họp, bảng điểm danh W1–W52 (3 cột sticky, tự cuộn tới tuần hiện tại).
 - **Hướng dẫn** — view tĩnh (`#view-guide`): menu neo, bảng quyền, callout, FAQ `<details>`.
@@ -325,10 +338,10 @@ khoản cũ và báo lại cho từng người (mật khẩu của họ vẫn l�
   Giao diện bị ẩn ở màn hình ≤480px vì topbar hết chỗ — truy cập được từ ≥481px).
 - Sửa MoC xét quyền theo bản ghi **trên server** → hai người sửa gần đồng thời có thể bị 403 và
   bị đồng bộ lại (mất thao tác dang dở); so khớp owner theo tên chuỗi nên trùng/khác tên có thể sai.
-- SLA chỉ áp cho MoC (không cho Action — Action đã có `dueDate` riêng). Số ngày SLA nằm cứng trong
-  `CONFIG.classificationSlaDays` (chưa có UI chỉnh).
+- SLA chỉ áp cho MoC (không cho Action — Action đã có `dueDate` riêng). Đổi số ngày SLA áp dụng
+  hồi tố cho mọi MoC chưa có hạn riêng (không lưu lịch sử thay đổi số ngày).
 - Ý tưởng chưa làm: phân quyền Action theo PIC; đính kèm bằng chứng qua File System Access API
   (như app RCA, chỉ Chrome/Edge desktop — cần cân nhắc kiến trúc); `Late` trong CSV/email;
-  UI chỉnh SLA; sort theo trạng thái hiệu lực.
+  sort theo trạng thái hiệu lực / theo cột Hạn.
 - Chưa kiểm chứng bằng print preview thật và chưa chạy lại CSV/email sau khi đổi giao diện. App
   **không có** nút In/PDF/Excel (chỉ CSV, `.eml`, JSON backup) — đừng ghi trong Hướng dẫn rằng có.
