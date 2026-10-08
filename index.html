@@ -743,22 +743,16 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
 /* ============================== STATUS BADGE — LATE (SLA) ============================== */
 .badge-late{background:var(--red-bg);color:var(--red);}
 
-/* ============================== SETTINGS — CHANGE OWNER / PIC LISTS ============================== */
-.people-lists-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-@media (max-width:720px){.people-lists-grid{grid-template-columns:1fr;}}
-.people-list{list-style:none;margin:8px 0;padding:0;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface);}
-.people-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);font-size:13px;}
-.people-list li:last-child{border-bottom:none;}
-.people-list li.people-empty{color:var(--muted-light);font-size:12.5px;justify-content:flex-start;}
-.people-add{display:flex;gap:6px;}
-.people-add input{flex:1;min-width:0;padding:7px 10px;border:1px solid var(--border-dark);border-radius:6px;background:var(--card);color:var(--text);}
-
 /* ============================== USERS — TOOLBAR / ROLE BADGES ============================== */
 .users-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .users-banner{display:none;background:var(--red-bg);color:var(--red);border-radius:8px;padding:9px 12px;font-size:13px;margin-bottom:12px;}
 .badge-role-admin{background:var(--purple-bg);color:var(--purple);}
 .badge-role-user{background:var(--indigo-bg);color:var(--indigo);}
 .user-self-tag,.user-legacy-tag{font-size:11px;color:var(--muted-light);font-weight:400;}
+.user-flag-cell{text-align:center;}
+.user-flag-cell input{width:16px;height:16px;cursor:pointer;accent-color:var(--blue);}
+.check-inline{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;color:var(--text);cursor:pointer;}
+.check-inline input{width:auto;min-height:0;}
 </style>
 </head>
 <body class="auth-locked">
@@ -1007,7 +1001,7 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
                   <tr><td><strong>User</strong></td><td>Tên đăng nhập + Mật khẩu (Admin cấp)</td><td>Xem tất cả, tạo MoC/Action mới; chỉ <strong>sửa</strong> được MoC nếu là Change Owner hoặc có tên trong "Người liên quan"; không xoá được</td></tr>
                 </tbody>
               </table>
-              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Admin tạo tài khoản ở tab <strong>Người dùng</strong>: bấm "+ Thêm người dùng", nhập Họ tên, Vai trò, Tên đăng nhập và Mật khẩu ban đầu rồi gửi cho người dùng. Cần tạo nhiều tài khoản thì dùng "Tải Template CSV" → điền → "Nhập từ CSV". Có thể nâng một tài khoản lên Admin hoặc vô hiệu hoá ngay trên từng dòng.</div>
+              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Admin tạo tài khoản ở tab <strong>Người dùng</strong>: bấm "+ Thêm người dùng", nhập Họ tên, Vai trò, Tên đăng nhập và Mật khẩu ban đầu rồi gửi cho người dùng. Cần tạo nhiều tài khoản thì dùng "Tải Template CSV" → điền → "Nhập từ CSV". Có thể nâng một tài khoản lên Admin hoặc vô hiệu hoá ngay trên từng dòng. Tick cột <strong>Change Owner</strong> / <strong>PIC</strong> để <strong>Tên hiển thị</strong> của người đó xuất hiện trong danh sách chọn ở form MoC và Action.</div>
               <div class="guide-callout warn"><span class="gc-icon">&#9888;</span>Quên mật khẩu? Liên hệ Admin — Admin bấm &#9998; ở dòng của bạn trong tab Người dùng và nhập mật khẩu mới. Mật khẩu chỉ lưu dạng băm nên không ai xem lại được mật khẩu cũ.</div>
               <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Tài khoản tạo trước đây (đăng nhập bằng Tên + Mã NV): hỏi Admin Tên đăng nhập mới của bạn; mật khẩu vẫn là Mã NV cũ cho tới khi Admin đặt lại.</div>
             </div>
@@ -1078,12 +1072,13 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
             <button class="btn btn-primary" id="btn-add-user">+ Thêm người dùng</button>
           </div>
         </div>
-        <p class="help-text" style="margin:-6px 0 14px;">Tạo nhiều tài khoản cùng lúc: tải <b>Template CSV</b>, điền Họ tên / Tên đăng nhập / Mật khẩu / Vai trò / Bộ phận mỗi người 1 dòng (lưu dạng "CSV UTF-8"), rồi bấm <b>Nhập từ CSV</b>. File <b>Xuất CSV</b> không chứa mật khẩu — máy chủ chỉ lưu dạng băm, không đọc lại được.</p>
+        <p class="help-text" style="margin:-6px 0 14px;">Tick <b>Change Owner</b> / <b>PIC</b> để Tên hiển thị của người đó có trong ô chọn Change Owner &amp; Người liên quan (form MoC), PIC &amp; Phối hợp (form Action); khi chưa tick ai thì các ô đó vẫn gõ tự do. Tạo nhiều tài khoản cùng lúc: tải <b>Template CSV</b>, điền mỗi người 1 dòng (lưu dạng "CSV UTF-8"), rồi bấm <b>Nhập từ CSV</b>. File <b>Xuất CSV</b> không chứa mật khẩu — máy chủ chỉ lưu dạng băm, không đọc lại được.</p>
         <div class="users-banner" id="users-banner" role="alert"></div>
+        <div class="banner" id="users-legacy-note" style="display:none;"></div>
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>Họ và tên</th><th>Đăng nhập</th><th>Bộ phận</th><th>Vai trò</th><th>Trạng thái</th><th></th>
+              <th>Tên hiển thị</th><th>Đăng nhập</th><th>Bộ phận</th><th>Vai trò</th><th style="text-align:center;">Change Owner</th><th style="text-align:center;">PIC</th><th>Trạng thái</th><th></th>
             </tr></thead>
             <tbody id="users-tbody"></tbody>
           </table>
@@ -1114,33 +1109,6 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
               </div>
               <button class="btn btn-sm" id="btn-cloud-refresh">Làm mới</button>
             </div>
-          </div>
-
-          <div class="card" id="card-people-lists">
-            <div class="settings-card-head">
-              <span class="sch-icon">&#128101;</span>
-              <h3>Danh sách Change Owner &amp; PIC</h3>
-            </div>
-            <div class="desc" style="margin-bottom:12px;">Khi một danh sách có ít nhất 1 tên, các ô tương ứng chỉ cho <strong>chọn từ danh sách</strong>: Change Owner &amp; Người liên quan (form MoC), PIC &amp; Phối hợp (form Action). Danh sách trống thì vẫn gõ tự do như cũ.</div>
-            <div class="people-lists-grid">
-              <div>
-                <div class="lbl">Change Owner</div>
-                <ul class="people-list" id="people-list-owner"></ul>
-                <div class="people-add">
-                  <input type="text" id="people-add-owner" list="people-datalist" placeholder="Thêm Change Owner...">
-                  <button type="button" class="btn btn-sm btn-primary" id="btn-people-add-owner">+ Thêm</button>
-                </div>
-              </div>
-              <div>
-                <div class="lbl">PIC (cũng dùng cho "Phối hợp")</div>
-                <ul class="people-list" id="people-list-pic"></ul>
-                <div class="people-add">
-                  <input type="text" id="people-add-pic" list="people-datalist" placeholder="Thêm PIC...">
-                  <button type="button" class="btn btn-sm btn-primary" id="btn-people-add-pic">+ Thêm</button>
-                </div>
-              </div>
-            </div>
-            <div style="margin-top:12px;"><button type="button" class="btn btn-sm" id="btn-people-import">&#8681; Nhập từ tên đã dùng trong dữ liệu</button></div>
           </div>
 
           <div class="card">
@@ -1242,9 +1210,9 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
     <form id="user-form" autocomplete="off">
       <div class="modal-body">
         <div class="field">
-          <label for="u-name">Họ và tên <span class="req">*</span></label>
+          <label for="u-name">Tên hiển thị <span class="req">*</span></label>
           <input id="u-name" placeholder="Ví dụ: Nguyễn Văn A">
-          <div class="help-text">Ghi giống tên ở Change Owner / Người liên quan — quyền sửa MoC được xét theo tên này.</div>
+          <div class="help-text">Tên này hiện trong danh sách chọn Change Owner / PIC và dùng để xét quyền sửa MoC. Đổi tên không tự sửa các MoC/Action đã ghi tên cũ.</div>
         </div>
         <div class="field" id="u-role-field" style="margin-top:12px;">
           <label for="u-role">Vai trò <span class="req">*</span></label>
@@ -1261,6 +1229,14 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
         <div class="field" style="margin-top:12px;">
           <label for="u-function">Bộ phận (Function)</label>
           <input id="u-function" placeholder="vd: QA, ENG, Production...">
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>Vai trò trong MoC</label>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;">
+            <label class="check-inline"><input type="checkbox" id="u-is-owner"> Change Owner</label>
+            <label class="check-inline"><input type="checkbox" id="u-is-pic"> PIC</label>
+          </div>
+          <div class="help-text">Change Owner: có trong ô Change Owner &amp; Người liên quan (form MoC). PIC: có trong ô PIC &amp; Phối hợp (form Action) và Người liên quan.</div>
         </div>
         <div class="field" style="margin-top:12px;">
           <label for="u-password" id="u-password-label">Mật khẩu ban đầu</label>
@@ -1576,11 +1552,12 @@ const Api = (()=>{
   const listUsers = () => request('/users', { auth:true });
   const createUser = (payload) => request('/users', { method:'POST', body: payload, auth:true });
   const updateUser = (id, patch) => request('/users/' + encodeURIComponent(id), { method:'PUT', body: patch, auth:true });
+  const clearLegacyPeople = () => request('/users/clear-legacy-people', { method:'POST', auth:true });
 
   const getData = () => request('/data', { auth:true });
   const putData = (dataObj) => request('/data', { method:'PUT', body: dataObj, auth:true });
 
-  return { login, me, logout, listUsers, createUser, updateUser, getData, putData };
+  return { login, me, logout, listUsers, createUser, updateUser, clearLegacyPeople, getData, putData };
 })();
 
 /* ================================================================================
@@ -1643,7 +1620,8 @@ const Storage = (()=>{
       actionPlan: mergeCollections(local.actionPlan, remote.actionPlan),
       agenda: mergeCollections(local.agenda, remote.agenda),
       attendant: mergeCollections(local.attendant, remote.attendant),
-      people: mergeCollections(local.people, remote.people)
+      // derived by the Worker from user accounts — the server copy replaces ours outright
+      people: remote.people !== undefined ? remote.people : (local.people || [])
     };
   }
 
@@ -1695,7 +1673,8 @@ function normalizeData(d){
     actionPlan: clean(d && d.actionPlan),
     agenda: clean(d && d.agenda),
     attendant: clean(d && d.attendant),
-    // Change Owner / PIC pick-lists managed in Settings: {id, kind:'owner'|'pic', name, updatedAt}
+    // Change Owner / PIC pick-lists, read-only here — the Worker derives them from the
+    // accounts ticked in the Users tab: {id, kind:'owner'|'pic', name, updatedAt}
     people: clean(d && d.people)
   };
 }
@@ -1952,8 +1931,7 @@ function buildOutgoingPayload(){
   const payload = {
     schemaVersion: state.data.schemaVersion,
     mocList: [...state.data.mocList], actionPlan: [...state.data.actionPlan],
-    agenda: [...state.data.agenda], attendant: [...state.data.attendant],
-    people: [...state.data.people]
+    agenda: [...state.data.agenda], attendant: [...state.data.attendant]
   };
   const now = Utils.nowISO();
   Object.keys(state.pendingDeletes).forEach(col => {
@@ -2085,7 +2063,7 @@ function renderActiveView(){
   else if(state.activeView==='actionplan') renderActionPlan();
   else if(state.activeView==='meeting'){ renderAgenda(); renderAttendant(); }
   else if(state.activeView==='users') renderUsers();
-  else if(state.activeView==='settings'){ updateFileStatusUI(); renderPeopleSettings(); }
+  else if(state.activeView==='settings') updateFileStatusUI();
 }
 
 /* ================================================================================
@@ -2421,10 +2399,12 @@ function getKnownPeople(){
   state.data.actionPlan.forEach(a=>{ add(a.pic); add(a.partner); });
   return Array.from(set).sort((a,b)=>a.localeCompare(b,'vi'));
 }
-/* ---- Change Owner / PIC pick-lists (managed in Settings, Admin only) ----
-   Once a list has at least one name, the matching form fields only offer that list
+/* ---- Change Owner / PIC pick-lists ----
+   state.data.people is derived by the Worker from the User Directory: every enabled
+   account ticked Change Owner / PIC in the Users tab, under its display name (the same
+   name canEditMoc() matches against). Once a list has at least one name, the matching form fields only offer that list
    (see ownerListOrNull / picListOrNull); with an empty list the fields stay free-text
-   exactly as before, so nothing breaks before an Admin sets the lists up. */
+   exactly as before, so nothing breaks before an Admin ticks anyone. */
 function peopleNames(kind){
   return (state.data.people||[]).filter(p=>p.kind===kind && p.name)
     .map(p=>p.name).sort((a,b)=>a.localeCompare(b,'vi'));
@@ -2435,57 +2415,6 @@ function picListOrNull(){ const l = peopleNames('pic'); return l.length ? l : nu
 function relevantListOrNull(){
   const l = Array.from(new Set([...peopleNames('owner'), ...peopleNames('pic')])).sort((a,b)=>a.localeCompare(b,'vi'));
   return l.length ? l : null;
-}
-const PEOPLE_KIND_LABEL = { owner:'Change Owner', pic:'PIC' };
-function renderPeopleSettings(){
-  populatePeopleDatalist();
-  ['owner','pic'].forEach(kind=>{
-    const ul = document.getElementById('people-list-'+kind);
-    if(!ul) return;
-    const recs = (state.data.people||[]).filter(p=>p.kind===kind)
-      .sort((a,b)=>String(a.name).localeCompare(String(b.name),'vi'));
-    ul.innerHTML = recs.length
-      ? recs.map(p=>`<li><span>${Utils.escapeHtml(p.name)}</span><button type="button" class="btn btn-sm btn-icon btn-danger" data-del-person="${p.id}" title="Xoá khỏi danh sách">&times;</button></li>`).join('')
-      : '<li class="people-empty">Chưa có tên — ô nhập vẫn là gõ tự do.</li>';
-    ul.querySelectorAll('[data-del-person]').forEach(btn=>btn.addEventListener('click', ()=>removePerson(btn.dataset.delPerson)));
-  });
-}
-function addPerson(kind){
-  if(!canAccessSettings()){ showToast('Chỉ Admin mới sửa được danh sách này.', 'err'); return; }
-  const inp = document.getElementById('people-add-'+kind);
-  const name = inp.value.trim();
-  if(!name) return;
-  if(/[,\/\n]/.test(name)){ showToast('Tên không được chứa dấu phẩy hoặc dấu /.', 'err'); return; }
-  if(peopleNames(kind).some(n=>n.toLowerCase()===name.toLowerCase())){
-    showToast('Tên này đã có trong danh sách '+PEOPLE_KIND_LABEL[kind]+'.', 'err'); return;
-  }
-  state.data.people.push({ id:Utils.uuid(), kind, name, updatedAt:Utils.nowISO() });
-  inp.value = '';
-  markDirty(); renderPeopleSettings();
-}
-function removePerson(id){
-  if(!canAccessSettings()) return;
-  const rec = state.data.people.find(p=>p.id===id);
-  if(!rec) return;
-  state.data.people = state.data.people.filter(p=>p.id!==id);
-  queueDelete('people', id);
-  markDirty(); renderPeopleSettings();
-}
-// One-click bootstrap: seeds the lists from names already typed into existing MoCs / Actions.
-function importKnownPeopleToLists(){
-  if(!canAccessSettings()) return;
-  const add = (kind, raw) => {
-    const name = (raw||'').trim();
-    if(!name || peopleNames(kind).some(n=>n.toLowerCase()===name.toLowerCase())) return 0;
-    state.data.people.push({ id:Utils.uuid(), kind, name, updatedAt:Utils.nowISO() });
-    return 1;
-  };
-  let n = 0;
-  state.data.mocList.forEach(m=>{ n += add('owner', m.changeOwner); });
-  state.data.actionPlan.forEach(a=>{ n += add('pic', a.pic); n += add('pic', a.partner); });
-  if(n){ markDirty(); showToast('Đã nhập '+n+' tên từ dữ liệu hiện có.', 'ok'); }
-  else showToast('Không có tên mới để nhập.', 'ok');
-  renderPeopleSettings();
 }
 function populatePeopleDatalist(){
   const dl = document.getElementById('people-datalist');
@@ -3697,7 +3626,9 @@ function handleBackupImportFile(file){
       const parsed = JSON.parse(reader.result);
       if(!parsed || typeof parsed !== 'object') throw new Error('invalid');
       if(!confirm('Nhập dữ liệu từ file sao lưu sẽ GHÉP với dữ liệu hiện tại (bản ghi mới hơn được giữ lại). Tiếp tục?')) return;
+      const people = state.data.people; // comes from user accounts, never from a backup file
       state.data = Storage.mergeData(state.data, normalizeData(parsed));
+      state.data.people = people;
       markDirty();
       renderActiveView();
       showToast('Đã nhập dữ liệu sao lưu.', 'ok');
@@ -3737,8 +3668,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 6;
 // Worker error codes (see cloudflare/worker.js) -> message shown to the Admin
 const USER_ERROR_VI = {
-  name_required: 'Họ và tên không được để trống.',
-  name_taken: 'Đã có tài khoản mang họ tên này.',
+  name_required: 'Tên hiển thị không được để trống.',
+  name_taken: 'Đã có tài khoản mang Tên hiển thị này.',
   login_invalid: 'Tên đăng nhập không hợp lệ: chữ thường/số, có thể có . _ - ở giữa, không dấu/khoảng trắng — hoặc một địa chỉ email.',
   login_taken: 'Tên đăng nhập đã được sử dụng.',
   password_too_short: 'Mật khẩu phải từ ' + MIN_PASSWORD_LENGTH + ' ký tự trở lên.',
@@ -3771,13 +3702,14 @@ async function renderUsers(){
   if(!canAccessUsers()) return;
   const tbody = document.getElementById('users-tbody');
   const banner = document.getElementById('users-banner');
-  const stateRow = text => `<tr class="empty-row"><td colspan="6"><div class="empty-state"><div class="empty-state-desc">${text}</div></div></td></tr>`;
+  const stateRow = text => `<tr class="empty-row"><td colspan="8"><div class="empty-state"><div class="empty-state-desc">${text}</div></div></td></tr>`;
   document.getElementById('users-account-info').textContent = 'Tài khoản hiện tại: ' + state.currentUser.name + ' · Admin';
   banner.style.display = 'none';
   tbody.innerHTML = stateRow('Đang tải danh sách người dùng...');
   try{
     const resp = await Api.listUsers();
     usersCache = resp.users || [];
+    renderLegacyPeopleNote(resp.unmatchedPeople || []);
   }catch(e){
     banner.textContent = 'Không tải được danh sách người dùng — kiểm tra mạng rồi bấm "Tải lại".';
     banner.style.display = 'block';
@@ -3787,7 +3719,7 @@ async function renderUsers(){
   usersCache.sort((a,b)=> (a.role===b.role ? 0 : (a.role==='admin' ? -1 : 1)) || String(a.name).localeCompare(String(b.name),'vi'));
   document.getElementById('users-count').textContent = usersCache.length;
   if(!usersCache.length){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6"><div class="empty-state">
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8"><div class="empty-state">
       <div class="empty-state-icon">&#128101;</div>
       <div class="empty-state-title">Chưa có người dùng nào</div>
       <div class="empty-state-desc">Thêm tài khoản để mọi người có thể đăng nhập.</div>
@@ -3805,6 +3737,8 @@ async function renderUsers(){
       <td class="cell-mono">${Utils.escapeHtml(u.loginId)}${u.legacyCode ? '<div class="user-legacy-tag">Mật khẩu = Mã NV cũ</div>' : ''}</td>
       <td>${Utils.escapeHtml(u.function||'')}</td>
       <td><span class="badge badge-role-${isAdmin?'admin':'user'}">${isAdmin?'Admin':'User'}</span></td>
+      <td class="user-flag-cell"><input type="checkbox" data-flag-user="${id}" data-flag="isOwner" ${u.isOwner?'checked':''} title="Có trong danh sách chọn Change Owner"></td>
+      <td class="user-flag-cell"><input type="checkbox" data-flag-user="${id}" data-flag="isPic" ${u.isPic?'checked':''} title="Có trong danh sách chọn PIC"></td>
       <td><span class="badge ${u.enabled?'badge-y':'badge-n'}">${u.enabled?'Hoạt động':'Vô hiệu hoá'}</span></td>
       <td class="row-actions">
         <button class="btn btn-sm" data-role-user="${id}">${isAdmin?'Hạ xuống User':'Nâng lên Admin'}</button>
@@ -3816,6 +3750,42 @@ async function renderUsers(){
   tbody.querySelectorAll('[data-edit-user]').forEach(btn=>btn.addEventListener('click', ()=>openUserModal(btn.dataset.editUser)));
   tbody.querySelectorAll('[data-toggle-user]').forEach(btn=>btn.addEventListener('click', ()=>toggleUserEnabled(btn.dataset.toggleUser)));
   tbody.querySelectorAll('[data-role-user]').forEach(btn=>btn.addEventListener('click', ()=>changeUserRole(btn.dataset.roleUser)));
+  tbody.querySelectorAll('[data-flag-user]').forEach(cb=>cb.addEventListener('change', ()=>setUserMocFlag(cb)));
+}
+// Change Owner / PIC tick straight from the table row. The pick-lists the forms use are
+// derived from these ticks by the Worker, so pull fresh data right after.
+async function setUserMocFlag(cb){
+  const u = usersCache.find(x=>x.id===cb.dataset.flagUser);
+  if(!u) return;
+  cb.disabled = true;
+  try{
+    await Api.updateUser(u.id, { [cb.dataset.flag]: cb.checked });
+    u[cb.dataset.flag] = cb.checked;
+    await refreshFromCloud(true);
+  }catch(e){
+    cb.checked = !cb.checked;
+    showToast(userErrorText(e), 'err');
+  }finally{
+    cb.disabled = false;
+  }
+}
+// Names left over from the old free-typed lists (Settings tab) that no account carries yet.
+function renderLegacyPeopleNote(unmatched){
+  const box = document.getElementById('users-legacy-note');
+  if(!unmatched.length){ box.style.display = 'none'; return; }
+  const names = kind => unmatched.filter(p=>p.kind===kind).map(p=>Utils.escapeHtml(p.name)).join(', ');
+  const parts = [];
+  if(names('owner')) parts.push('<b>Change Owner:</b> ' + names('owner'));
+  if(names('pic')) parts.push('<b>PIC:</b> ' + names('pic'));
+  box.innerHTML = `<div>Danh sách cũ còn ${unmatched.length} tên chưa gắn với tài khoản nào nên không còn trong ô chọn — ${parts.join(' · ')}.
+    Tạo tài khoản với đúng Tên hiển thị đó (hoặc sửa Tên hiển thị của tài khoản sẵn có) rồi tick vai trò tương ứng.</div>
+    <button class="btn btn-sm" id="btn-clear-legacy-people">Bỏ danh sách cũ</button>`;
+  box.style.display = '';
+  document.getElementById('btn-clear-legacy-people').addEventListener('click', async ()=>{
+    if(!confirm('Bỏ hẳn các tên còn lại của danh sách cũ? Các MoC/Action đã ghi những tên này không bị thay đổi.')) return;
+    try{ await Api.clearLegacyPeople(); await renderUsers(); }
+    catch(e){ showToast(userErrorText(e), 'err'); }
+  });
 }
 async function changeUserRole(id){
   const u = usersCache.find(x=>x.id===id);
@@ -3858,6 +3828,8 @@ function openUserModal(id){
   document.getElementById('u-function').value = rec ? (rec.function||'') : '';
   document.getElementById('u-login').value = rec ? rec.loginId : '';
   document.getElementById('u-login').disabled = !!rec;
+  document.getElementById('u-is-owner').checked = !!(rec && rec.isOwner);
+  document.getElementById('u-is-pic').checked = !!(rec && rec.isPic);
   // role is changed from the table row (Nâng lên Admin / Hạ xuống User), not here
   document.getElementById('u-role-field').style.display = rec ? 'none' : '';
   document.getElementById('u-password-label').innerHTML = rec ? 'Mật khẩu mới' : 'Mật khẩu ban đầu <span class="req">*</span>';
@@ -3878,6 +3850,8 @@ async function saveUserFromModal(){
   const fn = document.getElementById('u-function').value.trim();
   const loginId = document.getElementById('u-login').value.trim().toLowerCase();
   const password = document.getElementById('u-password').value;
+  const isOwner = document.getElementById('u-is-owner').checked;
+  const isPic = document.getElementById('u-is-pic').checked;
   const editingId = userEditingId;
   if(editingId){
     if(!name){ showErr(USER_ERROR_VI.name_required); return; }
@@ -3890,17 +3864,18 @@ async function saveUserFromModal(){
   btn.disabled = true;
   try{
     if(editingId){
-      const patch = { name, function: fn };
+      const patch = { name, function: fn, isOwner, isPic };
       if(password) patch.password = password;
       await Api.updateUser(editingId, patch);
       showToast(password ? 'Đã lưu và đặt lại mật khẩu.' : 'Đã lưu người dùng.', 'ok');
       if(editingId === state.currentUser.id) await refreshCurrentUser();
     } else {
-      await Api.createUser({ name, loginId, password, role: document.getElementById('u-role').value, function: fn });
+      await Api.createUser({ name, loginId, password, role: document.getElementById('u-role').value, function: fn, isOwner, isPic });
       showToast('Đã tạo tài khoản — gửi Tên đăng nhập và Mật khẩu cho người dùng.', 'ok');
     }
     closeUserModal();
     await renderUsers();
+    await refreshFromCloud(true); // pick-lists follow the name / Change Owner / PIC ticks
   }catch(e){
     showErr(userErrorText(e));
   }finally{
@@ -3910,18 +3885,20 @@ async function saveUserFromModal(){
 
 /* ---- Users: CSV export / template / bulk import ----
    Export never contains passwords (the server only has hashes). Import creates accounts
-   in bulk from the template: Họ và tên / Tên đăng nhập (hoặc Email) / Mật khẩu / Vai trò /
-   Bộ phận — one POST /users per row, so a bad row never blocks the good ones. */
-const USER_CSV_HEADERS = ['Họ và tên','Tên đăng nhập (hoặc Email)','Mật khẩu','Vai trò','Bộ phận'];
+   in bulk from the template: Tên hiển thị / Tên đăng nhập (hoặc Email) / Mật khẩu / Vai trò /
+   Bộ phận / Change Owner / PIC — one POST /users per row, so a bad row never blocks the good ones. */
+const USER_CSV_HEADERS = ['Tên hiển thị','Tên đăng nhập (hoặc Email)','Mật khẩu','Vai trò','Bộ phận','Change Owner','PIC'];
+const csvTick = v => ['x','1','yes','y','true','có','co'].includes(String(v||'').trim().toLowerCase());
 function exportUsersCSV(){
   if(!usersCache.length){ showToast('Chưa có người dùng nào để xuất.', 'err'); return; }
   const rows = usersCache.map(u=>({
     name: u.name, loginId: u.loginId, fn: u.function||'', role: u.role==='admin' ? 'Admin' : 'User',
+    owner: u.isOwner ? 'x' : '', pic: u.isPic ? 'x' : '',
     status: u.enabled ? 'Hoạt động' : 'Vô hiệu hoá', createdAt: u.createdAt
   }));
   const cols = [
-    {key:'name',label:'Họ và tên'},{key:'loginId',label:'Tên đăng nhập'},{key:'fn',label:'Bộ phận'},
-    {key:'role',label:'Vai trò'},{key:'status',label:'Trạng thái'},{key:'createdAt',label:'Ngày tạo',format:Utils.formatDateVN}
+    {key:'name',label:'Tên hiển thị'},{key:'loginId',label:'Tên đăng nhập'},{key:'fn',label:'Bộ phận'},
+    {key:'role',label:'Vai trò'},{key:'owner',label:'Change Owner'},{key:'pic',label:'PIC'},{key:'status',label:'Trạng thái'},{key:'createdAt',label:'Ngày tạo',format:Utils.formatDateVN}
   ];
   Utils.downloadBlob(Utils.toCSV(rows, cols), 'MoC_Nguoi_dung_'+Utils.todayISO()+'.csv', 'text/csv;charset=utf-8');
   showToast('Đã xuất '+usersCache.length+' người dùng (không kèm mật khẩu).', 'ok');
@@ -3929,7 +3906,7 @@ function exportUsersCSV(){
 function downloadUsersTemplate(){
   const csv = '\uFEFF' + USER_CSV_HEADERS.map(Utils.csvEscape).join(',') + '\r\n';
   Utils.downloadBlob(csv, 'MoC_Template_Nguoi_dung.csv', 'text/csv;charset=utf-8');
-  showToast('Đã tải template — điền mỗi người 1 dòng, cột Vai trò ghi User hoặc Admin (để trống = User).', 'ok');
+  showToast('Đã tải template — điền mỗi người 1 dòng, cột Vai trò ghi User hoặc Admin (để trống = User); cột Change Owner / PIC ghi x nếu có.', 'ok');
 }
 // Minimal RFC 4180 reader. Excel writes ";" or a tab instead of "," depending on the
 // machine's regional settings, so the delimiter is taken from the header line.
@@ -3968,11 +3945,12 @@ async function importUsersCSV(file){
   const header = (rows.shift() || []).map(h=>h.trim().toLowerCase());
   const find = test => header.findIndex(test);
   const col = {
-    name: find(h=>h.startsWith('họ')), login: find(h=>h.startsWith('tên đăng nhập') || h==='email'),
-    pass: find(h=>h.startsWith('mật khẩu')), role: find(h=>h.startsWith('vai trò')), fn: find(h=>h.startsWith('bộ phận'))
+    name: find(h=>h.startsWith('tên hiển thị') || h.startsWith('họ')), login: find(h=>h.startsWith('tên đăng nhập') || h==='email'),
+    pass: find(h=>h.startsWith('mật khẩu')), role: find(h=>h.startsWith('vai trò')), fn: find(h=>h.startsWith('bộ phận')),
+    owner: find(h=>h.startsWith('change owner')), pic: find(h=>h==='pic')
   };
   if(col.name < 0 || col.login < 0 || col.pass < 0){
-    showToast('File không đúng mẫu (thiếu cột Họ và tên / Tên đăng nhập / Mật khẩu) — dùng nút "Tải Template CSV".', 'err'); return;
+    showToast('File không đúng mẫu (thiếu cột Tên hiển thị / Tên đăng nhập / Mật khẩu) — dùng nút "Tải Template CSV".', 'err'); return;
   }
   const takenLogin = new Set(usersCache.map(u=>String(u.loginId).toLowerCase()));
   const takenName = new Set(usersCache.map(u=>normalizeNameForMatch(u.name)));
@@ -3986,11 +3964,12 @@ async function importUsersCSV(file){
     if(!name && !loginId && !password.trim()) return;
     let problem = userInputProblem(name, loginId, password);
     if(!problem && takenLogin.has(loginId)) problem = 'Tên đăng nhập đã tồn tại hoặc trùng dòng khác trong file.';
-    if(!problem && takenName.has(normalizeNameForMatch(name))) problem = 'Họ tên đã có tài khoản hoặc trùng dòng khác trong file.';
+    if(!problem && takenName.has(normalizeNameForMatch(name))) problem = 'Tên hiển thị đã có tài khoản hoặc trùng dòng khác trong file.';
     if(!problem && roleRaw && roleRaw !== 'user' && roleRaw !== 'admin') problem = 'Vai trò phải là User hoặc Admin.';
     if(problem){ problems.push('Dòng '+(i+2)+(loginId ? ' ('+loginId+')' : '')+': '+problem); return; }
     takenLogin.add(loginId); takenName.add(normalizeNameForMatch(name));
-    valid.push({ line: i+2, payload: { name, loginId, password, role: roleRaw==='admin' ? 'admin' : 'user', function: get(col.fn).trim() } });
+    valid.push({ line: i+2, payload: { name, loginId, password, role: roleRaw==='admin' ? 'admin' : 'user', function: get(col.fn).trim(),
+      isOwner: csvTick(get(col.owner)), isPic: csvTick(get(col.pic)) } });
   });
   const problemList = max => problems.slice(0, max).join('\n') + (problems.length > max ? '\n…và '+(problems.length-max)+' dòng khác.' : '');
   if(!valid.length){
@@ -4012,6 +3991,7 @@ async function importUsersCSV(file){
     }
   }
   await renderUsers();
+  await refreshFromCloud(true);
   showToast('Đã tạo '+created+'/'+valid.length+' tài khoản.', created === valid.length ? 'ok' : 'err');
   if(problems.length) alert('Các dòng không nhập được:\n\n'+problemList(15));
 }
@@ -4137,11 +4117,6 @@ function bindStaticEvents(){
     e.target.value = '';
   });
   document.getElementById('btn-reset-seed').addEventListener('click', handleResetSeed);
-  ['owner','pic'].forEach(kind=>{
-    document.getElementById('btn-people-add-'+kind).addEventListener('click', ()=>addPerson(kind));
-    document.getElementById('people-add-'+kind).addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addPerson(kind); } });
-  });
-  document.getElementById('btn-people-import').addEventListener('click', importKnownPeopleToLists);
 
   // User Management
   document.getElementById('btn-add-user').addEventListener('click', ()=>openUserModal(null));

@@ -13,6 +13,8 @@ lịch sử hội thoại** — quyết định quan trọng và lý do đều g
   Pages): sửa lỗi 403 tombstone (mục 2) + đăng nhập Tên đăng nhập/Mật khẩu và tab Quản lý người
   dùng mới (mục 3). Worker và frontend của đợt này **phải đi cùng nhau** — frontend gửi
   `{loginId, password}`, không tương thích với Worker trước đó; đừng rollback riêng một phía.
+- **Đợt 2 cùng ngày, cũng đã deploy cả hai phía** (Worker version `e657a137`): gộp "Danh sách
+  Change Owner & PIC" vào tab Quản lý người dùng (mục 4).
 - **Worker production:** `https://moc-data-api.dangthanhbinh53.workers.dev` (tài khoản
   Cloudflare của người dùng, KV `MOC_KV` id nằm trong `cloudflare/wrangler.toml`).
 - **Frontend production:** GitHub Pages của repo trên (origin được phép CORS:
@@ -34,8 +36,10 @@ base64) + **thanh tab ngang** (không còn sidebar dọc) — xem mục 4.
 
 ## 2. Dữ liệu & đồng bộ
 
-- KV key `moc_data` gồm 5 collection: `mocList`, `actionPlan`, `agenda`, `attendant`, và
-  **`people`** (danh sách Change Owner/PIC cấu hình ở tab Cài đặt: `{id, kind:'owner'|'pic', name, updatedAt}`).
+- KV key `moc_data` gồm 4 collection ghi được: `mocList`, `actionPlan`, `agenda`, `attendant`.
+  Trường **`people`** client nhận về (`{id, kind:'owner'|'pic', name, updatedAt}`) là **chỉ-đọc, do
+  Worker sinh ra ở mỗi response** từ danh bạ tài khoản (mục 4) — client không gửi lên, Worker bỏ
+  qua nếu có gửi. `people` nằm trong KV chỉ còn là danh sách cũ đóng băng (xem mục 4).
   Danh mục tài khoản (`moc_users`) tách riêng — mục 3.
 - Cache cục bộ: `localStorage` key `moc_app_cache_v1`. Token phiên: `moc_app_token_v1`.
   Theme: `ild-crafted-appearance-v1` (mục 5). Cỡ chữ trình chiếu lưu riêng từng máy.
@@ -45,9 +49,9 @@ base64) + **thanh tab ngang** (không còn sidebar dọc) — xem mục 4.
   nếu chỉ bỏ id khỏi payload). `queueDelete()` + `buildOutgoingPayload()` tạo tombstone;
   `normalizeData()` lọc sạch chúng nên phần còn lại của app không biết tombstone tồn tại.
 - **Thêm collection mới phải sửa đủ các chỗ:** `Storage.mergeData`, `state.data`,
-  `normalizeData`, `buildOutgoingPayload`, `saveData` (giữ lại local nếu Worker cũ không trả
-  về key đó — đã làm cho `people`), `handleResetSeed`, và phía Worker: `emptyData`,
+  `normalizeData`, `buildOutgoingPayload`, `handleResetSeed`, và phía Worker: `emptyData`,
   `mergeData`, danh sách trong `handleDataPut`, luật ghi trong `assertWriteAllowed`.
+  (`people` là ngoại lệ: `Storage.mergeData` lấy nguyên bản của server, không union-merge.)
 - **Tombstone không bao giờ được client gửi lại** (đã bị `normalizeData()` lọc), nên
   `assertWriteAllowed()` phải bỏ qua bản ghi `deleted:true` đang lưu khi dò "id bị thiếu trong
   payload". Thiếu bước này thì sau lần xoá đầu tiên của Admin, mọi lần lưu của User đều bị 403
@@ -70,7 +74,8 @@ khoản; vai trò do Worker quyết định theo danh bạ.
   passwordIterations, createdAt, updatedAt}`. Mật khẩu do Admin đặt, chỉ lưu băm
   **PBKDF2-SHA256 có salt, 100.000 vòng** (mức tối đa Web Crypto của Workers cho phép) — không
   đọc lại được, chỉ đặt lại. `loginId` lưu chữ thường: username (`[a-z0-9._-]`, tối đa 32 ký tự)
-  hoặc email; **không đổi được sau khi tạo**. `name` phải duy nhất (so khớp bỏ dấu) vì quyền sửa
+  hoặc email; **không đổi được sau khi tạo**. Thêm `isOwner`/`isPic` (mục 4). `name` (= "Tên
+  hiển thị") phải duy nhất (so khớp bỏ dấu) vì quyền sửa
   MoC xét theo tên.
 - **Admin "bootstrap"** = secret `ADMIN_USER`/`ADMIN_PASS` ở Worker (không có trong code/KV,
   không hiện trong danh bạ, `id` phiên là `'admin'`). Dùng để tạo các tài khoản đầu tiên và là
@@ -94,8 +99,6 @@ khoản; vai trò do Worker quyết định theo danh bạ.
   trên server, không tin client): tạo mới → ai cũng được; sửa MoC → Admin hoặc owner/relevant
   theo **bản ghi trên server**; sửa Action/Agenda/Attendant → ai đã đăng nhập; xoá → chỉ Admin.
   Vi phạm → 403, frontend tự đồng bộ lại.
-- **`people`:** chỉ Admin được đổi. Với non-admin, Worker **bỏ qua** (không báo lỗi) `people`
-  trong payload để User có tab hơi cũ vẫn lưu được MoC của mình.
 - So khớp tên (owner/relevant) bỏ dấu, không phân biệt hoa thường (`normalizeNameForMatch`
   ở frontend, `normalizeName` ở Worker — giữ 2 bản **đồng bộ**).
 
@@ -126,22 +129,36 @@ Thêm tab mới: thêm `.nav-item[data-view=x]`, `<section class="view" id="view
   Nội dung viết tay trong HTML — **cập nhật khi đổi hành vi** (đặc biệt phân quyền, SLA).
 - **Quản lý người dùng** (Admin) — bảng Họ tên / Đăng nhập / Bộ phận / Vai trò / Trạng thái; trên
   từng dòng: Nâng lên Admin ↔ Hạ xuống User, Vô hiệu hoá ↔ Kích hoạt (khoá nút với chính mình),
-  ✎ sửa tên/bộ phận và **đặt lại mật khẩu**. Thanh công cụ: Tải lại, Xuất CSV (không có mật
+  ✎ sửa Tên hiển thị/bộ phận và **đặt lại mật khẩu**; cột tick **Change Owner** / **PIC** (xem dưới). Thanh công cụ: Tải lại, Xuất CSV (không có mật
   khẩu), Tải Template CSV, **Nhập từ CSV** tạo tài khoản hàng loạt (`parseCSV` tự nhận dấu
   phân cách `,` `;` tab; kiểm tra từng dòng bằng `userInputProblem` trước khi gửi; mỗi dòng một
   `POST /users`). Dùng CSV thay vì Excel như app tham chiếu vì app này không nhúng thư viện.
-- **Dữ liệu & Cài đặt** (Admin) — trạng thái Cloud Sync, **Danh sách Change Owner & PIC**,
-  backup/restore JSON, reset dữ liệu mẫu (giữ nguyên `people`).
+- **Dữ liệu & Cài đặt** (Admin) — trạng thái Cloud Sync, backup/restore JSON, reset dữ liệu mẫu.
 
-### Danh sách Change Owner / PIC (tab Cài đặt)
-- Hai danh sách (`kind` owner/pic). **Khi một danh sách có ≥1 tên**, các ô tương ứng thành
-  `<select>` chỉ-chọn: Change Owner (form MoC ← owner), Người liên quan (readonly, chọn từ owner∪pic,
-  có "Xoá hết"), PIC & Phối hợp (form Action ← pic). **Danh sách rỗng → vẫn gõ tự do** như cũ.
-- Giá trị cũ ngoài danh sách vẫn hiện nguyên với nhãn "(giá trị cũ)" (qua `selectOptions`), không mất dữ liệu.
-- Từ chối tên trùng (không phân biệt hoa thường) và tên chứa `,` `/` (vì `relevantPeople` tách bằng các ký tự này).
-- Nút "Nhập từ tên đã dùng trong dữ liệu" seed danh sách từ MoC/Action hiện có.
-- Hàm: `peopleNames/ownerListOrNull/picListOrNull/relevantListOrNull`, `renderPeopleSettings`,
-  `addPerson`, `removePerson`, `importKnownPeopleToLists`.
+### Danh sách Change Owner / PIC = tài khoản được tick (tab Quản lý người dùng)
+- Không còn danh sách gõ tay ở tab Cài đặt. Mỗi tài khoản có 2 cờ `isOwner`, `isPic` (tick ngay
+  trên dòng, trong popup thêm/sửa, hoặc cột `Change Owner`/`PIC` ghi `x` trong CSV). Tên trong
+  danh sách chọn **chính là Tên hiển thị của tài khoản** — cũng là tên dùng xét quyền sửa MoC,
+  nên Change Owner chọn từ danh sách luôn khớp với người đăng nhập.
+- Worker `derivedPeople()` trả `people` = mọi tài khoản **đang hoạt động** có cờ tương ứng
+  (tài khoản bị vô hiệu hoá tự rời danh sách; đổi Tên hiển thị thì danh sách đổi theo, nhưng
+  MoC/Action đã ghi tên cũ **không** tự sửa). Admin bootstrap không nằm trong danh bạ nên không
+  bao giờ có trong danh sách.
+- Phía form không đổi: **khi một danh sách có ≥1 tên**, ô tương ứng thành `<select>` chỉ-chọn:
+  Change Owner (form MoC ← owner), Người liên quan (chọn từ owner∪pic, có "Xoá hết"), PIC &
+  Phối hợp (form Action ← pic). **Chưa tick ai → vẫn gõ tự do.** Giá trị cũ ngoài danh sách vẫn
+  hiện nguyên với nhãn "(giá trị cũ)" (qua `selectOptions`), không mất dữ liệu.
+- Tên hiển thị không nên chứa `,` `/` (vì `relevantPeople` tách bằng các ký tự này) — hiện
+  **chưa chặn** ở form tài khoản.
+- **Di trú danh sách cũ:** lần đầu Worker đọc `moc_data` sau khi deploy (`loadData()`, cờ
+  `peopleMigrated`), tài khoản nào trùng tên (bỏ dấu) với một dòng trong danh sách cũ được tự
+  tick. Tên cũ **không trùng tài khoản nào** thì không còn trong ô chọn; tab Người dùng hiện
+  khung vàng liệt kê các tên đó (`unmatchedPeople` từ `GET /users`) kèm nút "Bỏ danh sách cũ"
+  (`POST /users/clear-legacy-people`). Người chỉ được giao việc mà không dùng app vẫn cần một
+  tài khoản để có tên trong danh sách.
+- Hàm frontend: `peopleNames/ownerListOrNull/picListOrNull/relevantListOrNull` (đọc
+  `state.data.people`), `setUserMocFlag`, `renderLegacyPeopleNote`. Worker: `derivedPeople`,
+  `legacyPeople`, `unmatchedLegacyPeople`, `loadData`, `clientData`.
 
 ## 5. Thương hiệu ILD Crafted & module Theme
 
@@ -219,8 +236,8 @@ Map `index.html` (~4265 dòng; luôn `grep -n` lại tên section thay vì tin s
 **Kiểm tra Worker** (không cần deploy): viết script Node `import worker from './cloudflare/worker.js'`,
 `env.MOC_KV` = object giả `get(key,'json')/put/delete` dùng `Map`, tạo sẵn `session:<token>` và
 `moc_users`, rồi `worker.fetch(new Request('http://x/data',{method:'PUT',headers:{Authorization:'Bearer <token>'},body}), env)`.
-Các ca nên kiểm: admin ghi `people` OK; leader ghi `people` bị bỏ qua (200 nhưng không đổi);
-client cũ không gửi `people` không bị coi là xoá; leader sửa MoC không phải của mình → 403;
+Các ca nên kiểm: `people` trong payload bị bỏ qua với mọi vai trò (200, danh sách không đổi);
+tick/bỏ tick/đổi tên/vô hiệu hoá tài khoản → `people` ở `GET /data` đổi theo; leader sửa MoC không phải của mình → 403;
 leader xoá → 403; **User lưu khi server đang có tombstone → 200**; tài khoản cũ đăng nhập bằng
 username sinh tự động + Mã NV; tạo trùng tên/trùng `loginId` → 409; tự vô hiệu hoá → 400;
 vô hiệu hoá xong phiên cũ → 401, đăng nhập lại → 403 `account_disabled`.
@@ -261,7 +278,7 @@ Pages: branch `main`, thư mục `/`). Người dùng cần Ctrl+F5 để lấy 
 ### 9.3. Lần đầu
 Đăng nhập bằng Admin bootstrap (`ADMIN_USER`/`ADMIN_PASS`) → tab **Người dùng** tạo tài khoản
 (tự đặt Tên đăng nhập + Mật khẩu ban đầu, hoặc Nhập từ CSV), nên tạo luôn một Admin trong danh bạ
-cho từng người quản trị → tab **Cài đặt** thiết lập danh sách Change Owner/PIC.
+cho từng người quản trị, và tick **Change Owner** / **PIC** cho những người sẽ được chọn trong form.
 **Sau khi deploy đợt đăng nhập mới:** mở tab Người dùng xem Tên đăng nhập đã sinh cho các tài
 khoản cũ và báo lại cho từng người (mật khẩu của họ vẫn là Mã NV cũ).
 

@@ -30,7 +30,9 @@
  *                                             already stored, not the client's payload)
  *       - editing action/agenda/attendant  -> any enabled user (matches prior app behavior)
  *       - deleting anything                -> admin only
- *       - `people` (Change Owner/PIC lists) -> admin only to add/edit/delete
+ *       - `people` (Change Owner/PIC lists) -> read-only: derived on every response
+ *                                             from the User Directory (accounts ticked
+ *                                             Change Owner / PIC), never written via /data
  *
  * Bindings expected (see wrangler.toml):
  *   KV namespace  MOC_KV
@@ -186,6 +188,7 @@ async function saveUsers(env, users){
 function publicUser(u){
   return {
     id: u.id, name: u.name, loginId: u.loginId || '', function: u.function || '', role: u.role, enabled: !!u.enabled,
+    isOwner: !!u.isOwner, isPic: !!u.isPic,
     // still signing in with the pre-migration Mã NV as password
     legacyCode: !u.passwordHash && !!u.employeeCodeHash,
     createdAt: u.createdAt, updatedAt: u.updatedAt
@@ -260,7 +263,10 @@ function mergeData(incoming, stored){
     actionPlan: mergeCollections(incoming.actionPlan, stored.actionPlan),
     agenda: mergeCollections(incoming.agenda, stored.agenda),
     attendant: mergeCollections(incoming.attendant, stored.attendant),
-    people: mergeCollections(incoming.people, stored.people)
+    // pre-User-Directory pick-lists, kept frozen for reference only — the lists the
+    // client sees are derived from user accounts (see clientData)
+    people: stored.people || [],
+    peopleMigrated: stored.peopleMigrated
   };
 }
 
@@ -291,13 +297,6 @@ function assertWriteAllowed(collectionName, incomingArr, storedArr, session){
   // edits (only records that actually changed content)
   for(const [id, incomingRec] of incomingMap){
     const storedRec = storedMap.get(id);
-    // `people` = the Change Owner / PIC pick-lists edited in Settings — admin only, even to add
-    if(collectionName === 'people' && !isAdmin){
-      if(!storedRec || JSON.stringify(incomingRec) !== JSON.stringify(storedRec)){
-        throw { status: 403, body: { error: 'forbidden', reason: 'people_admin_only', collection: collectionName, id } };
-      }
-      continue;
-    }
     if(!storedRec) continue; // brand-new record — anyone enabled may create
     if(JSON.stringify(incomingRec) === JSON.stringify(storedRec)) continue; // unchanged passthrough
 
@@ -355,11 +354,70 @@ async function handleLogout(request, env){
   return json({ ok: true }, 200, env);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Change Owner / PIC pick-lists — derived from the User Directory */
+/* -------------------------------------------------------------------------- */
+const PEOPLE_FLAG = { owner: 'isOwner', pic: 'isPic' };
+// What the MoC/Action forms offer: every enabled account ticked Change Owner / PIC,
+// under its display name — the same name edit rights are matched against.
+function derivedPeople(users){
+  const out = [];
+  Object.values(users).filter(u => u.enabled).forEach(u => {
+    Object.keys(PEOPLE_FLAG).forEach(kind => {
+      if(u[PEOPLE_FLAG[kind]]) out.push({ id: u.id + ':' + kind, kind, name: u.name, updatedAt: u.updatedAt });
+    });
+  });
+  return out;
+}
+// Entries of the old free-typed lists (Settings tab, stored in moc_data.people).
+function legacyPeople(stored){
+  return (stored.people || []).filter(p => p && !p.deleted && p.name && PEOPLE_FLAG[p.kind]);
+}
+// Old-list names no account carries yet — shown to the Admin so nobody is silently dropped.
+function unmatchedLegacyPeople(stored, users){
+  const list = Object.values(users);
+  return legacyPeople(stored)
+    .filter(p => !list.some(u => u[PEOPLE_FLAG[p.kind]] && normalizeName(u.name) === normalizeName(p.name)))
+    .map(p => ({ kind: p.kind, name: p.name }));
+}
+// Loads moc_data; the first time after the lists moved to the User Directory, ticks
+// Change Owner / PIC on every account whose name was on the matching old list.
+async function loadData(env, users){
+  const stored = (await env.MOC_KV.get(DATA_KEY, 'json')) || emptyData();
+  if(!stored.peopleMigrated && legacyPeople(stored).length){
+    let touched = false;
+    legacyPeople(stored).forEach(p => {
+      const u = Object.values(users).find(x => normalizeName(x.name) === normalizeName(p.name));
+      if(u && !u[PEOPLE_FLAG[p.kind]]){ u[PEOPLE_FLAG[p.kind]] = true; touched = true; }
+    });
+    if(touched) await saveUsers(env, users);
+    stored.peopleMigrated = true;
+    await env.MOC_KV.put(DATA_KEY, JSON.stringify(stored));
+  }
+  return stored;
+}
+function clientData(stored, users){
+  const { peopleMigrated, ...rest } = stored;
+  return { ...rest, people: derivedPeople(users) };
+}
+
 async function handleUsersList(request, env){
   const { error } = await requireAdmin(request, env);
   if(error) return error;
   const users = await loadUsers(env);
-  return json({ users: Object.values(users).map(publicUser) }, 200, env);
+  const stored = await loadData(env, users);
+  return json({ users: Object.values(users).map(publicUser), unmatchedPeople: unmatchedLegacyPeople(stored, users) }, 200, env);
+}
+
+// Admin has dealt with (or doesn't need) the leftover old-list names.
+async function handleClearLegacyPeople(request, env){
+  const { error } = await requireAdmin(request, env);
+  if(error) return error;
+  const stored = (await env.MOC_KV.get(DATA_KEY, 'json')) || emptyData();
+  stored.people = [];
+  stored.peopleMigrated = true;
+  await env.MOC_KV.put(DATA_KEY, JSON.stringify(stored));
+  return json({ ok: true }, 200, env);
 }
 
 function loginIdError(env, users, loginId, exceptId){
@@ -393,6 +451,7 @@ async function handleUsersCreate(request, env){
   const now = new Date().toISOString();
   users[id] = {
     id, name, loginId, function: String(body.function || '').trim(), role: body.role === 'admin' ? 'admin' : 'user',
+    isOwner: !!body.isOwner, isPic: !!body.isPic,
     enabled: true, createdAt: now, updatedAt: now
   };
   await setPassword(users[id], password);
@@ -415,6 +474,8 @@ async function handleUserUpdate(request, env, id){
     rec.name = body.name.trim();
   }
   if(typeof body.function === 'string') rec.function = body.function.trim();
+  if(typeof body.isOwner === 'boolean') rec.isOwner = body.isOwner;
+  if(typeof body.isPic === 'boolean') rec.isPic = body.isPic;
   if(typeof body.enabled === 'boolean'){
     if(isSelf && !body.enabled) return json({ error: 'cannot_disable_self' }, 400, env);
     rec.enabled = body.enabled;
@@ -435,8 +496,8 @@ async function handleUserUpdate(request, env, id){
 async function handleDataGet(request, env){
   const { error } = await requireAuth(request, env);
   if(error) return error;
-  const stored = await env.MOC_KV.get(DATA_KEY, 'json');
-  return json(stored || emptyData(), 200, env);
+  const users = await loadUsers(env);
+  return json(clientData(await loadData(env, users), users), 200, env);
 }
 
 async function handleDataPut(request, env){
@@ -444,17 +505,13 @@ async function handleDataPut(request, env){
   if(error) return error;
   let incoming;
   try{ incoming = await request.json(); }catch(e){ return json({ error: 'invalid_json' }, 400, env); }
-  const stored = (await env.MOC_KV.get(DATA_KEY, 'json')) || emptyData();
+  const users = await loadUsers(env);
+  const stored = await loadData(env, users);
 
-  // Only an admin can change the Change Owner/PIC lists. For everyone else the payload's
-  // copy is ignored (not rejected) — a user whose tab is a few seconds stale must still
-  // be able to save their own MoC edit without tripping over lists they can't touch.
-  if(session.role !== 'admin') incoming.people = stored.people || [];
-
+  // `people` in the payload is ignored (not rejected): the lists are derived from the
+  // User Directory, and a tab still running an older frontend may keep sending them.
   try{
-    ['mocList', 'actionPlan', 'agenda', 'attendant', 'people'].forEach(col => {
-      // an older frontend that predates `people` simply omits it — not a delete
-      if(col === 'people' && incoming[col] === undefined) return;
+    ['mocList', 'actionPlan', 'agenda', 'attendant'].forEach(col => {
       assertWriteAllowed(col, incoming[col], stored[col], session);
     });
   }catch(e){
@@ -464,7 +521,7 @@ async function handleDataPut(request, env){
 
   const merged = mergeData(incoming, stored);
   await env.MOC_KV.put(DATA_KEY, JSON.stringify(merged));
-  return json(merged, 200, env);
+  return json(clientData(merged, users), 200, env);
 }
 
 export default {
@@ -482,6 +539,7 @@ export default {
 
     if(path === '/users' && request.method === 'GET') return handleUsersList(request, env);
     if(path === '/users' && request.method === 'POST') return handleUsersCreate(request, env);
+    if(path === '/users/clear-legacy-people' && request.method === 'POST') return handleClearLegacyPeople(request, env);
     const userMatch = /^\/users\/([^/]+)$/.exec(path);
     if(userMatch && request.method === 'PUT') return handleUserUpdate(request, env, userMatch[1]);
 
