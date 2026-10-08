@@ -855,6 +855,9 @@ thead th,tbody td{padding-left:12px;padding-right:12px;}
 #ml-tbody > tr.row-clickable > td:nth-child(7){max-width:170px;}
 .cell-mono,.cell-nowrap{white-space:nowrap;}
 .cell-dash{color:var(--muted-light);}
+/* Name of change / Issue / Action: always readable in full — the cell wraps and the row grows
+   with the text instead of cutting it off with an ellipsis. */
+.cell-wrap{white-space:normal;overflow-wrap:break-word;min-width:240px;line-height:1.5;}
 #ml-tbody > tr.row-clickable > td:nth-child(3),#ml-tbody > tr.row-clickable > td:nth-child(4),
 #ap-tbody td:nth-child(1),#ap-tbody td:nth-child(4){white-space:nowrap;}
 /* a <td> must stay a table cell (display:flex on it broke the row's bottom border) */
@@ -2530,7 +2533,7 @@ function renderMasterList(){
       <td>${Utils.escapeHtml(Utils.formatDateVN(m.requestDate))}</td>
       <td>${Utils.escapeHtml(m.changeOwner)}</td>
       <td>${m.dept ? `<span class="dept-tag">${Utils.escapeHtml(m.dept)}</span>` : ''}</td>
-      <td class="cell-ellipsis" title="${Utils.escapeHtml(m.nameOfChange)}">${Utils.escapeHtml(m.nameOfChange)}</td>
+      <td class="cell-wrap">${Utils.escapeHtml(m.nameOfChange)}</td>
       <td class="cell-ellipsis" title="${Utils.escapeHtml(m.natureOfChange)}">${Utils.escapeHtml(m.natureOfChange)}</td>
       <td class="cell-nowrap" title="${Utils.escapeHtml(m.typeOfChange)}">${Utils.escapeHtml((m.typeOfChange||'').replace(/ Change$/,''))}</td>
       <td>${m.classification ? `<span class="cls-tag cls-${Utils.escapeHtml(m.classification.toLowerCase())}">${Utils.escapeHtml(m.classification)}</span>` : '<span class="cell-dash">—</span>'}</td>
@@ -3031,8 +3034,8 @@ function renderActionPlan(){
     else if(a.status==='Done') dueSub = `<div class="due-sub is-ok">Đã hoàn thành</div>`;
     return `<tr class="row-clickable" data-id="${a.id}">
       <td>${Utils.escapeHtml(Utils.formatDateVN(a.date))}</td>
-      <td class="cell-ellipsis" title="${Utils.escapeHtml(a.issue)}">${Utils.escapeHtml(a.issue)}</td>
-      <td class="cell-ellipsis" title="${Utils.escapeHtml(a.action)}">${Utils.escapeHtml(a.action)}</td>
+      <td class="cell-wrap">${Utils.nl2br(a.issue)}</td>
+      <td class="cell-wrap">${Utils.nl2br(a.action)}</td>
       <td>${Utils.escapeHtml(a.pic)}</td>
       <td class="due-cell"><div class="due-date">${Utils.escapeHtml(Utils.formatDateVN(a.dueDate))}</div>${dueSub}</td>
       <td><span class="badge ${statusBadgeClass(a.status)}">${Utils.escapeHtml(a.status||'On progress')}</span></td>

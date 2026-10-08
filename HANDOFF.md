@@ -209,6 +209,9 @@ Thêm tab mới: thêm `.nav-item[data-view=x]`, `<section class="view" id="view
   `display:table-cell` (trước là `flex`, làm lệch đường kẻ); MoC No/ngày/owner không xuống dòng;
   cột Type hiển thị bỏ hậu tố " Change" (chỉ hiển thị — giá trị lưu/lọc/CSV không đổi); Dept là
   nhãn `.dept-tag`; Mức độ là `.cls-tag` có chấm màu (Minor xám / Major vàng / Critical đỏ).
+- **Ô chữ dài:** Name of change (Master List), Issue và Action (Action Plan) dùng `.cell-wrap` —
+  tự xuống dòng, dòng cao theo nội dung, không còn cắt "…" (yêu cầu người dùng 2026-10-08: phải
+  đọc được hết). Nature và Remark vẫn là `.cell-ellipsis`.
 - **Popup:** `.modal` giới hạn trong viewport, chỉ `.modal-body` cuộn; header/footer đứng yên
   (sửa lỗi nội dung form lộ ra dưới footer sticky khi cuộn). Popup có `<form>` bọc body+footer
   (login, user) dựa vào luật `.modal > form`.
