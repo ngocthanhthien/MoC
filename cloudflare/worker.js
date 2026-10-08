@@ -11,7 +11,7 @@
  *     creates the first real accounts and is the recovery path if every directory
  *     Admin is lost. It is never shipped to the frontend and never stored in KV.
  *
- *  2. User Directory — GET/POST /users, PUT /users/:id  (admin only)
+ *  2. User Directory — GET/POST /users, PUT/DELETE /users/:id  (admin only)
  *     Stored at KV key `moc_users`. Passwords are chosen by the Admin and stored only
  *     as a salted PBKDF2-SHA256 hash — they cannot be read back, only replaced.
  *     Accounts created before this scheme (name + 6-digit Mã NV) are migrated on
@@ -52,7 +52,7 @@ function emptyData(){
 function corsHeaders(env){
   return {
     'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN || '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
     'Access-Control-Max-Age': '86400'
   };
@@ -493,6 +493,20 @@ async function handleUserUpdate(request, env, id){
   return json({ user: publicUser(rec) }, 200, env);
 }
 
+// Permanent: the account is removed from the directory, so its sessions die on their
+// next request (resolveSession) and its name leaves the Change Owner / PIC lists.
+// MoC/Action records that mention the name are left as they are.
+async function handleUserDelete(request, env, id){
+  const { session, error } = await requireAdmin(request, env);
+  if(error) return error;
+  if(session.userId === id) return json({ error: 'cannot_delete_self' }, 400, env);
+  const users = await loadUsers(env);
+  if(!users[id]) return json({ error: 'not_found' }, 404, env);
+  delete users[id];
+  await saveUsers(env, users);
+  return json({ ok: true }, 200, env);
+}
+
 async function handleDataGet(request, env){
   const { error } = await requireAuth(request, env);
   if(error) return error;
@@ -542,6 +556,7 @@ export default {
     if(path === '/users/clear-legacy-people' && request.method === 'POST') return handleClearLegacyPeople(request, env);
     const userMatch = /^\/users\/([^/]+)$/.exec(path);
     if(userMatch && request.method === 'PUT') return handleUserUpdate(request, env, userMatch[1]);
+    if(userMatch && request.method === 'DELETE') return handleUserDelete(request, env, userMatch[1]);
 
     if(path === '/data' && request.method === 'GET') return handleDataGet(request, env);
     if(path === '/data' && request.method === 'PUT') return handleDataPut(request, env);

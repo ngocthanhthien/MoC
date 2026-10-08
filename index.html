@@ -1001,7 +1001,7 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
                   <tr><td><strong>User</strong></td><td>Tên đăng nhập + Mật khẩu (Admin cấp)</td><td>Xem tất cả, tạo MoC/Action mới; chỉ <strong>sửa</strong> được MoC nếu là Change Owner hoặc có tên trong "Người liên quan"; không xoá được</td></tr>
                 </tbody>
               </table>
-              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Admin tạo tài khoản ở tab <strong>Người dùng</strong>: bấm "+ Thêm người dùng", nhập Họ tên, Vai trò, Tên đăng nhập và Mật khẩu ban đầu rồi gửi cho người dùng. Cần tạo nhiều tài khoản thì dùng "Tải Template CSV" → điền → "Nhập từ CSV". Có thể nâng một tài khoản lên Admin hoặc vô hiệu hoá ngay trên từng dòng. Tick cột <strong>Change Owner</strong> / <strong>PIC</strong> để <strong>Tên hiển thị</strong> của người đó xuất hiện trong danh sách chọn ở form MoC và Action.</div>
+              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Admin tạo tài khoản ở tab <strong>Người dùng</strong>: bấm "+ Thêm người dùng", nhập Họ tên, Vai trò, Tên đăng nhập và Mật khẩu ban đầu rồi gửi cho người dùng. Cần tạo nhiều tài khoản thì dùng "Tải Template CSV" → điền → "Nhập từ CSV". Có thể nâng một tài khoản lên Admin vô hiệu hoá hoặc xoá hẳn (&#128465;) ngay trên từng dòng. Tick cột <strong>Change Owner</strong> / <strong>PIC</strong> để <strong>Tên hiển thị</strong> của người đó xuất hiện trong danh sách chọn ở form MoC và Action.</div>
               <div class="guide-callout warn"><span class="gc-icon">&#9888;</span>Quên mật khẩu? Liên hệ Admin — Admin bấm &#9998; ở dòng của bạn trong tab Người dùng và nhập mật khẩu mới. Mật khẩu chỉ lưu dạng băm nên không ai xem lại được mật khẩu cũ.</div>
               <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Tài khoản tạo trước đây (đăng nhập bằng Tên + Mã NV): hỏi Admin Tên đăng nhập mới của bạn; mật khẩu vẫn là Mã NV cũ cho tới khi Admin đặt lại.</div>
             </div>
@@ -1552,12 +1552,13 @@ const Api = (()=>{
   const listUsers = () => request('/users', { auth:true });
   const createUser = (payload) => request('/users', { method:'POST', body: payload, auth:true });
   const updateUser = (id, patch) => request('/users/' + encodeURIComponent(id), { method:'PUT', body: patch, auth:true });
+  const deleteUser = (id) => request('/users/' + encodeURIComponent(id), { method:'DELETE', auth:true });
   const clearLegacyPeople = () => request('/users/clear-legacy-people', { method:'POST', auth:true });
 
   const getData = () => request('/data', { auth:true });
   const putData = (dataObj) => request('/data', { method:'PUT', body: dataObj, auth:true });
 
-  return { login, me, logout, listUsers, createUser, updateUser, clearLegacyPeople, getData, putData };
+  return { login, me, logout, listUsers, createUser, updateUser, deleteUser, clearLegacyPeople, getData, putData };
 })();
 
 /* ================================================================================
@@ -3674,6 +3675,8 @@ const USER_ERROR_VI = {
   login_taken: 'Tên đăng nhập đã được sử dụng.',
   password_too_short: 'Mật khẩu phải từ ' + MIN_PASSWORD_LENGTH + ' ký tự trở lên.',
   cannot_disable_self: 'Không thể tự vô hiệu hoá tài khoản của chính bạn.',
+  cannot_delete_self: 'Không thể tự xoá tài khoản của chính bạn.',
+  not_found: 'Tài khoản không còn tồn tại — bấm "Tải lại".',
   last_admin: 'Không thể hạ quyền: bạn là Admin đang hoạt động duy nhất.',
   forbidden: 'Chỉ Admin mới thực hiện được thao tác này.'
 };
@@ -3744,6 +3747,7 @@ async function renderUsers(){
         <button class="btn btn-sm" data-role-user="${id}">${isAdmin?'Hạ xuống User':'Nâng lên Admin'}</button>
         <button class="btn btn-sm${u.enabled?' btn-danger':''}" data-toggle-user="${id}" ${isSelf ? 'disabled title="Không thể khoá tài khoản của chính bạn"' : ''}>${u.enabled?'Vô hiệu hoá':'Kích hoạt'}</button>
         <button class="btn btn-sm btn-icon" data-edit-user="${id}" title="Sửa / đặt lại mật khẩu">&#9998;</button>
+        <button class="btn btn-sm btn-icon btn-danger" data-del-user="${id}" ${isSelf ? 'disabled title="Không thể xoá tài khoản của chính bạn"' : 'title="Xoá tài khoản"'}>&#128465;</button>
       </td>
     </tr>`;
   }).join('');
@@ -3751,6 +3755,22 @@ async function renderUsers(){
   tbody.querySelectorAll('[data-toggle-user]').forEach(btn=>btn.addEventListener('click', ()=>toggleUserEnabled(btn.dataset.toggleUser)));
   tbody.querySelectorAll('[data-role-user]').forEach(btn=>btn.addEventListener('click', ()=>changeUserRole(btn.dataset.roleUser)));
   tbody.querySelectorAll('[data-flag-user]').forEach(cb=>cb.addEventListener('change', ()=>setUserMocFlag(cb)));
+  tbody.querySelectorAll('[data-del-user]').forEach(btn=>btn.addEventListener('click', ()=>deleteUser(btn.dataset.delUser)));
+}
+async function deleteUser(id){
+  const u = usersCache.find(x=>x.id===id);
+  if(!u) return;
+  if(!confirm('XOÁ HẲN tài khoản "'+u.name+'" ('+u.loginId+')?\n'
+    + 'Người này bị đăng xuất, không đăng nhập được nữa và tên không còn trong danh sách chọn Change Owner / PIC. '
+    + 'Các MoC/Action đã ghi tên này vẫn giữ nguyên.\n\nKhông hoàn tác được — nếu chỉ muốn tạm khoá, hãy dùng "Vô hiệu hoá".')) return;
+  try{
+    await Api.deleteUser(id);
+    showToast('Đã xoá tài khoản.', 'ok');
+    await renderUsers();
+    await refreshFromCloud(true);
+  }catch(e){
+    showToast(userErrorText(e), 'err');
+  }
 }
 // Change Owner / PIC tick straight from the table row. The pick-lists the forms use are
 // derived from these ticks by the Worker, so pull fresh data right after.

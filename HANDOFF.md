@@ -129,7 +129,8 @@ Thêm tab mới: thêm `.nav-item[data-view=x]`, `<section class="view" id="view
   Nội dung viết tay trong HTML — **cập nhật khi đổi hành vi** (đặc biệt phân quyền, SLA).
 - **Quản lý người dùng** (Admin) — bảng Họ tên / Đăng nhập / Bộ phận / Vai trò / Trạng thái; trên
   từng dòng: Nâng lên Admin ↔ Hạ xuống User, Vô hiệu hoá ↔ Kích hoạt (khoá nút với chính mình),
-  ✎ sửa Tên hiển thị/bộ phận và **đặt lại mật khẩu**; cột tick **Change Owner** / **PIC** (xem dưới). Thanh công cụ: Tải lại, Xuất CSV (không có mật
+  ✎ sửa Tên hiển thị/bộ phận và **đặt lại mật khẩu**; 🗑 **xoá hẳn** tài khoản (`DELETE /users/:id`,
+  không xoá được chính mình; MoC/Action đã ghi tên đó giữ nguyên); cột tick **Change Owner** / **PIC** (xem dưới). Thanh công cụ: Tải lại, Xuất CSV (không có mật
   khẩu), Tải Template CSV, **Nhập từ CSV** tạo tài khoản hàng loạt (`parseCSV` tự nhận dấu
   phân cách `,` `;` tab; kiểm tra từng dòng bằng `userInputProblem` trước khi gửi; mỗi dòng một
   `POST /users`). Dùng CSV thay vì Excel như app tham chiếu vì app này không nhúng thư viện.
@@ -220,7 +221,8 @@ Map `index.html` (~4265 dòng; luôn `grep -n` lại tên section thay vì tin s
 `EVENT BINDING` → `INIT` → `SEED DATA` (rỗng); sau `</script>` chính còn dialog Theme + script Theme.
 
 `cloudflare/worker.js`: `handleLogin/Me/Logout` (`/auth/*`), `handleUsersList/Create/Update`
-(`GET/POST /users`, `PUT /users/:id` nhận `{name, function, enabled, role, password}` — admin),
+(`GET/POST /users`, `PUT /users/:id` nhận `{name, function, enabled, role, password, isOwner, isPic}`,
+`DELETE /users/:id` — admin),
 `handleDataGet/Put` (`/data`), `assertWriteAllowed()`; tài khoản: `migrateLegacyUsers`,
 `checkPassword`, `setPassword`, `loginIdError`, `hasOtherActiveAdmin`.
 
@@ -286,7 +288,7 @@ khoản cũ và báo lại cho từng người (mật khẩu của họ vẫn l�
 
 - Không gửi email thật được (chỉ `.eml`); cần internet để đăng nhập/đồng bộ; phiên hết hạn 12h;
   người dùng chưa tự đổi được mật khẩu (chỉ Admin đặt lại); không giới hạn số lần đăng nhập
-  sai; không xoá hẳn được tài khoản (chỉ vô hiệu hoá); chưa test trên iPad/điện thoại ở mức đầy đủ (thanh tab ngang có cuộn ngang; nút
+  sai; chưa test trên iPad/điện thoại ở mức đầy đủ (thanh tab ngang có cuộn ngang; nút
   Giao diện bị ẩn ở màn hình ≤480px vì topbar hết chỗ — truy cập được từ ≥481px).
 - Sửa MoC xét quyền theo bản ghi **trên server** → hai người sửa gần đồng thời có thể bị 403 và
   bị đồng bộ lại (mất thao tác dang dở); so khớp owner theo tên chuỗi nên trùng/khác tên có thể sai.
