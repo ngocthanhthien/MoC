@@ -9,6 +9,27 @@
    wrong theme. Self-contained: reads its own localStorage key only, never touches
    any business data. If storage is blocked/corrupt, silently falls back to the
    default (Crafted tiêu chuẩn) and the app renders normally either way. */
+/* Custom background colour (light appearance only). The page background is the one colour
+   the person picks; the tones that sit next to it — soft surfaces, hairline borders, the
+   highlight tint — are derived from it so they never clash with a non-cream background.
+   Shared with the Theme module at the end of <body> via window.__ildApplyBg. */
+window.__ildApplyBg = function(root, bg, resolvedAppearance){
+  var props = ['--bg', '--surface', '--border', '--blue-light'];
+  if(resolvedAppearance !== 'light' || !/^#[0-9a-fA-F]{6}$/.test(bg || '')){
+    for(var i=0;i<props.length;i++) root.style.removeProperty(props[i]);
+    return;
+  }
+  function rgb(hex){ return [parseInt(hex.substr(1,2),16), parseInt(hex.substr(3,2),16), parseInt(hex.substr(5,2),16)]; }
+  function mix(a, b, t){
+    var x = rgb(a), y = rgb(b), out = '#';
+    for(var k=0;k<3;k++){ var v = Math.round(x[k] + (y[k]-x[k])*t).toString(16); out += v.length < 2 ? '0'+v : v; }
+    return out;
+  }
+  root.style.setProperty('--bg', bg);
+  root.style.setProperty('--surface', mix(bg, '#ffffff', 0.45));
+  root.style.setProperty('--border', mix(bg, '#2A2018', 0.13));
+  root.style.setProperty('--blue-light', mix(bg, '#382E28', 0.09));
+};
 (function(){
   try{
     var raw = localStorage.getItem('ild-crafted-appearance-v1');
@@ -24,6 +45,7 @@
     root.setAttribute('data-ild-appearance', resolved);
     root.setAttribute('data-ild-contrast', contrast);
     root.setAttribute('data-ild-emphasis', emphasis);
+    window.__ildApplyBg(root, cfg && cfg.bg, resolved);
   }catch(e){ /* storage blocked or corrupt — default light theme via CSS already applies */ }
 })();
 </script>
@@ -682,6 +704,19 @@ thead .att-sticky-col{z-index:3;background:var(--surface);}
 .ild-theme-option:hover{background:var(--surface);}
 .ild-theme-option input{width:auto;margin:0;accent-color:var(--blue);}
 .ild-theme-option.checked{border-color:var(--blue);background:var(--blue-light);font-weight:600;}
+.ild-theme-swatches{display:flex;flex-wrap:wrap;gap:8px;}
+.ild-theme-swatch{
+  position:relative;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border-dark);background:var(--card);
+  color:var(--text);border-radius:9px;padding:6px 11px 6px 7px;font-size:12.5px;font-family:inherit;cursor:pointer;
+  transition:border-color var(--dur) var(--ease),background var(--dur) var(--ease);
+}
+.ild-theme-swatch:hover{background:var(--surface);}
+.ild-theme-swatch .dot{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.2);flex-shrink:0;}
+.ild-theme-swatch.active{border-color:var(--blue);background:var(--blue-light);font-weight:600;}
+.ild-theme-swatch.is-disabled{opacity:.45;cursor:not-allowed;pointer-events:none;}
+.ild-theme-swatch input[type=color]{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;padding:0;border:0;}
+.ild-theme-swatch:focus-within{outline:2px solid var(--focus);outline-offset:1px;}
+.ild-theme-bg-note{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.45;}
 
 /* Print must never show the Theme button/panel, and must never print a dark
    background regardless of the on-screen appearance — force the Crafted light
@@ -1179,7 +1214,7 @@ body.auth-locked #modal-login{background:radial-gradient(900px 480px at 50% -5%,
 
             <div class="guide-section" id="guide-giaodien">
               <h3>&#127912; Giao diện (Theme)</h3>
-              <p>Bấm nút "Giao diện" trên thanh trên cùng để đổi giữa các cấu hình dựng sẵn (Sáng/Tối/Tương phản cao/Đậm), hoặc tự chọn riêng Chế độ hiển thị, Độ tương phản, Độ đậm. Lựa chọn được lưu riêng trên từng trình duyệt.</p>
+              <p>Bấm nút "Giao diện" trên thanh trên cùng để đổi giữa các cấu hình dựng sẵn (Sáng/Tối/Tương phản cao/Đậm), hoặc tự chọn riêng Chế độ hiển thị, <strong>Màu nền</strong> (có sẵn vài màu nhạt, hoặc "Màu khác…" để tự chọn — chỉ áp dụng ở chế độ Sáng), Độ tương phản, Độ đậm. Lựa chọn được lưu riêng trên từng trình duyệt.</p>
             </div>
 
             <div class="guide-section guide-faq" id="guide-faq">
@@ -4351,6 +4386,11 @@ const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"a
         <div class="ild-theme-options" id="ild-theme-appearance-group" role="radiogroup" aria-label="Chế độ hiển thị"></div>
       </div>
       <div>
+        <div class="ild-theme-group-title">Màu nền</div>
+        <div class="ild-theme-swatches" id="ild-theme-bg-group" role="group" aria-label="Màu nền"></div>
+        <div class="ild-theme-bg-note" id="ild-theme-bg-note" role="status"></div>
+      </div>
+      <div>
         <div class="ild-theme-group-title">Độ tương phản</div>
         <div class="ild-theme-options" id="ild-theme-contrast-group" role="radiogroup" aria-label="Độ tương phản"></div>
       </div>
@@ -4375,7 +4415,29 @@ const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"a
 (function(){
   'use strict';
   var STORAGE_KEY = 'ild-crafted-appearance-v1';
-  var DEFAULTS = { appearance:'light', contrast:'standard', emphasis:'standard' };
+  var DEFAULTS = { appearance:'light', contrast:'standard', emphasis:'standard', bg:'' };
+  // Background colour: '' = the theme's own (Crafted cream), otherwise '#rrggbb'. Only light
+  // tints are offered/accepted — text colours stay dark, so a dark background would be
+  // unreadable; people who want dark use "Chế độ hiển thị: Tối" instead.
+  var BG_OPTS = [
+    { value:'',        label:'Kem (mặc định)', swatch:'#F7F0E6' },
+    { value:'#F4F5F7', label:'Xám nhạt' },
+    { value:'#EEF3F9', label:'Xanh dương nhạt' },
+    { value:'#EFF5EE', label:'Xanh lá nhạt' },
+    { value:'#FAF5DC', label:'Vàng nhạt' },
+    { value:'#FAEFEA', label:'Hồng đào' },
+    { value:'#F2EFF8', label:'Tím nhạt' }
+  ];
+  var HEX_RE = /^#[0-9a-fA-F]{6}$/;
+  var MIN_BG_LUMINANCE = 0.65; // keeps body and muted text at a readable contrast
+  function luminance(hex){
+    var c = [1,3,5].map(function(i){
+      var v = parseInt(hex.substr(i,2),16)/255;
+      return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+    });
+    return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2];
+  }
+  function validBg(v){ return (typeof v === 'string' && HEX_RE.test(v) && luminance(v) >= MIN_BG_LUMINANCE) ? v.toUpperCase() : ''; }
 
   var PRESETS = [
     { id:'standard', label:'Crafted tiêu chuẩn', desc:'Nền kem, chữ rõ ràng',    config:{ appearance:'light', contrast:'standard', emphasis:'standard' } },
@@ -4396,14 +4458,14 @@ const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"a
   function loadConfig(){
     try{
       var raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return { appearance:DEFAULTS.appearance, contrast:DEFAULTS.contrast, emphasis:DEFAULTS.emphasis };
+      if(!raw) return { appearance:DEFAULTS.appearance, contrast:DEFAULTS.contrast, emphasis:DEFAULTS.emphasis, bg:DEFAULTS.bg };
       var cfg = JSON.parse(raw);
       if(!cfg || typeof cfg !== 'object') throw new Error('invalid');
       var appearance = (cfg.appearance==='light'||cfg.appearance==='dark'||cfg.appearance==='system') ? cfg.appearance : DEFAULTS.appearance;
       var contrast = (cfg.contrast==='standard'||cfg.contrast==='high') ? cfg.contrast : DEFAULTS.contrast;
       var emphasis = (cfg.emphasis==='light'||cfg.emphasis==='standard'||cfg.emphasis==='bold') ? cfg.emphasis : DEFAULTS.emphasis;
-      return { appearance:appearance, contrast:contrast, emphasis:emphasis };
-    }catch(e){ return { appearance:DEFAULTS.appearance, contrast:DEFAULTS.contrast, emphasis:DEFAULTS.emphasis }; }
+      return { appearance:appearance, contrast:contrast, emphasis:emphasis, bg:validBg(cfg.bg) };
+    }catch(e){ return { appearance:DEFAULTS.appearance, contrast:DEFAULTS.contrast, emphasis:DEFAULTS.emphasis, bg:DEFAULTS.bg }; }
   }
   function saveConfig(cfg){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); }catch(e){ /* storage blocked — theme still applies this session */ }
@@ -4421,6 +4483,7 @@ const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"a
     root.setAttribute('data-ild-appearance', resolvedAppearance());
     root.setAttribute('data-ild-contrast', current.contrast);
     root.setAttribute('data-ild-emphasis', current.emphasis);
+    window.__ildApplyBg(root, current.bg, resolvedAppearance());
   }
   function matchingPresetId(){
     for(var i=0;i<PRESETS.length;i++){
@@ -4437,7 +4500,7 @@ const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"a
   applyToDocument();
 
   var panelBuilt = false;
-  var overlay, panel, presetsBox, appearanceGroup, contrastGroup, emphasisGroup, presetTag, openBtn, lastFocused;
+  var overlay, panel, presetsBox, appearanceGroup, contrastGroup, emphasisGroup, bgGroup, bgNote, bgPicker, presetTag, openBtn, lastFocused;
 
   function el(tag, cls, attrs){
     var e = document.createElement(tag);
@@ -4478,7 +4541,7 @@ const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"a
       var d = document.createElement('span'); d.className='d'; d.textContent = p.desc;
       btn.appendChild(t); btn.appendChild(d);
       btn.addEventListener('click', function(cfg){ return function(){
-        current = { appearance:cfg.appearance, contrast:cfg.contrast, emphasis:cfg.emphasis };
+        current = { appearance:cfg.appearance, contrast:cfg.contrast, emphasis:cfg.emphasis, bg:current.bg };
         saveConfig(current);
         applyToDocument();
         refreshPanel();
@@ -4499,9 +4562,59 @@ const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"a
     refreshOptionChecked(contrastGroup, current.contrast);
     refreshOptionChecked(emphasisGroup, current.emphasis);
     refreshPresetActive();
+    refreshBg();
+  }
+  function buildBgGroup(){
+    bgGroup.innerHTML = '';
+    BG_OPTS.forEach(function(opt){
+      var btn = el('button', 'ild-theme-swatch', { type:'button' });
+      btn.setAttribute('data-bg', opt.value);
+      var dot = el('span', 'dot'); dot.style.background = opt.swatch || opt.value;
+      var txt = document.createElement('span'); txt.textContent = opt.label;
+      btn.appendChild(dot); btn.appendChild(txt);
+      btn.addEventListener('click', function(){ bgNote.textContent = ''; setField('bg', opt.value); });
+      bgGroup.appendChild(btn);
+    });
+    // any other light colour, through the browser's own colour picker
+    var custom = el('label', 'ild-theme-swatch');
+    custom.setAttribute('data-bg', 'custom');
+    var cdot = el('span', 'dot'); cdot.style.background = 'conic-gradient(#f87171,#fbbf24,#34d399,#60a5fa,#a78bfa,#f87171)';
+    var ctxt = document.createElement('span'); ctxt.textContent = 'Màu khác…';
+    bgPicker = el('input', null, { type:'color', 'aria-label':'Chọn màu nền khác' });
+    custom.appendChild(cdot); custom.appendChild(ctxt); custom.appendChild(bgPicker);
+    bgPicker.addEventListener('input', function(){
+      var picked = validBg(bgPicker.value);
+      if(!picked){
+        bgNote.textContent = 'Màu này quá đậm nên chữ sẽ khó đọc — hãy chọn màu nhạt hơn, hoặc dùng Chế độ hiển thị "Tối".';
+        return;
+      }
+      bgNote.textContent = '';
+      setField('bg', picked);
+    });
+    bgGroup.appendChild(custom);
+  }
+  function refreshBg(){
+    var dark = resolvedAppearance() !== 'light';
+    var isPreset = false;
+    var items = bgGroup.querySelectorAll('.ild-theme-swatch');
+    for(var i=0;i<items.length;i++){
+      var v = items[i].getAttribute('data-bg');
+      var on = v !== 'custom' && v.toUpperCase() === current.bg;
+      if(on) isPreset = true;
+      items[i].classList.toggle('active', on);
+      items[i].classList.toggle('is-disabled', dark);
+      if(items[i].tagName === 'BUTTON') items[i].disabled = dark;
+    }
+    var custom = bgGroup.querySelector('[data-bg="custom"]');
+    custom.classList.toggle('active', !isPreset);
+    custom.querySelector('.dot').style.background = isPreset ? 'conic-gradient(#f87171,#fbbf24,#34d399,#60a5fa,#a78bfa,#f87171)' : current.bg;
+    bgPicker.disabled = dark;
+    bgPicker.value = current.bg || '#F7F0E6';
+    if(dark) bgNote.textContent = 'Màu nền chỉ áp dụng ở chế độ Sáng — chế độ Tối dùng nền tối riêng.';
+    else if(bgNote.textContent.indexOf('chế độ Sáng') >= 0) bgNote.textContent = '';
   }
   function setField(field, value){
-    var next = { appearance:current.appearance, contrast:current.contrast, emphasis:current.emphasis };
+    var next = { appearance:current.appearance, contrast:current.contrast, emphasis:current.emphasis, bg:current.bg };
     next[field] = value;
     current = next;
     saveConfig(current);
@@ -4517,15 +4630,19 @@ const SEED_DATA = {"schemaVersion":1,"mocList":[],"actionPlan":[],"agenda":[],"a
     contrastGroup = document.getElementById('ild-theme-contrast-group');
     emphasisGroup = document.getElementById('ild-theme-emphasis-group');
     presetTag = document.getElementById('ild-theme-preset-tag');
+    bgGroup = document.getElementById('ild-theme-bg-group');
+    bgNote = document.getElementById('ild-theme-bg-note');
 
     buildPresets();
+    buildBgGroup();
     buildOptionGroup(appearanceGroup, 'appearance', APPEARANCE_OPTS, current.appearance, function(v){ setField('appearance', v); });
     buildOptionGroup(contrastGroup, 'contrast', CONTRAST_OPTS, current.contrast, function(v){ setField('contrast', v); });
     buildOptionGroup(emphasisGroup, 'emphasis', EMPHASIS_OPTS, current.emphasis, function(v){ setField('emphasis', v); });
     refreshPresetActive();
 
     document.getElementById('ild-theme-reset-btn').addEventListener('click', function(){
-      current = { appearance:DEFAULTS.appearance, contrast:DEFAULTS.contrast, emphasis:DEFAULTS.emphasis };
+      current = { appearance:DEFAULTS.appearance, contrast:DEFAULTS.contrast, emphasis:DEFAULTS.emphasis, bg:DEFAULTS.bg };
+      bgNote.textContent = '';
       saveConfig(current);
       applyToDocument();
       refreshPanel();

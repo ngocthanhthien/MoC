@@ -17,6 +17,7 @@ lịch sử hội thoại** — quyết định quan trọng và lý do đều g
   Change Owner & PIC" vào tab Quản lý người dùng (mục 4).
 - **Đợt 3 cùng ngày (đã push):** làm mới giao diện (mục 5, "UI refresh") — chỉ đổi `index.html`,
   không đụng Worker.
+- **Đợt 4 cùng ngày (đã push):** thêm chọn Màu nền trong "Tuỳ chỉnh giao diện" (mục 5) — chỉ `index.html`.
 - **Worker production:** `https://moc-data-api.dangthanhbinh53.workers.dev` (tài khoản
   Cloudflare của người dùng, KV `MOC_KV` id nằm trong `cloudflare/wrangler.toml`).
 - **Frontend production:** GitHub Pages của repo trên (origin được phép CORS:
@@ -176,7 +177,13 @@ Thêm tab mới: thêm `.nav-item[data-view=x]`, `<section class="view" id="view
 - **Theme** = tính năng thêm duy nhất của đợt đó: nút "Giao diện" mở dialog (4 preset: Crafted
   tiêu chuẩn/đậm/tối/Tương phản cao + Sáng/Tối/Theo hệ thống, Tương phản Tiêu chuẩn/Cao, Độ đậm
   Nhẹ/Tiêu chuẩn/Đậm, nút khôi phục mặc định). Lưu `localStorage['ild-crafted-appearance-v1']`
-  (`{appearance, contrast, emphasis}`, validate khi đọc, lỗi storage không làm app hỏng).
+  (`{appearance, contrast, emphasis, bg}`, validate khi đọc, lỗi storage không làm app hỏng).
+- **Màu nền tuỳ chọn (`bg`)**: `''` = màu kem của theme, hoặc `'#RRGGBB'` (vài màu nhạt dựng sẵn
+  trong `BG_OPTS` + "Màu khác…" qua `<input type="color">`). `window.__ildApplyBg(root, bg,
+  appearance)` (định nghĩa ở script đầu `<head>`, dùng chung cho áp-sớm và module Theme) đặt
+  inline `--bg` và **suy ra** `--surface`, `--border`, `--blue-light` từ màu đó để không lệch tông.
+  Chỉ áp ở chế độ **Sáng** (chế độ Tối xoá các biến inline); màu quá đậm (độ sáng < 0.65) bị từ
+  chối vì chữ vẫn là màu tối. In ấn không bị ảnh hưởng (`@media print` dùng `!important`).
 - Cấu trúc: (1) script nhỏ đầu `<head>` áp theme sớm chống chớp màu; (2) khối CSS
   `ILD THEME — APPEARANCE OVERRIDES` (ghi đè token qua `:root[data-ild-appearance|contrast|emphasis]`);
   (3) markup dialog `#ild-theme-overlay` + IIFE JS riêng ở cuối `<body>` (không đụng handler
