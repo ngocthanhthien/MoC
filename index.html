@@ -753,10 +753,12 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
 .people-add{display:flex;gap:6px;}
 .people-add input{flex:1;min-width:0;padding:7px 10px;border:1px solid var(--border-dark);border-radius:6px;background:var(--card);color:var(--text);}
 
-/* ============================== USERS — INLINE ENABLE/DISABLE TOGGLE ============================== */
-.user-toggle-btn{background:none;border:1px solid var(--border-dark);border-radius:6px;width:26px;height:26px;
-  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted);}
-.user-toggle-btn:hover{background:var(--surface);color:var(--text);}
+/* ============================== USERS — TOOLBAR / ROLE BADGES ============================== */
+.users-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.users-banner{display:none;background:var(--red-bg);color:var(--red);border-radius:8px;padding:9px 12px;font-size:13px;margin-bottom:12px;}
+.badge-role-admin{background:var(--purple-bg);color:var(--purple);}
+.badge-role-user{background:var(--indigo-bg);color:var(--indigo);}
+.user-self-tag,.user-legacy-tag{font-size:11px;color:var(--muted-light);font-weight:400;}
 </style>
 </head>
 <body class="auth-locked">
@@ -997,16 +999,17 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
 
             <div class="guide-section" id="guide-dangnhap">
               <h3>&#128100; Đăng nhập &amp; phân quyền</h3>
-              <p>App yêu cầu đăng nhập trước khi dùng. Có 2 vai trò:</p>
+              <p>App yêu cầu đăng nhập trước khi dùng — mọi người dùng chung một màn hình: <strong>Tên đăng nhập</strong> (hoặc email) + <strong>Mật khẩu</strong>. Có 2 vai trò:</p>
               <table class="guide-role-table">
                 <thead><tr><th>Vai trò</th><th>Cách đăng nhập</th><th>Được phép</th></tr></thead>
                 <tbody>
-                  <tr><td><strong>Admin</strong></td><td>Username + Mật khẩu</td><td>Toàn quyền: thêm/sửa/xoá mọi MoC &amp; Action, quản lý người dùng, cài đặt dữ liệu</td></tr>
-                  <tr><td><strong>Leader / User</strong></td><td>Chọn Tên + nhập Mã NV (Admin cấp)</td><td>Xem tất cả, tạo MoC/Action mới; chỉ <strong>sửa</strong> được MoC nếu là Change Owner hoặc có tên trong "Người liên quan"; không xoá được</td></tr>
+                  <tr><td><strong>Admin</strong></td><td>Tên đăng nhập + Mật khẩu</td><td>Toàn quyền: thêm/sửa/xoá mọi MoC &amp; Action, quản lý người dùng, cài đặt dữ liệu</td></tr>
+                  <tr><td><strong>User</strong></td><td>Tên đăng nhập + Mật khẩu (Admin cấp)</td><td>Xem tất cả, tạo MoC/Action mới; chỉ <strong>sửa</strong> được MoC nếu là Change Owner hoặc có tên trong "Người liên quan"; không xoá được</td></tr>
                 </tbody>
               </table>
-              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Admin tạo tài khoản ở tab <strong>Người dùng</strong>: bấm "+ Thêm người dùng", nhập Tên + Bộ phận — hệ thống tự sinh Mã NV, gửi mã này cho người dùng để họ đăng nhập.</div>
-              <div class="guide-callout warn"><span class="gc-icon">&#9888;</span>Quên Mã NV? Admin mở lại hồ sơ người dùng đó và bấm "Tạo Mã NV mới" — mã cũ sẽ ngừng hoạt động ngay lập tức.</div>
+              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Admin tạo tài khoản ở tab <strong>Người dùng</strong>: bấm "+ Thêm người dùng", nhập Họ tên, Vai trò, Tên đăng nhập và Mật khẩu ban đầu rồi gửi cho người dùng. Cần tạo nhiều tài khoản thì dùng "Tải Template CSV" → điền → "Nhập từ CSV". Có thể nâng một tài khoản lên Admin hoặc vô hiệu hoá ngay trên từng dòng.</div>
+              <div class="guide-callout warn"><span class="gc-icon">&#9888;</span>Quên mật khẩu? Liên hệ Admin — Admin bấm &#9998; ở dòng của bạn trong tab Người dùng và nhập mật khẩu mới. Mật khẩu chỉ lưu dạng băm nên không ai xem lại được mật khẩu cũ.</div>
+              <div class="guide-callout tip"><span class="gc-icon">&#128161;</span>Tài khoản tạo trước đây (đăng nhập bằng Tên + Mã NV): hỏi Admin Tên đăng nhập mới của bạn; mật khẩu vẫn là Mã NV cũ cho tới khi Admin đặt lại.</div>
             </div>
 
             <div class="guide-section" id="guide-moc">
@@ -1063,15 +1066,24 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
       <section class="view" id="view-users">
         <div class="section-title-row">
           <div>
-            <h2>Người dùng <span class="tag-count" id="users-count">0</span></h2>
-            <p class="section-subtitle">Quản lý tài khoản Leader/User — chỉ Admin thấy được mục này</p>
+            <h2>Quản lý người dùng <span class="tag-count" id="users-count">0</span></h2>
+            <p class="section-subtitle" id="users-account-info">Quản lý tài khoản, vai trò và trạng thái hoạt động — chỉ Admin thấy được mục này</p>
           </div>
-          <button class="btn btn-primary" id="btn-add-user">+ Thêm người dùng</button>
+          <div class="users-toolbar">
+            <button class="btn btn-sm" id="btn-users-refresh">&#8635; Tải lại</button>
+            <button class="btn btn-sm" id="btn-users-export">&#8681; Xuất CSV</button>
+            <button class="btn btn-sm" id="btn-users-template">&#8681; Tải Template CSV</button>
+            <button class="btn btn-sm" id="btn-users-import">&#8679; Nhập từ CSV</button>
+            <input type="file" id="input-users-file" accept=".csv,text/csv" style="display:none;">
+            <button class="btn btn-primary" id="btn-add-user">+ Thêm người dùng</button>
+          </div>
         </div>
+        <p class="help-text" style="margin:-6px 0 14px;">Tạo nhiều tài khoản cùng lúc: tải <b>Template CSV</b>, điền Họ tên / Tên đăng nhập / Mật khẩu / Vai trò / Bộ phận mỗi người 1 dòng (lưu dạng "CSV UTF-8"), rồi bấm <b>Nhập từ CSV</b>. File <b>Xuất CSV</b> không chứa mật khẩu — máy chủ chỉ lưu dạng băm, không đọc lại được.</p>
+        <div class="users-banner" id="users-banner" role="alert"></div>
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>Tên</th><th>Chức năng</th><th>Trạng thái</th><th></th>
+              <th>Họ và tên</th><th>Đăng nhập</th><th>Bộ phận</th><th>Vai trò</th><th>Trạng thái</th><th></th>
             </tr></thead>
             <tbody id="users-tbody"></tbody>
           </table>
@@ -1225,25 +1237,43 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2 id="user-modal-title">Thêm người dùng</h2>
-      <button class="modal-close" data-close-modal="modal-user">&times;</button>
+      <button type="button" class="modal-close" data-close-modal="modal-user">&times;</button>
     </div>
-    <div class="modal-body">
-      <div class="field"><label>Tên <span class="req">*</span></label><input id="u-name"></div>
-      <div class="field" style="margin-top:12px;"><label>Chức năng (Function)</label><input id="u-function" placeholder="vd: QA, ENG, Production..."></div>
-      <div class="field" style="margin-top:12px;">
-        <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="u-enabled" style="width:auto;"> Cho phép đăng nhập (Enable)</label>
+    <form id="user-form" autocomplete="off">
+      <div class="modal-body">
+        <div class="field">
+          <label for="u-name">Họ và tên <span class="req">*</span></label>
+          <input id="u-name" placeholder="Ví dụ: Nguyễn Văn A">
+          <div class="help-text">Ghi giống tên ở Change Owner / Người liên quan — quyền sửa MoC được xét theo tên này.</div>
+        </div>
+        <div class="field" id="u-role-field" style="margin-top:12px;">
+          <label for="u-role">Vai trò <span class="req">*</span></label>
+          <select id="u-role">
+            <option value="user">User (Nhân viên)</option>
+            <option value="admin">Admin (Quản trị viên)</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label for="u-login">Tên đăng nhập <span class="req">*</span></label>
+          <input id="u-login" placeholder="vd: nguyenvana (hoặc một địa chỉ email)" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <div class="help-text">Chữ thường/số, có thể có . _ - ở giữa, không dấu, không khoảng trắng — hoặc một địa chỉ email. Không đổi được sau khi tạo.</div>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label for="u-function">Bộ phận (Function)</label>
+          <input id="u-function" placeholder="vd: QA, ENG, Production...">
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label for="u-password" id="u-password-label">Mật khẩu ban đầu</label>
+          <input type="password" id="u-password" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự">
+          <div class="help-text" id="u-password-help"></div>
+          <div class="err-msg" id="u-error" role="alert" style="display:none;font-size:12.5px;margin-top:6px;"></div>
+        </div>
       </div>
-      <div id="user-code-box" style="display:none;margin-top:14px;padding:12px 14px;background:var(--blue-light);border-radius:8px;">
-        <div class="lbl" style="margin-bottom:4px;">Mã NV mới</div>
-        <div id="user-code-value" style="font-size:20px;font-weight:800;letter-spacing:.05em;color:var(--blue);"></div>
-        <div class="help-text">Chỉ hiển thị một lần — hãy gửi cho người dùng ngay bây giờ.</div>
+      <div class="modal-footer">
+        <button type="button" class="btn" data-close-modal="modal-user">Đóng</button>
+        <button type="submit" class="btn btn-primary" id="btn-save-user">Lưu</button>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn" id="btn-reset-user-code" style="margin-right:auto;display:none;">Reset Mã NV</button>
-      <button class="btn" data-close-modal="modal-user">Đóng</button>
-      <button class="btn btn-primary" id="btn-save-user">Lưu</button>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -1252,40 +1282,26 @@ tr.exp-row > td{padding:10px 14px 14px 44px;border-bottom:1px solid var(--border
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Chào mừng đến MoC Management</h2>
-      <button class="modal-close" data-close-modal="modal-login">&times;</button>
+      <button type="button" class="modal-close" data-close-modal="modal-login">&times;</button>
     </div>
-    <div class="modal-body">
-      <p class="modal-subtitle">Đăng nhập để quản lý các yêu cầu thay đổi.</p>
-      <div class="field">
-        <label>Vai trò</label>
-        <div class="segmented" id="login-role-segmented">
-          <button type="button" class="segmented-btn active" data-role="admin">Admin</button>
-          <button type="button" class="segmented-btn" data-role="leader">Leader</button>
+    <form id="login-form">
+      <div class="modal-body">
+        <p class="modal-subtitle">Đăng nhập bằng tài khoản được cấp để quản lý các yêu cầu thay đổi.</p>
+        <div class="field">
+          <label for="login-username">Tên đăng nhập</label>
+          <input type="text" id="login-username" placeholder="Tên đăng nhập hoặc email" autocomplete="username" autocapitalize="none" spellcheck="false">
         </div>
-        <select id="login-role" style="display:none;">
-          <option value="admin">Admin</option>
-          <option value="leader">Leader</option>
-        </select>
+        <div class="field" style="margin-top:12px;">
+          <label for="login-password">Mật khẩu</label>
+          <input type="password" id="login-password" autocomplete="current-password">
+          <div class="err-msg" id="login-error" role="alert" style="display:none;font-size:12.5px;margin-top:6px;"></div>
+        </div>
+        <div class="help-text" style="margin-top:12px;">Liên hệ Admin để được cấp tài khoản hoặc đặt lại mật khẩu.</div>
       </div>
-      <div class="field" id="login-admin-field" style="margin-top:12px;">
-        <label>Username / Email</label>
-        <input type="text" id="login-username" placeholder="admin@congty.com" autocomplete="username">
-        <label style="margin-top:10px;">Mật khẩu</label>
-        <input type="password" id="login-password" placeholder="Nhập mật khẩu" autocomplete="current-password">
-        <div class="err-msg" id="login-error" style="display:none;">Sai thông tin đăng nhập.</div>
+      <div class="modal-footer" style="flex-direction:column;align-items:stretch;">
+        <button type="submit" class="btn btn-primary" id="btn-do-login" style="justify-content:center;">Đăng nhập</button>
       </div>
-      <div class="field" id="login-leader-field" style="margin-top:12px;display:none;">
-        <label>Chọn Tên</label>
-        <select id="login-leader-name"></select>
-        <label style="margin-top:10px;">Mã NV</label>
-        <input type="text" inputmode="numeric" id="login-employee-code" placeholder="Nhập Mã NV được Admin cấp">
-        <div class="help-text">Chưa có Mã NV hoặc quên Mã NV? Liên hệ Admin để được cấp/đặt lại.</div>
-        <div class="err-msg" id="login-leader-error" style="display:none;">Sai thông tin đăng nhập.</div>
-      </div>
-    </div>
-    <div class="modal-footer" style="flex-direction:column;align-items:stretch;">
-      <button class="btn btn-primary" id="btn-do-login" style="justify-content:center;">Đăng nhập</button>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -1553,20 +1569,18 @@ const Api = (()=>{
     return payload;
   }
 
-  const loginAdmin = (username, password) => request('/auth/login', { method:'POST', body:{ role:'admin', username, password } });
-  const loginLeader = (name, employeeCode) => request('/auth/login', { method:'POST', body:{ role:'leader', name, employeeCode } });
+  const login = (loginId, password) => request('/auth/login', { method:'POST', body:{ loginId, password } });
   const me = () => request('/auth/me', { auth:true });
   const logout = () => request('/auth/logout', { method:'POST', auth:true }).catch(()=>{});
-  const authNames = () => request('/auth/names');
 
   const listUsers = () => request('/users', { auth:true });
-  const createUser = (name, fn) => request('/users', { method:'POST', body:{ name, function: fn }, auth:true });
+  const createUser = (payload) => request('/users', { method:'POST', body: payload, auth:true });
   const updateUser = (id, patch) => request('/users/' + encodeURIComponent(id), { method:'PUT', body: patch, auth:true });
 
   const getData = () => request('/data', { auth:true });
   const putData = (dataObj) => request('/data', { method:'PUT', body: dataObj, auth:true });
 
-  return { loginAdmin, loginLeader, me, logout, authNames, listUsers, createUser, updateUser, getData, putData };
+  return { login, me, logout, listUsers, createUser, updateUser, getData, putData };
 })();
 
 /* ================================================================================
@@ -1659,7 +1673,7 @@ const state = {
   mocEditingIsNew: false,
   actionEditing: null,
   agendaEditing: null,
-  currentUser: null,     // { role:'admin'|'leader', name:string, function:string }
+  currentUser: null,     // { id, role:'admin'|'user', name, function, loginId }
   mlSort: { field:'requestDate', dir:'desc' },
   apSort: { field:'date', dir:'desc' },
   mlExpanded: new Set()  // MoC ids currently expanded (▸/▾) in Master List
@@ -1691,7 +1705,7 @@ function normalizeData(d){
    - Login is mandatory: the app shell stays hidden (body.auth-locked) until a valid
      session is established, either by a fresh login or by restoring a saved token
      that the Worker still accepts (see restoreSession()).
-   - Leader: can add new MoC/Action/Agenda/Attendant. Can only EDIT an existing MoC if
+   - User: can add new MoC/Action/Agenda/Attendant. Can only EDIT an existing MoC if
      they are its Change Owner or listed in "Relevant people" — cannot delete, no
      Settings, no User Management.
    - Admin: full access (add/edit/delete ANY record + Settings/User Management/reset),
@@ -1761,7 +1775,7 @@ function initialsOf(name){
 function renderAuthArea(){
   const el = document.getElementById('auth-area');
   if(!state.currentUser){ el.innerHTML = ''; return; }
-  const roleLabel = state.currentUser.role === 'admin' ? 'Admin' : (state.currentUser.function || 'Leader');
+  const roleLabel = state.currentUser.role === 'admin' ? 'Admin' : (state.currentUser.function || 'User');
   el.innerHTML = `
     <div class="user-chip">
       <div class="avatar">${Utils.escapeHtml(initialsOf(state.currentUser.name))}</div>
@@ -1772,22 +1786,6 @@ function renderAuthArea(){
       <button class="btn btn-sm" id="btn-logout">Đăng xuất</button>
     </div>`;
   document.getElementById('btn-logout').addEventListener('click', doLogout);
-}
-
-// Login-screen name picker: only enabled Leader/User accounts, no employee codes —
-// see GET /auth/names in cloudflare/worker.js for exactly what's exposed and why.
-async function populateLeaderNameOptions(){
-  const sel = document.getElementById('login-leader-name');
-  sel.innerHTML = '<option value="">Đang tải...</option>';
-  try{
-    const resp = await Api.authNames();
-    const list = resp.users || [];
-    sel.innerHTML = list.length
-      ? list.map(u=>`<option value="${Utils.escapeHtml(u.name)}">${Utils.escapeHtml(u.name)}${u.function ? ' — '+Utils.escapeHtml(u.function) : ''}</option>`).join('')
-      : '<option value="">(Chưa có tài khoản — liên hệ Admin)</option>';
-  }catch(e){
-    sel.innerHTML = '<option value="">(Không tải được danh sách — kiểm tra mạng)</option>';
-  }
 }
 
 // Locks/unlocks the whole app shell behind the mandatory login screen. body.auth-locked
@@ -1803,60 +1801,48 @@ function unlockApp(){
 }
 
 function openLoginModal(){
-  document.getElementById('login-role').value = 'admin';
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
-  document.getElementById('login-employee-code').value = '';
   document.getElementById('login-error').style.display = 'none';
-  document.getElementById('login-leader-error').style.display = 'none';
-  document.getElementById('login-admin-field').style.display = '';
-  document.getElementById('login-leader-field').style.display = 'none';
-  document.querySelectorAll('#login-role-segmented .segmented-btn').forEach(b=>b.classList.toggle('active', b.dataset.role==='admin'));
-  populateLeaderNameOptions();
   document.getElementById('modal-login').classList.add('open');
+  document.getElementById('login-username').focus();
 }
-function closeLoginModal(){ document.getElementById('modal-login').classList.remove('open'); }
+function closeLoginModal(){
+  document.getElementById('login-password').value = '';
+  document.getElementById('modal-login').classList.remove('open');
+}
 
+// One form for every account: Tên đăng nhập (or email) + Mật khẩu. The Worker decides
+// the role — this page never asks the person which one they are.
 async function doLogin(){
-  const role = document.getElementById('login-role').value;
-  const errAdmin = document.getElementById('login-error');
-  const errLeader = document.getElementById('login-leader-error');
-  errAdmin.style.display = 'none';
-  errLeader.style.display = 'none';
+  const err = document.getElementById('login-error');
+  const showErr = msg => { err.textContent = msg; err.style.display = 'block'; };
+  err.style.display = 'none';
+  const loginId = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if(!loginId || !password){ showErr('Nhập đủ Tên đăng nhập và Mật khẩu.'); return; }
   const btn = document.getElementById('btn-do-login');
   btn.disabled = true;
+  let resp;
   try{
-    let resp;
-    if(role === 'admin'){
-      const username = document.getElementById('login-username').value.trim();
-      const password = document.getElementById('login-password').value;
-      if(!username || !password){
-        errAdmin.textContent = 'Nhập đủ Username/Email và mật khẩu.'; errAdmin.style.display = 'block'; return;
-      }
-      resp = await Api.loginAdmin(username, password);
-    } else {
-      const name = document.getElementById('login-leader-name').value;
-      const code = document.getElementById('login-employee-code').value.trim();
-      if(!name){ showToast('Danh sách trống — liên hệ Admin để được cấp tài khoản.', 'err'); return; }
-      if(!code){ errLeader.textContent = 'Nhập Mã NV.'; errLeader.style.display = 'block'; return; }
-      resp = await Api.loginLeader(name, code);
-    }
-    state.authToken = resp.token;
-    state.currentUser = resp.user;
-    Storage.saveAuthToken(state.authToken);
-    unlockApp();
-    renderAuthArea();
-    applyPermissionsUI();
-    await initStorage();
-    renderActiveView();
-    showToast('Xin chào ' + state.currentUser.name + '.', 'ok');
+    resp = await Api.login(loginId, password);
   }catch(e){
-    const msg = 'Sai thông tin đăng nhập.';
-    if(role === 'admin'){ errAdmin.textContent = msg; errAdmin.style.display = 'block'; }
-    else { errLeader.textContent = msg; errLeader.style.display = 'block'; }
+    if(e.status === 401) showErr('Sai tên đăng nhập hoặc mật khẩu.');
+    else if(e.message === 'account_disabled') showErr('Tài khoản của bạn đã bị vô hiệu hoá — liên hệ Admin.');
+    else showErr('Không kết nối được máy chủ — kiểm tra mạng rồi thử lại.');
+    return;
   }finally{
     btn.disabled = false;
   }
+  state.authToken = resp.token;
+  state.currentUser = resp.user;
+  Storage.saveAuthToken(state.authToken);
+  unlockApp();
+  renderAuthArea();
+  applyPermissionsUI();
+  await initStorage();
+  renderActiveView();
+  showToast('Xin chào ' + state.currentUser.name + '.', 'ok');
 }
 
 async function doLogout(){
@@ -2082,7 +2068,7 @@ async function initStorage(){
 ================================================================================ */
 const VIEW_TITLES = {
   dashboard:'Dashboard', masterlist:'MoC Master List', actionplan:'MoC Action Plan',
-  meeting:'Agenda & Attendant', guide:'Hướng dẫn sử dụng', users:'Người dùng', settings:'Dữ liệu & Cài đặt'
+  meeting:'Agenda & Attendant', guide:'Hướng dẫn sử dụng', users:'Quản lý người dùng', settings:'Dữ liệu & Cài đặt'
 };
 function switchView(view){
   state.activeView = view;
@@ -3741,112 +3727,293 @@ function handleResetSeed(){
 }
 
 /* ================================================================================
-   USER MANAGEMENT (Admin only) — Name / Employee Code / Function / Enable-Disable
+   USER MANAGEMENT (Admin only) — accounts, roles, enable/disable, CSV import/export.
+   Passwords are typed by the Admin and only ever sent to the Worker, which stores a
+   salted hash — nothing on this page can read one back, only replace it.
 ================================================================================ */
 let usersCache = [];
+const USERNAME_RE = /^[a-z0-9](?:[a-z0-9._-]{0,30}[a-z0-9])?$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 6;
+// Worker error codes (see cloudflare/worker.js) -> message shown to the Admin
+const USER_ERROR_VI = {
+  name_required: 'Họ và tên không được để trống.',
+  name_taken: 'Đã có tài khoản mang họ tên này.',
+  login_invalid: 'Tên đăng nhập không hợp lệ: chữ thường/số, có thể có . _ - ở giữa, không dấu/khoảng trắng — hoặc một địa chỉ email.',
+  login_taken: 'Tên đăng nhập đã được sử dụng.',
+  password_too_short: 'Mật khẩu phải từ ' + MIN_PASSWORD_LENGTH + ' ký tự trở lên.',
+  cannot_disable_self: 'Không thể tự vô hiệu hoá tài khoản của chính bạn.',
+  last_admin: 'Không thể hạ quyền: bạn là Admin đang hoạt động duy nhất.',
+  forbidden: 'Chỉ Admin mới thực hiện được thao tác này.'
+};
+function userErrorText(e){
+  return USER_ERROR_VI[e && e.message] || 'Không thực hiện được — kiểm tra mạng rồi thử lại.';
+}
+// First problem with a would-be account, or '' — the same rules the Worker enforces,
+// checked here too so a whole CSV can be vetted before anything is sent.
+function userInputProblem(name, loginId, password){
+  if(!name) return USER_ERROR_VI.name_required;
+  if(!loginId) return 'Tên đăng nhập không được để trống.';
+  if(!(loginId.includes('@') ? EMAIL_RE.test(loginId) : USERNAME_RE.test(loginId))) return USER_ERROR_VI.login_invalid;
+  if(password.length < MIN_PASSWORD_LENGTH) return USER_ERROR_VI.password_too_short;
+  return '';
+}
+// After an Admin edits their own account (name, role) the chip and visible tabs must follow.
+async function refreshCurrentUser(){
+  try{
+    state.currentUser = (await Api.me()).user;
+    renderAuthArea();
+    applyPermissionsUI();
+  }catch(e){ if(e.status === 401) await handleAuthFailure(); }
+}
+
 async function renderUsers(){
   if(!canAccessUsers()) return;
   const tbody = document.getElementById('users-tbody');
-  tbody.innerHTML = '<tr class="empty-row"><td colspan="4"><div class="empty-state"><div class="empty-state-desc">Đang tải...</div></div></td></tr>';
+  const banner = document.getElementById('users-banner');
+  const stateRow = text => `<tr class="empty-row"><td colspan="6"><div class="empty-state"><div class="empty-state-desc">${text}</div></div></td></tr>`;
+  document.getElementById('users-account-info').textContent = 'Tài khoản hiện tại: ' + state.currentUser.name + ' · Admin';
+  banner.style.display = 'none';
+  tbody.innerHTML = stateRow('Đang tải danh sách người dùng...');
   try{
     const resp = await Api.listUsers();
     usersCache = resp.users || [];
   }catch(e){
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="4"><div class="empty-state"><div class="empty-state-desc">Không tải được danh sách người dùng.</div></div></td></tr>';
+    banner.textContent = 'Không tải được danh sách người dùng — kiểm tra mạng rồi bấm "Tải lại".';
+    banner.style.display = 'block';
+    tbody.innerHTML = stateRow('Không tải được danh sách người dùng.');
     return;
   }
+  usersCache.sort((a,b)=> (a.role===b.role ? 0 : (a.role==='admin' ? -1 : 1)) || String(a.name).localeCompare(String(b.name),'vi'));
   document.getElementById('users-count').textContent = usersCache.length;
   if(!usersCache.length){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="4"><div class="empty-state">
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6"><div class="empty-state">
       <div class="empty-state-icon">&#128101;</div>
       <div class="empty-state-title">Chưa có người dùng nào</div>
-      <div class="empty-state-desc">Thêm tài khoản Leader/User để họ có thể đăng nhập.</div>
+      <div class="empty-state-desc">Thêm tài khoản để mọi người có thể đăng nhập.</div>
       <button class="btn btn-primary btn-sm" onclick="openUserModal(null)">+ Thêm người dùng</button>
     </div></td></tr>`;
     return;
   }
-  tbody.innerHTML = usersCache.map(u => `
+  tbody.innerHTML = usersCache.map(u => {
+    const id = Utils.escapeHtml(u.id);
+    const isSelf = u.id === state.currentUser.id;
+    const isAdmin = u.role === 'admin';
+    return `
     <tr>
-      <td>${Utils.escapeHtml(u.name)}</td>
+      <td style="white-space:nowrap;"><strong>${Utils.escapeHtml(u.name)}</strong>${isSelf ? ' <span class="user-self-tag">(Bạn)</span>' : ''}</td>
+      <td class="cell-mono">${Utils.escapeHtml(u.loginId)}${u.legacyCode ? '<div class="user-legacy-tag">Mật khẩu = Mã NV cũ</div>' : ''}</td>
       <td>${Utils.escapeHtml(u.function||'')}</td>
-      <td><span class="badge ${u.enabled?'badge-y':'badge-n'}">${u.enabled?'Enabled':'Disabled'}</span></td>
+      <td><span class="badge badge-role-${isAdmin?'admin':'user'}">${isAdmin?'Admin':'User'}</span></td>
+      <td><span class="badge ${u.enabled?'badge-y':'badge-n'}">${u.enabled?'Hoạt động':'Vô hiệu hoá'}</span></td>
       <td class="row-actions">
-        <button class="user-toggle-btn" data-toggle-user="${u.id}" title="${u.enabled?'Vô hiệu hoá ngay':'Kích hoạt ngay'}">${u.enabled?'&#128274;':'&#128275;'}</button>
-        <button class="btn btn-sm btn-icon" data-edit-user="${u.id}" title="Sửa">&#9998;</button>
+        <button class="btn btn-sm" data-role-user="${id}">${isAdmin?'Hạ xuống User':'Nâng lên Admin'}</button>
+        <button class="btn btn-sm${u.enabled?' btn-danger':''}" data-toggle-user="${id}" ${isSelf ? 'disabled title="Không thể khoá tài khoản của chính bạn"' : ''}>${u.enabled?'Vô hiệu hoá':'Kích hoạt'}</button>
+        <button class="btn btn-sm btn-icon" data-edit-user="${id}" title="Sửa / đặt lại mật khẩu">&#9998;</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   tbody.querySelectorAll('[data-edit-user]').forEach(btn=>btn.addEventListener('click', ()=>openUserModal(btn.dataset.editUser)));
   tbody.querySelectorAll('[data-toggle-user]').forEach(btn=>btn.addEventListener('click', ()=>toggleUserEnabled(btn.dataset.toggleUser)));
+  tbody.querySelectorAll('[data-role-user]').forEach(btn=>btn.addEventListener('click', ()=>changeUserRole(btn.dataset.roleUser)));
 }
-// Quick lock/unlock straight from the table row — same permission model as the
-// edit modal's "enabled" checkbox, just one click instead of opening the modal.
+async function changeUserRole(id){
+  const u = usersCache.find(x=>x.id===id);
+  if(!u) return;
+  const next = u.role === 'admin' ? 'user' : 'admin';
+  if(!confirm('Đổi vai trò của "'+u.name+'" thành '+(next==='admin' ? 'Admin (Quản trị viên)' : 'User (Nhân viên)')+'?')) return;
+  try{
+    await Api.updateUser(id, { role: next });
+    showToast('Đã cập nhật vai trò.', 'ok');
+    if(id === state.currentUser.id) await refreshCurrentUser();
+    await renderUsers();
+  }catch(e){
+    showToast(userErrorText(e), 'err');
+  }
+}
 async function toggleUserEnabled(id){
   const u = usersCache.find(x=>x.id===id);
   if(!u) return;
   const next = !u.enabled;
-  if(!confirm((next?'Kích hoạt':'Vô hiệu hoá')+' tài khoản "'+u.name+'"?')) return;
+  const msg = next
+    ? 'Kích hoạt lại tài khoản "'+u.name+'"?'
+    : 'VÔ HIỆU HOÁ tài khoản "'+u.name+'"?\nNgười này sẽ bị đăng xuất và không đăng nhập được nữa. Dữ liệu họ đã nhập vẫn được giữ nguyên.';
+  if(!confirm(msg)) return;
   try{
     await Api.updateUser(id, { enabled: next });
-    showToast(next?'Đã kích hoạt tài khoản.':'Đã vô hiệu hoá tài khoản.', 'ok');
+    showToast(next ? 'Đã kích hoạt tài khoản.' : 'Đã vô hiệu hoá tài khoản.', 'ok');
     await renderUsers();
   }catch(e){
-    showToast('Không cập nhật được — thử lại.', 'err');
+    showToast(userErrorText(e), 'err');
   }
 }
+
 let userEditingId = null;
 function openUserModal(id){
   userEditingId = id;
   const rec = id ? usersCache.find(u=>u.id===id) : null;
-  document.getElementById('user-modal-title').textContent = rec ? 'Sửa người dùng' : 'Thêm người dùng';
+  document.getElementById('user-form').reset();
+  document.getElementById('user-modal-title').textContent = rec ? 'Sửa người dùng' : 'Thêm người dùng mới';
   document.getElementById('u-name').value = rec ? rec.name : '';
   document.getElementById('u-function').value = rec ? (rec.function||'') : '';
-  document.getElementById('u-enabled').checked = rec ? !!rec.enabled : true;
-  document.getElementById('user-code-box').style.display = 'none';
-  document.getElementById('user-code-value').textContent = '';
-  document.getElementById('btn-reset-user-code').style.display = rec ? '' : 'none';
+  document.getElementById('u-login').value = rec ? rec.loginId : '';
+  document.getElementById('u-login').disabled = !!rec;
+  // role is changed from the table row (Nâng lên Admin / Hạ xuống User), not here
+  document.getElementById('u-role-field').style.display = rec ? 'none' : '';
+  document.getElementById('u-password-label').innerHTML = rec ? 'Mật khẩu mới' : 'Mật khẩu ban đầu <span class="req">*</span>';
+  document.getElementById('u-password-help').textContent = rec
+    ? 'Để trống nếu không đổi mật khẩu.' + (rec.legacyCode ? ' Tài khoản này đang dùng Mã NV cũ làm mật khẩu.' : '')
+    : 'Tối thiểu ' + MIN_PASSWORD_LENGTH + ' ký tự — gửi cho người dùng sau khi tạo.';
+  document.getElementById('u-error').style.display = 'none';
   document.getElementById('modal-user').classList.add('open');
+  document.getElementById('u-name').focus();
 }
 function closeUserModal(){ document.getElementById('modal-user').classList.remove('open'); userEditingId = null; }
 
-function showUserCode(code){
-  document.getElementById('user-code-box').style.display = '';
-  document.getElementById('user-code-value').textContent = code;
-}
-
 async function saveUserFromModal(){
+  const errBox = document.getElementById('u-error');
+  const showErr = msg => { errBox.textContent = msg; errBox.style.display = 'block'; };
+  errBox.style.display = 'none';
   const name = document.getElementById('u-name').value.trim();
-  if(!name){ showToast('Nhập tên người dùng.', 'err'); return; }
   const fn = document.getElementById('u-function').value.trim();
-  const enabled = document.getElementById('u-enabled').checked;
+  const loginId = document.getElementById('u-login').value.trim().toLowerCase();
+  const password = document.getElementById('u-password').value;
+  const editingId = userEditingId;
+  if(editingId){
+    if(!name){ showErr(USER_ERROR_VI.name_required); return; }
+    if(password && password.length < MIN_PASSWORD_LENGTH){ showErr(USER_ERROR_VI.password_too_short); return; }
+  } else {
+    const problem = userInputProblem(name, loginId, password);
+    if(problem){ showErr(problem); return; }
+  }
+  const btn = document.getElementById('btn-save-user');
+  btn.disabled = true;
   try{
-    if(userEditingId){
-      const resp = await Api.updateUser(userEditingId, { name, function: fn, enabled });
-      if(resp.employeeCode) showUserCode(resp.employeeCode);
-      showToast('Đã lưu người dùng.', 'ok');
+    if(editingId){
+      const patch = { name, function: fn };
+      if(password) patch.password = password;
+      await Api.updateUser(editingId, patch);
+      showToast(password ? 'Đã lưu và đặt lại mật khẩu.' : 'Đã lưu người dùng.', 'ok');
+      if(editingId === state.currentUser.id) await refreshCurrentUser();
     } else {
-      const resp = await Api.createUser(name, fn);
-      showUserCode(resp.employeeCode);
-      showToast('Đã tạo người dùng — gửi Mã NV cho họ ngay.', 'ok');
-      userEditingId = resp.user.id;
-      document.getElementById('user-modal-title').textContent = 'Sửa người dùng';
-      document.getElementById('btn-reset-user-code').style.display = '';
+      await Api.createUser({ name, loginId, password, role: document.getElementById('u-role').value, function: fn });
+      showToast('Đã tạo tài khoản — gửi Tên đăng nhập và Mật khẩu cho người dùng.', 'ok');
     }
+    closeUserModal();
     await renderUsers();
   }catch(e){
-    showToast(e.reason === 'name_taken' ? 'Tên này đã có tài khoản.' : 'Không lưu được — thử lại.', 'err');
+    showErr(userErrorText(e));
+  }finally{
+    btn.disabled = false;
   }
 }
 
-async function resetUserCode(){
-  if(!userEditingId) return;
-  if(!confirm('Tạo Mã NV mới cho người dùng này? Mã cũ sẽ ngừng hoạt động ngay.')) return;
-  try{
-    const resp = await Api.updateUser(userEditingId, { resetCode: true });
-    showUserCode(resp.employeeCode);
-    showToast('Đã tạo Mã NV mới.', 'ok');
-  }catch(e){
-    showToast('Không đặt lại được Mã NV — thử lại.', 'err');
+/* ---- Users: CSV export / template / bulk import ----
+   Export never contains passwords (the server only has hashes). Import creates accounts
+   in bulk from the template: Họ và tên / Tên đăng nhập (hoặc Email) / Mật khẩu / Vai trò /
+   Bộ phận — one POST /users per row, so a bad row never blocks the good ones. */
+const USER_CSV_HEADERS = ['Họ và tên','Tên đăng nhập (hoặc Email)','Mật khẩu','Vai trò','Bộ phận'];
+function exportUsersCSV(){
+  if(!usersCache.length){ showToast('Chưa có người dùng nào để xuất.', 'err'); return; }
+  const rows = usersCache.map(u=>({
+    name: u.name, loginId: u.loginId, fn: u.function||'', role: u.role==='admin' ? 'Admin' : 'User',
+    status: u.enabled ? 'Hoạt động' : 'Vô hiệu hoá', createdAt: u.createdAt
+  }));
+  const cols = [
+    {key:'name',label:'Họ và tên'},{key:'loginId',label:'Tên đăng nhập'},{key:'fn',label:'Bộ phận'},
+    {key:'role',label:'Vai trò'},{key:'status',label:'Trạng thái'},{key:'createdAt',label:'Ngày tạo',format:Utils.formatDateVN}
+  ];
+  Utils.downloadBlob(Utils.toCSV(rows, cols), 'MoC_Nguoi_dung_'+Utils.todayISO()+'.csv', 'text/csv;charset=utf-8');
+  showToast('Đã xuất '+usersCache.length+' người dùng (không kèm mật khẩu).', 'ok');
+}
+function downloadUsersTemplate(){
+  const csv = '\uFEFF' + USER_CSV_HEADERS.map(Utils.csvEscape).join(',') + '\r\n';
+  Utils.downloadBlob(csv, 'MoC_Template_Nguoi_dung.csv', 'text/csv;charset=utf-8');
+  showToast('Đã tải template — điền mỗi người 1 dòng, cột Vai trò ghi User hoặc Admin (để trống = User).', 'ok');
+}
+// Minimal RFC 4180 reader. Excel writes ";" or a tab instead of "," depending on the
+// machine's regional settings, so the delimiter is taken from the header line.
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/, '');
+  const firstLine = text.split(/\r?\n/, 1)[0];
+  const delim = [',', ';', '\t'].map(d=>[d, firstLine.split(d).length]).sort((a,b)=>b[1]-a[1])[0][0];
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  for(let i=0; i<text.length; i++){
+    const c = text[i];
+    if(quoted){
+      if(c === '"'){
+        if(text[i+1] === '"'){ cell += '"'; i++; } else quoted = false;
+      } else cell += c;
+    } else if(c === '"') quoted = true;
+    else if(c === delim){ row.push(cell); cell = ''; }
+    else if(c === '\n' || c === '\r'){
+      if(c === '\r' && text[i+1] === '\n') i++;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += c;
   }
+  if(cell || row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+async function importUsersCSV(file){
+  if(!canAccessUsers()) return;
+  let rows;
+  try{
+    const text = await file.text();
+    if(text.includes('\uFFFD')){ showToast('File không phải UTF-8 — trong Excel chọn kiểu "CSV UTF-8" khi lưu.', 'err'); return; }
+    rows = parseCSV(text);
+  }catch(e){
+    showToast('Không đọc được file.', 'err'); return;
+  }
+  const header = (rows.shift() || []).map(h=>h.trim().toLowerCase());
+  const find = test => header.findIndex(test);
+  const col = {
+    name: find(h=>h.startsWith('họ')), login: find(h=>h.startsWith('tên đăng nhập') || h==='email'),
+    pass: find(h=>h.startsWith('mật khẩu')), role: find(h=>h.startsWith('vai trò')), fn: find(h=>h.startsWith('bộ phận'))
+  };
+  if(col.name < 0 || col.login < 0 || col.pass < 0){
+    showToast('File không đúng mẫu (thiếu cột Họ và tên / Tên đăng nhập / Mật khẩu) — dùng nút "Tải Template CSV".', 'err'); return;
+  }
+  const takenLogin = new Set(usersCache.map(u=>String(u.loginId).toLowerCase()));
+  const takenName = new Set(usersCache.map(u=>normalizeNameForMatch(u.name)));
+  const valid = [], problems = [];
+  rows.forEach((r, i)=>{
+    const get = idx => idx >= 0 ? String(r[idx] || '') : '';
+    const name = get(col.name).trim();
+    const loginId = get(col.login).trim().toLowerCase();
+    const password = get(col.pass); // not trimmed: a space can be part of a password
+    const roleRaw = get(col.role).trim().toLowerCase();
+    if(!name && !loginId && !password.trim()) return;
+    let problem = userInputProblem(name, loginId, password);
+    if(!problem && takenLogin.has(loginId)) problem = 'Tên đăng nhập đã tồn tại hoặc trùng dòng khác trong file.';
+    if(!problem && takenName.has(normalizeNameForMatch(name))) problem = 'Họ tên đã có tài khoản hoặc trùng dòng khác trong file.';
+    if(!problem && roleRaw && roleRaw !== 'user' && roleRaw !== 'admin') problem = 'Vai trò phải là User hoặc Admin.';
+    if(problem){ problems.push('Dòng '+(i+2)+(loginId ? ' ('+loginId+')' : '')+': '+problem); return; }
+    takenLogin.add(loginId); takenName.add(normalizeNameForMatch(name));
+    valid.push({ line: i+2, payload: { name, loginId, password, role: roleRaw==='admin' ? 'admin' : 'user', function: get(col.fn).trim() } });
+  });
+  const problemList = max => problems.slice(0, max).join('\n') + (problems.length > max ? '\n…và '+(problems.length-max)+' dòng khác.' : '');
+  if(!valid.length){
+    alert('Không có dòng hợp lệ nào để nhập.' + (problems.length ? '\n\n'+problemList(15) : ''));
+    return;
+  }
+  const adminCount = valid.filter(v=>v.payload.role==='admin').length;
+  if(!confirm('Tạo '+valid.length+' tài khoản'+(adminCount ? ' (trong đó '+adminCount+' Admin)' : '')+'?'
+    + (problems.length ? '\n\n'+problems.length+' dòng lỗi sẽ bị bỏ qua:\n'+problemList(10) : ''))) return;
+  let created = 0;
+  for(const v of valid){
+    try{
+      await Api.createUser(v.payload);
+      created++;
+    }catch(e){
+      problems.push('Dòng '+v.line+' ('+v.payload.loginId+'): '+userErrorText(e));
+      // network / session / server failure: the remaining rows would fail the same way
+      if(!e.status || e.status === 401 || e.status >= 500) break;
+    }
+  }
+  await renderUsers();
+  showToast('Đã tạo '+created+'/'+valid.length+' tài khoản.', created === valid.length ? 'ok' : 'err');
+  if(problems.length) alert('Các dòng không nhập được:\n\n'+problemList(15));
 }
 
 /* ================================================================================
@@ -3923,26 +4090,7 @@ function bindStaticEvents(){
   });
 
   // Login
-  document.getElementById('btn-do-login').addEventListener('click', doLogin);
-  document.getElementById('login-role').addEventListener('change', e=>{
-    const isAdmin = e.target.value === 'admin';
-    document.getElementById('login-admin-field').style.display = isAdmin ? '' : 'none';
-    document.getElementById('login-leader-field').style.display = isAdmin ? 'none' : '';
-  });
-  document.querySelectorAll('#login-role-segmented .segmented-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const sel = document.getElementById('login-role');
-      sel.value = btn.dataset.role;
-      sel.dispatchEvent(new Event('change'));
-      document.querySelectorAll('#login-role-segmented .segmented-btn').forEach(b=>b.classList.toggle('active', b===btn));
-    });
-  });
-  document.getElementById('login-employee-code').addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){ e.preventDefault(); doLogin(); }
-  });
-  document.getElementById('login-password').addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){ e.preventDefault(); doLogin(); }
-  });
+  document.getElementById('login-form').addEventListener('submit', e=>{ e.preventDefault(); doLogin(); });
 
   // Modal generic close — modal-login is excluded whenever the app is locked behind
   // the mandatory login gate (see lockApp()/unlockApp()), since it must stay open.
@@ -3997,8 +4145,15 @@ function bindStaticEvents(){
 
   // User Management
   document.getElementById('btn-add-user').addEventListener('click', ()=>openUserModal(null));
-  document.getElementById('btn-save-user').addEventListener('click', saveUserFromModal);
-  document.getElementById('btn-reset-user-code').addEventListener('click', resetUserCode);
+  document.getElementById('user-form').addEventListener('submit', e=>{ e.preventDefault(); saveUserFromModal(); });
+  document.getElementById('btn-users-refresh').addEventListener('click', renderUsers);
+  document.getElementById('btn-users-export').addEventListener('click', exportUsersCSV);
+  document.getElementById('btn-users-template').addEventListener('click', downloadUsersTemplate);
+  document.getElementById('btn-users-import').addEventListener('click', ()=>document.getElementById('input-users-file').click());
+  document.getElementById('input-users-file').addEventListener('change', e=>{
+    if(e.target.files && e.target.files[0]) importUsersCSV(e.target.files[0]);
+    e.target.value = '';
+  });
 }
 
 /* ================================================================================

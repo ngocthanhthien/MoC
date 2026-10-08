@@ -3,15 +3,20 @@
  *
  * Three responsibilities, all backed by the same KV namespace (MOC_KV):
  *
- *  1. Auth — POST /auth/login, GET /auth/me, POST /auth/logout, GET /auth/names
+ *  1. Auth — POST /auth/login, GET /auth/me, POST /auth/logout
+ *     One login form for everyone: Tên đăng nhập (username or email) + Mật khẩu.
  *     Sessions are opaque tokens stored at  session:<token>  with a TTL (auto-expire).
- *     Admin has exactly one account, defined by the ADMIN_USER / ADMIN_PASS secrets
- *     (never shipped to the frontend). Leader/User accounts live in the User Directory.
+ *     Accounts (role admin|user) live in the User Directory. The ADMIN_USER /
+ *     ADMIN_PASS secrets define one extra "bootstrap" Admin that always works — it
+ *     creates the first real accounts and is the recovery path if every directory
+ *     Admin is lost. It is never shipped to the frontend and never stored in KV.
  *
  *  2. User Directory — GET/POST /users, PUT /users/:id  (admin only)
- *     Stored at KV key `moc_users`. Employee Code is never stored in plaintext —
- *     only its SHA-256 hash. Create/reset return the plaintext code ONCE so the
- *     admin can relay it to the person.
+ *     Stored at KV key `moc_users`. Passwords are chosen by the Admin and stored only
+ *     as a salted PBKDF2-SHA256 hash — they cannot be read back, only replaced.
+ *     Accounts created before this scheme (name + 6-digit Mã NV) are migrated on
+ *     first read: they get a username derived from their name and keep the old Mã NV
+ *     as password until it is changed (see migrateLegacyUsers / checkPassword).
  *
  *  3. App data — GET/PUT /data  (any authenticated, enabled user)
  *     Stored at KV key `moc_data` (mocList/actionPlan/agenda/attendant/people — no more
@@ -86,10 +91,31 @@ async function sha256Hex(text){
 function randomToken(){
   return Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2, '0')).join('');
 }
-function randomEmployeeCode(){
-  // 6-digit numeric — easy to read aloud / type on a shared floor PC
-  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
-  return String(n).padStart(6, '0');
+function b64(bytes){
+  let s = '';
+  new Uint8Array(bytes).forEach(b => { s += String.fromCharCode(b); });
+  return btoa(s);
+}
+function b64ToBytes(str){
+  const bin = atob(str);
+  const out = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+// 100,000 is the most Workers' Web Crypto accepts for PBKDF2. Stored per account so
+// it can be raised later without invalidating existing hashes.
+const PBKDF2_ITERATIONS = 100000;
+async function pbkdf2(password, saltBytes, iterations){
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations }, key, 256);
+  return b64(bits);
+}
+async function setPassword(rec, password){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  rec.passwordHash = await pbkdf2(password, salt, PBKDF2_ITERATIONS);
+  rec.passwordSalt = b64(salt);
+  rec.passwordIterations = PBKDF2_ITERATIONS;
+  delete rec.employeeCodeHash;
 }
 function safeEqual(a, b){
   a = String(a || ''); b = String(b || '');
@@ -102,14 +128,68 @@ function safeEqual(a, b){
 /* -------------------------------------------------------------------------- */
 /* users directory */
 /* -------------------------------------------------------------------------- */
+const BOOTSTRAP_ADMIN_ID = 'admin';
+const USERNAME_RE = /^[a-z0-9](?:[a-z0-9._-]{0,30}[a-z0-9])?$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 6;
+
 async function loadUsers(env){
-  return (await env.MOC_KV.get(USERS_KEY, 'json')) || {};
+  const users = (await env.MOC_KV.get(USERS_KEY, 'json')) || {};
+  if(migrateLegacyUsers(users)) await saveUsers(env, users);
+  return users;
+}
+// Accounts from the old "pick your name + Mã NV" login have no loginId. Give each one
+// a username built from its name (no diacritics/spaces, numbered if it collides) so
+// it can sign in through the single login form; its old Mã NV keeps working as the
+// password until someone replaces it (see checkPassword).
+function migrateLegacyUsers(users){
+  const legacy = Object.values(users).filter(u => !u.loginId)
+    .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  if(!legacy.length) return false;
+  const taken = new Set(Object.values(users).filter(u => u.loginId).map(u => u.loginId.toLowerCase()));
+  legacy.forEach(u => {
+    const base = normalizeName(u.name).replace(/ /g, '').slice(0, 28) || 'user';
+    let login = base, n = 2;
+    while(taken.has(login)) login = base + (n++);
+    taken.add(login);
+    u.loginId = login;
+    u.role = u.role === 'admin' ? 'admin' : 'user';
+  });
+  return true;
+}
+function bootstrapAdminLogin(env){
+  return env.ADMIN_USER && env.ADMIN_PASS ? env.ADMIN_USER.trim().toLowerCase() : '';
+}
+function findUserByLogin(users, loginId){
+  const lower = String(loginId || '').toLowerCase();
+  return Object.values(users).find(u => (u.loginId || '').toLowerCase() === lower) || null;
+}
+function hasOtherActiveAdmin(env, users, exceptId){
+  if(bootstrapAdminLogin(env)) return true;
+  return Object.values(users).some(u => u.id !== exceptId && u.role === 'admin' && u.enabled);
+}
+async function checkPassword(env, users, rec, password){
+  if(rec.passwordHash){
+    const computed = await pbkdf2(password, b64ToBytes(rec.passwordSalt), rec.passwordIterations);
+    return safeEqual(computed, rec.passwordHash);
+  }
+  if(!rec.employeeCodeHash) return false;
+  if(!safeEqual(await sha256Hex(password), rec.employeeCodeHash)) return false;
+  // legacy Mã NV accepted — re-store it under the current hashing scheme
+  await setPassword(rec, password);
+  await saveUsers(env, users);
+  return true;
 }
 async function saveUsers(env, users){
   await env.MOC_KV.put(USERS_KEY, JSON.stringify(users));
 }
 function publicUser(u){
-  return { id: u.id, name: u.name, function: u.function || '', role: u.role, enabled: !!u.enabled, createdAt: u.createdAt, updatedAt: u.updatedAt };
+  return {
+    id: u.id, name: u.name, loginId: u.loginId || '', function: u.function || '', role: u.role, enabled: !!u.enabled,
+    // still signing in with the pre-migration Mã NV as password
+    legacyCode: !u.passwordHash && !!u.employeeCodeHash,
+    createdAt: u.createdAt, updatedAt: u.updatedAt
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -120,24 +200,30 @@ async function createSession(env, user){
   await env.MOC_KV.put(SESSION_PREFIX + token, JSON.stringify(user), { expirationTtl: SESSION_TTL_SECONDS });
   return token;
 }
+function sessionUser(s){
+  return { id: s.userId, name: s.name, role: s.role, function: s.function || '', loginId: s.loginId || '' };
+}
 function bearerToken(request){
   const h = request.headers.get('Authorization') || '';
   const m = /^Bearer\s+(.+)$/i.exec(h.trim());
   return m ? m[1] : null;
 }
 // Resolves the current session, re-checking the live User Directory each time so a
-// leader disabled mid-session is cut off immediately rather than at next login.
+// user disabled mid-session is cut off immediately rather than at next login, and a
+// role change takes effect on the very next request.
 async function resolveSession(request, env){
   const token = bearerToken(request);
   if(!token) return null;
   const session = await env.MOC_KV.get(SESSION_PREFIX + token, 'json');
   if(!session) return null;
-  if(session.role === 'leader'){
+  if(session.userId !== BOOTSTRAP_ADMIN_ID){
     const users = await loadUsers(env);
     const rec = users[session.userId];
     if(!rec || !rec.enabled) { await env.MOC_KV.delete(SESSION_PREFIX + token); return null; }
-    // keep name/function in sync with the directory in case admin edited them
+    // keep name/function/role in sync with the directory in case admin edited them
     session.name = rec.name; session.function = rec.function || '';
+    session.role = rec.role === 'admin' ? 'admin' : 'user';
+    session.loginId = rec.loginId;
   }
   return { token, ...session };
 }
@@ -194,7 +280,10 @@ function assertWriteAllowed(collectionName, incomingArr, storedArr, session){
   const nameKey = normalizeName(session.name);
 
   // ids silently dropped from the payload (stale client, not an explicit tombstone)
-  for(const id of storedMap.keys()){
+  // A stored tombstone is never sent back: the client strips deleted:true records in
+  // normalizeData(), so its absence from the payload is expected, not a delete.
+  for(const [id, storedRec] of storedMap){
+    if(storedRec.deleted) continue;
     if(!incomingMap.has(id) && !isAdmin){
       throw { status: 403, body: { error: 'forbidden', reason: 'delete_requires_admin', collection: collectionName, id } };
     }
@@ -234,58 +323,36 @@ function assertWriteAllowed(collectionName, incomingArr, storedArr, session){
 async function handleLogin(request, env){
   let body;
   try{ body = await request.json(); }catch(e){ return json({ error: 'invalid_json' }, 400, env); }
+  const loginId = String(body.loginId || '').trim();
+  const password = String(body.password || '');
+  // same error for "no such account" and "wrong password" — don't reveal which
+  if(!loginId || !password) return json({ error: 'invalid_credentials' }, 401, env);
 
-  if(body.role === 'admin'){
-    const okUser = safeEqual((body.username || '').trim().toLowerCase(), (env.ADMIN_USER || '').trim().toLowerCase());
-    const okPass = safeEqual(body.password || '', env.ADMIN_PASS || '');
-    if(!okUser || !okPass || !env.ADMIN_USER || !env.ADMIN_PASS){
-      return json({ error: 'invalid_credentials' }, 401, env);
-    }
-    const user = { userId: 'admin', name: 'Admin', role: 'admin', function: 'Administrator' };
-    const token = await createSession(env, user);
-    return json({ token, user: { name: user.name, role: user.role, function: user.function } }, 200, env);
-  }
-
-  if(body.role === 'leader'){
-    const nameKey = normalizeName(body.name);
-    const code = String(body.employeeCode || '').trim();
-    if(!nameKey || !code) return json({ error: 'invalid_credentials' }, 401, env);
+  let user;
+  if(bootstrapAdminLogin(env) && safeEqual(loginId.toLowerCase(), bootstrapAdminLogin(env))){
+    if(!safeEqual(password, env.ADMIN_PASS)) return json({ error: 'invalid_credentials' }, 401, env);
+    user = { userId: BOOTSTRAP_ADMIN_ID, name: 'Admin', role: 'admin', function: 'Administrator', loginId: env.ADMIN_USER.trim() };
+  } else {
     const users = await loadUsers(env);
-    const rec = Object.values(users).find(u => normalizeName(u.name) === nameKey);
-    if(!rec || !rec.enabled) return json({ error: 'invalid_credentials' }, 401, env);
-    const codeHash = await sha256Hex(code);
-    if(!safeEqual(codeHash, rec.employeeCodeHash)) return json({ error: 'invalid_credentials' }, 401, env);
-    const user = { userId: rec.id, name: rec.name, role: 'leader', function: rec.function || '' };
-    const token = await createSession(env, user);
-    return json({ token, user: { name: user.name, role: user.role, function: user.function } }, 200, env);
+    const rec = findUserByLogin(users, loginId);
+    if(!rec || !(await checkPassword(env, users, rec, password))) return json({ error: 'invalid_credentials' }, 401, env);
+    if(!rec.enabled) return json({ error: 'account_disabled' }, 403, env);
+    user = { userId: rec.id, name: rec.name, role: rec.role === 'admin' ? 'admin' : 'user', function: rec.function || '', loginId: rec.loginId };
   }
-
-  return json({ error: 'invalid_role' }, 400, env);
+  const token = await createSession(env, user);
+  return json({ token, user: sessionUser(user) }, 200, env);
 }
 
 async function handleMe(request, env){
   const { session, error } = await requireAuth(request, env);
   if(error) return error;
-  return json({ user: { name: session.name, role: session.role, function: session.function } }, 200, env);
+  return json({ user: sessionUser(session) }, 200, env);
 }
 
 async function handleLogout(request, env){
   const token = bearerToken(request);
   if(token) await env.MOC_KV.delete(SESSION_PREFIX + token);
   return json({ ok: true }, 200, env);
-}
-
-// Public-ish: only the display names + function of *enabled* leader accounts, so the
-// login screen can offer a "chọn tên" picker without exposing anything sensitive
-// (no employee codes, no disabled accounts). Strictly less exposed than the old app,
-// which showed the full Attendant list to anyone before logging in at all.
-async function handleAuthNames(request, env){
-  const users = await loadUsers(env);
-  const list = Object.values(users)
-    .filter(u => u.enabled)
-    .map(u => ({ id: u.id, name: u.name, function: u.function || '' }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
-  return json({ users: list }, 200, env);
 }
 
 async function handleUsersList(request, env){
@@ -295,49 +362,74 @@ async function handleUsersList(request, env){
   return json({ users: Object.values(users).map(publicUser) }, 200, env);
 }
 
+function loginIdError(env, users, loginId, exceptId){
+  const lower = loginId.toLowerCase();
+  if(!(loginId.includes('@') ? EMAIL_RE.test(loginId) : USERNAME_RE.test(lower))) return 'login_invalid';
+  const clash = findUserByLogin(users, loginId);
+  if((clash && clash.id !== exceptId) || lower === bootstrapAdminLogin(env)) return 'login_taken';
+  return null;
+}
+function nameTaken(users, name, exceptId){
+  return Object.values(users).some(u => u.id !== exceptId && normalizeName(u.name) === normalizeName(name));
+}
+
 async function handleUsersCreate(request, env){
   const { error } = await requireAdmin(request, env);
   if(error) return error;
   let body;
   try{ body = await request.json(); }catch(e){ return json({ error: 'invalid_json' }, 400, env); }
-  const name = (body.name || '').trim();
+  const name = String(body.name || '').trim();
+  const loginId = String(body.loginId || '').trim().toLowerCase();
+  const password = String(body.password || '');
   if(!name) return json({ error: 'name_required' }, 400, env);
   const users = await loadUsers(env);
-  if(Object.values(users).some(u => normalizeName(u.name) === normalizeName(name))){
-    return json({ error: 'name_taken' }, 409, env);
-  }
+  // MoC edit rights are matched by display name, so two accounts can't share one
+  if(nameTaken(users, name)) return json({ error: 'name_taken' }, 409, env);
+  const loginErr = loginIdError(env, users, loginId);
+  if(loginErr) return json({ error: loginErr }, loginErr === 'login_taken' ? 409 : 400, env);
+  if(password.length < MIN_PASSWORD_LENGTH) return json({ error: 'password_too_short' }, 400, env);
+
   const id = crypto.randomUUID();
-  const code = randomEmployeeCode();
   const now = new Date().toISOString();
   users[id] = {
-    id, name, function: (body.function || '').trim(), role: 'leader',
-    enabled: true, employeeCodeHash: await sha256Hex(code), createdAt: now, updatedAt: now
+    id, name, loginId, function: String(body.function || '').trim(), role: body.role === 'admin' ? 'admin' : 'user',
+    enabled: true, createdAt: now, updatedAt: now
   };
+  await setPassword(users[id], password);
   await saveUsers(env, users);
-  return json({ user: publicUser(users[id]), employeeCode: code }, 201, env);
+  return json({ user: publicUser(users[id]) }, 201, env);
 }
 
 async function handleUserUpdate(request, env, id){
-  const { error } = await requireAdmin(request, env);
+  const { session, error } = await requireAdmin(request, env);
   if(error) return error;
   let body;
   try{ body = await request.json(); }catch(e){ return json({ error: 'invalid_json' }, 400, env); }
   const users = await loadUsers(env);
   const rec = users[id];
   if(!rec) return json({ error: 'not_found' }, 404, env);
-  if(typeof body.name === 'string' && body.name.trim()) rec.name = body.name.trim();
-  if(typeof body.function === 'string') rec.function = body.function.trim();
-  if(typeof body.enabled === 'boolean') rec.enabled = body.enabled;
-  rec.updatedAt = new Date().toISOString();
-  let employeeCode;
-  if(body.resetCode){
-    employeeCode = randomEmployeeCode();
-    rec.employeeCodeHash = await sha256Hex(employeeCode);
+  const isSelf = session.userId === id;
+
+  if(typeof body.name === 'string' && body.name.trim()){
+    if(nameTaken(users, body.name.trim(), id)) return json({ error: 'name_taken' }, 409, env);
+    rec.name = body.name.trim();
   }
+  if(typeof body.function === 'string') rec.function = body.function.trim();
+  if(typeof body.enabled === 'boolean'){
+    if(isSelf && !body.enabled) return json({ error: 'cannot_disable_self' }, 400, env);
+    rec.enabled = body.enabled;
+  }
+  if(body.role === 'admin' || body.role === 'user'){
+    if(isSelf && body.role !== 'admin' && !hasOtherActiveAdmin(env, users, id)) return json({ error: 'last_admin' }, 400, env);
+    rec.role = body.role;
+  }
+  if(typeof body.password === 'string' && body.password){
+    if(body.password.length < MIN_PASSWORD_LENGTH) return json({ error: 'password_too_short' }, 400, env);
+    await setPassword(rec, body.password);
+  }
+  rec.updatedAt = new Date().toISOString();
   await saveUsers(env, users);
-  const resp = { user: publicUser(rec) };
-  if(employeeCode) resp.employeeCode = employeeCode;
-  return json(resp, 200, env);
+  return json({ user: publicUser(rec) }, 200, env);
 }
 
 async function handleDataGet(request, env){
@@ -355,7 +447,7 @@ async function handleDataPut(request, env){
   const stored = (await env.MOC_KV.get(DATA_KEY, 'json')) || emptyData();
 
   // Only an admin can change the Change Owner/PIC lists. For everyone else the payload's
-  // copy is ignored (not rejected) — a leader whose tab is a few seconds stale must still
+  // copy is ignored (not rejected) — a user whose tab is a few seconds stale must still
   // be able to save their own MoC edit without tripping over lists they can't touch.
   if(session.role !== 'admin') incoming.people = stored.people || [];
 
@@ -387,7 +479,6 @@ export default {
     if(path === '/auth/login' && request.method === 'POST') return handleLogin(request, env);
     if(path === '/auth/me' && request.method === 'GET') return handleMe(request, env);
     if(path === '/auth/logout' && request.method === 'POST') return handleLogout(request, env);
-    if(path === '/auth/names' && request.method === 'GET') return handleAuthNames(request, env);
 
     if(path === '/users' && request.method === 'GET') return handleUsersList(request, env);
     if(path === '/users' && request.method === 'POST') return handleUsersCreate(request, env);

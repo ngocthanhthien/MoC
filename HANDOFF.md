@@ -1,7 +1,7 @@
 # HANDOFF — MoC Management App
 
 Tài liệu bàn giao cho app quản lý MoC (Management of Change) nội bộ nhà máy ILD Coffee.
-Cập nhật lần cuối: 2026-10-06. Viết để người/AI khác tiếp tục sửa code **mà không cần đọc lại
+Cập nhật lần cuối: 2026-10-08. Viết để người/AI khác tiếp tục sửa code **mà không cần đọc lại
 lịch sử hội thoại** — quyết định quan trọng và lý do đều ghi ở đây.
 
 ## 0. Trạng thái ngay lúc này
@@ -9,8 +9,10 @@ lịch sử hội thoại** — quyết định quan trọng và lý do đều g
 - **Thư mục làm việc chuẩn:** `C:\Users\BinhDang\Documents\GitHub\MoC` (clone của
   `https://github.com/ngocthanhthien/MoC`, nhánh `main`). Thư mục cũ `C:\Apps\M - MOC - New`
   là bản làm việc đời đầu, **đã lỗi thời** (index.html cũ, HANDOFF cũ) — đừng dùng làm nguồn.
-- **Đã deploy cả hai phía** ở commit `dfbc4ac` (Worker + GitHub Pages). Các thay đổi sau
-  commit đó (dọn dẹp + HANDOFF này) chỉ là tài liệu/file phụ, không đổi hành vi app.
+- **Đã deploy cả hai phía ngày 2026-10-08** (Worker version `093675ed`, frontend qua GitHub
+  Pages): sửa lỗi 403 tombstone (mục 2) + đăng nhập Tên đăng nhập/Mật khẩu và tab Quản lý người
+  dùng mới (mục 3). Worker và frontend của đợt này **phải đi cùng nhau** — frontend gửi
+  `{loginId, password}`, không tương thích với Worker trước đó; đừng rollback riêng một phía.
 - **Worker production:** `https://moc-data-api.dangthanhbinh53.workers.dev` (tài khoản
   Cloudflare của người dùng, KV `MOC_KV` id nằm trong `cloudflare/wrangler.toml`).
 - **Frontend production:** GitHub Pages của repo trên (origin được phép CORS:
@@ -46,30 +48,56 @@ base64) + **thanh tab ngang** (không còn sidebar dọc) — xem mục 4.
   `normalizeData`, `buildOutgoingPayload`, `saveData` (giữ lại local nếu Worker cũ không trả
   về key đó — đã làm cho `people`), `handleResetSeed`, và phía Worker: `emptyData`,
   `mergeData`, danh sách trong `handleDataPut`, luật ghi trong `assertWriteAllowed`.
+- **Tombstone không bao giờ được client gửi lại** (đã bị `normalizeData()` lọc), nên
+  `assertWriteAllowed()` phải bỏ qua bản ghi `deleted:true` đang lưu khi dò "id bị thiếu trong
+  payload". Thiếu bước này thì sau lần xoá đầu tiên của Admin, mọi lần lưu của User đều bị 403
+  `delete_requires_admin` (lỗi thật đã gặp, sửa 2026-10-08).
 - Mất mạng: app dùng cache cục bộ, có Xuất/Nhập JSON thủ công ở tab Cài đặt.
 
 ## 3. Đăng nhập & phân quyền
 
-Đăng nhập **bắt buộc** (body có class `auth-locked` cho tới khi xác thực xong).
+Đăng nhập **bắt buộc** (body có class `auth-locked` cho tới khi xác thực xong). Mô hình làm
+theo app CloseCAPGMP: **một form duy nhất** Tên đăng nhập (hoặc email) + Mật khẩu cho mọi tài
+khoản; vai trò do Worker quyết định theo danh bạ.
 
-| Vai trò | Đăng nhập | Quyền |
-|---|---|---|
-| **Admin** | Username + Mật khẩu (secret `ADMIN_USER`/`ADMIN_PASS` ở Worker — không có trong code/KV) | Toàn quyền: sửa/xoá mọi thứ, tab Người dùng, tab Cài đặt |
-| **Leader/User** | Chọn Tên + Mã NV 6 số (Admin cấp ở tab Người dùng) | Xem tất cả, tạo mới mọi loại; **chỉ sửa MoC nếu là Change Owner hoặc có tên trong Người liên quan**; không xoá, không vào Người dùng/Cài đặt |
+| Vai trò | Quyền |
+|---|---|
+| **Admin** | Toàn quyền: sửa/xoá mọi thứ, tab Người dùng, tab Cài đặt. Có thể có **nhiều** Admin |
+| **User** | Xem tất cả, tạo mới mọi loại; **chỉ sửa MoC nếu là Change Owner hoặc có tên trong Người liên quan**; không xoá, không vào Người dùng/Cài đặt |
 
-- Mã NV chỉ lưu dạng hash SHA-256; hiện plaintext **một lần** lúc tạo/reset. Phiên: token
-  ngẫu nhiên ở KV `session:<token>` (TTL 12h), gửi bằng `Authorization: Bearer`. Worker kiểm
-  tra lại user bị Disable ở **mỗi request**.
+- **Danh bạ tài khoản** ở KV `moc_users` (object theo `id`):
+  `{id, name, loginId, function, role:'admin'|'user', enabled, passwordHash, passwordSalt,
+  passwordIterations, createdAt, updatedAt}`. Mật khẩu do Admin đặt, chỉ lưu băm
+  **PBKDF2-SHA256 có salt, 100.000 vòng** (mức tối đa Web Crypto của Workers cho phép) — không
+  đọc lại được, chỉ đặt lại. `loginId` lưu chữ thường: username (`[a-z0-9._-]`, tối đa 32 ký tự)
+  hoặc email; **không đổi được sau khi tạo**. `name` phải duy nhất (so khớp bỏ dấu) vì quyền sửa
+  MoC xét theo tên.
+- **Admin "bootstrap"** = secret `ADMIN_USER`/`ADMIN_PASS` ở Worker (không có trong code/KV,
+  không hiện trong danh bạ, `id` phiên là `'admin'`). Dùng để tạo các tài khoản đầu tiên và là
+  đường cứu hộ khi mất hết Admin trong danh bạ. Đổi mật khẩu = `npx wrangler secret put ADMIN_PASS`.
+  Không tạo được tài khoản danh bạ trùng `loginId` với `ADMIN_USER`.
+- **Di trú tài khoản cũ (Tên + Mã NV 6 số):** `migrateLegacyUsers()` chạy trong `loadUsers()` —
+  bản ghi chưa có `loginId` được gán username = tên bỏ dấu viết liền (trùng thì thêm số: `…2`),
+  `role` → `'user'`. Mật khẩu **vẫn là Mã NV cũ** (`checkPassword()` so SHA-256 với
+  `employeeCodeHash`), lần đăng nhập đúng đầu tiên tự băm lại sang PBKDF2 và xoá `employeeCodeHash`.
+  Tab Người dùng ghi chú "Mật khẩu = Mã NV cũ" (`legacyCode`) cho tới lúc đó. Endpoint
+  `/auth/names` (danh sách tên trước khi đăng nhập) đã bỏ.
+- **Phiên:** token ngẫu nhiên ở KV `session:<token>` (TTL 12h), gửi bằng `Authorization: Bearer`.
+  Mỗi request Worker đọc lại danh bạ: tài khoản bị vô hiệu hoá/xoá → 401 ngay; đổi vai trò/tên có
+  hiệu lực ở request kế tiếp. (App tham chiếu dùng JWT 30 ngày; ở đây giữ 12h vì hay dùng máy chung.)
+- **Chốt chặn quản lý tài khoản (Worker):** không tự vô hiệu hoá chính mình; không tự hạ quyền
+  nếu là Admin đang hoạt động duy nhất *và* không có Admin bootstrap. Lỗi trả về dạng mã
+  (`name_taken`, `login_taken`, `login_invalid`, `password_too_short`, `cannot_disable_self`,
+  `last_admin`, `account_disabled`…) — frontend dịch qua `USER_ERROR_VI`.
 - **Phân quyền kiểm tra 2 lớp:** frontend (`canEdit/canDelete/canEditMoc...`) chỉ để ẩn/hiện
   nút; **lớp bảo mật thật là `assertWriteAllowed()` trong Worker** (so với dữ liệu đang lưu
   trên server, không tin client): tạo mới → ai cũng được; sửa MoC → Admin hoặc owner/relevant
   theo **bản ghi trên server**; sửa Action/Agenda/Attendant → ai đã đăng nhập; xoá → chỉ Admin.
   Vi phạm → 403, frontend tự đồng bộ lại.
 - **`people`:** chỉ Admin được đổi. Với non-admin, Worker **bỏ qua** (không báo lỗi) `people`
-  trong payload để leader có tab hơi cũ vẫn lưu được MoC của mình.
+  trong payload để User có tab hơi cũ vẫn lưu được MoC của mình.
 - So khớp tên (owner/relevant) bỏ dấu, không phân biệt hoa thường (`normalizeNameForMatch`
   ở frontend, `normalizeName` ở Worker — giữ 2 bản **đồng bộ**).
-- Chỉ có 1 tài khoản Admin; đổi mật khẩu = `npx wrangler secret put ADMIN_PASS`.
 
 ## 4. Bản đồ tính năng
 
@@ -96,8 +124,12 @@ Thêm tab mới: thêm `.nav-item[data-view=x]`, `<section class="view" id="view
 - **Agenda & Attendant** — agenda họp, bảng điểm danh W1–W52 (3 cột sticky, tự cuộn tới tuần hiện tại).
 - **Hướng dẫn** — view tĩnh (`#view-guide`): menu neo, bảng quyền, callout, FAQ `<details>`.
   Nội dung viết tay trong HTML — **cập nhật khi đổi hành vi** (đặc biệt phân quyền, SLA).
-- **Người dùng** (Admin) — thêm/sửa tài khoản, bật/tắt Enable (có nút 🔒/🔓 bật-tắt nhanh ngay
-  trên dòng), Reset Mã NV.
+- **Quản lý người dùng** (Admin) — bảng Họ tên / Đăng nhập / Bộ phận / Vai trò / Trạng thái; trên
+  từng dòng: Nâng lên Admin ↔ Hạ xuống User, Vô hiệu hoá ↔ Kích hoạt (khoá nút với chính mình),
+  ✎ sửa tên/bộ phận và **đặt lại mật khẩu**. Thanh công cụ: Tải lại, Xuất CSV (không có mật
+  khẩu), Tải Template CSV, **Nhập từ CSV** tạo tài khoản hàng loạt (`parseCSV` tự nhận dấu
+  phân cách `,` `;` tab; kiểm tra từng dòng bằng `userInputProblem` trước khi gửi; mỗi dòng một
+  `POST /users`). Dùng CSV thay vì Excel như app tham chiếu vì app này không nhúng thư viện.
 - **Dữ liệu & Cài đặt** (Admin) — trạng thái Cloud Sync, **Danh sách Change Owner & PIC**,
   backup/restore JSON, reset dữ liệu mẫu (giữ nguyên `people`).
 
@@ -170,8 +202,10 @@ Map `index.html` (~4265 dòng; luôn `grep -n` lại tên section thay vì tin s
 `ACTION PLAN` → `ATTENDANT` → `EXPORT CSV` → `EMAIL REPORT` → `SETTINGS` → `USER MANAGEMENT` →
 `EVENT BINDING` → `INIT` → `SEED DATA` (rỗng); sau `</script>` chính còn dialog Theme + script Theme.
 
-`cloudflare/worker.js`: `handleLogin/Me/Logout/AuthNames` (`/auth/*`), `handleUsersList/Create/Update`
-(`/users*`, admin), `handleDataGet/Put` (`/data`), `assertWriteAllowed()`.
+`cloudflare/worker.js`: `handleLogin/Me/Logout` (`/auth/*`), `handleUsersList/Create/Update`
+(`GET/POST /users`, `PUT /users/:id` nhận `{name, function, enabled, role, password}` — admin),
+`handleDataGet/Put` (`/data`), `assertWriteAllowed()`; tài khoản: `migrateLegacyUsers`,
+`checkPassword`, `setPassword`, `loginIdError`, `hasOtherActiveAdmin`.
 
 **Kiểm tra nhanh sau khi sửa frontend** (quy trình đã dùng xuyên suốt):
 1. Cú pháp: tách các khối `<script>...</script>` rồi `new Function(code)` bằng Node.
@@ -187,7 +221,14 @@ Map `index.html` (~4265 dòng; luôn `grep -n` lại tên section thay vì tin s
 `moc_users`, rồi `worker.fetch(new Request('http://x/data',{method:'PUT',headers:{Authorization:'Bearer <token>'},body}), env)`.
 Các ca nên kiểm: admin ghi `people` OK; leader ghi `people` bị bỏ qua (200 nhưng không đổi);
 client cũ không gửi `people` không bị coi là xoá; leader sửa MoC không phải của mình → 403;
-leader xoá → 403.
+leader xoá → 403; **User lưu khi server đang có tombstone → 200**; tài khoản cũ đăng nhập bằng
+username sinh tự động + Mã NV; tạo trùng tên/trùng `loginId` → 409; tự vô hiệu hoá → 400;
+vô hiệu hoá xong phiên cũ → 401, đăng nhập lại → 403 `account_disabled`.
+
+**Chạy thử cả app cục bộ không đụng production:** viết server Node nhỏ phục vụ `index.html`
+(thay chuỗi `workerUrl` thành `'/api'` lúc trả về) và chuyển `/api/*` vào `worker.fetch` với KV
+giả — đăng nhập, tab Người dùng, lưu dữ liệu đều chạy thật trên trình duyệt. Đã dùng cách này
+để kiểm thử đợt 2026-10-08.
 
 ## 9. Deploy
 
@@ -218,13 +259,17 @@ Sau deploy: `curl -i https://moc-data-api.dangthanhbinh53.workers.dev/data` ph�
 Pages: branch `main`, thư mục `/`). Người dùng cần Ctrl+F5 để lấy bản mới.
 
 ### 9.3. Lần đầu
-Đăng nhập Admin → tab **Người dùng** tạo tài khoản Leader (ghi Mã NV, chỉ hiện 1 lần) → tab
-**Cài đặt** thiết lập danh sách Change Owner/PIC (hoặc "Nhập từ tên đã dùng").
+Đăng nhập bằng Admin bootstrap (`ADMIN_USER`/`ADMIN_PASS`) → tab **Người dùng** tạo tài khoản
+(tự đặt Tên đăng nhập + Mật khẩu ban đầu, hoặc Nhập từ CSV), nên tạo luôn một Admin trong danh bạ
+cho từng người quản trị → tab **Cài đặt** thiết lập danh sách Change Owner/PIC.
+**Sau khi deploy đợt đăng nhập mới:** mở tab Người dùng xem Tên đăng nhập đã sinh cho các tài
+khoản cũ và báo lại cho từng người (mật khẩu của họ vẫn là Mã NV cũ).
 
 ## 10. Giới hạn đã biết & việc có thể làm tiếp
 
 - Không gửi email thật được (chỉ `.eml`); cần internet để đăng nhập/đồng bộ; phiên hết hạn 12h;
-  chỉ 1 Admin; chưa test trên iPad/điện thoại ở mức đầy đủ (thanh tab ngang có cuộn ngang; nút
+  người dùng chưa tự đổi được mật khẩu (chỉ Admin đặt lại); không giới hạn số lần đăng nhập
+  sai; không xoá hẳn được tài khoản (chỉ vô hiệu hoá); chưa test trên iPad/điện thoại ở mức đầy đủ (thanh tab ngang có cuộn ngang; nút
   Giao diện bị ẩn ở màn hình ≤480px vì topbar hết chỗ — truy cập được từ ≥481px).
 - Sửa MoC xét quyền theo bản ghi **trên server** → hai người sửa gần đồng thời có thể bị 403 và
   bị đồng bộ lại (mất thao tác dang dở); so khớp owner theo tên chuỗi nên trùng/khác tên có thể sai.
