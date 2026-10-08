@@ -13,7 +13,7 @@ lịch sử hội thoại** — quyết định quan trọng và lý do đều g
   Pages): sửa lỗi 403 tombstone (mục 2) + đăng nhập Tên đăng nhập/Mật khẩu và tab Quản lý người
   dùng mới (mục 3). Worker và frontend của đợt này **phải đi cùng nhau** — frontend gửi
   `{loginId, password}`, không tương thích với Worker trước đó; đừng rollback riêng một phía.
-- **Đợt 2 cùng ngày, cũng đã deploy cả hai phía** (Worker version `e657a137`): gộp "Danh sách
+- **Đợt 2 cùng ngày, cũng đã deploy cả hai phía** (Worker hiện tại version `9b488b1c`, đã gồm cả quyền xoá tài khoản): gộp "Danh sách
   Change Owner & PIC" vào tab Quản lý người dùng (mục 4).
 - **Worker production:** `https://moc-data-api.dangthanhbinh53.workers.dev` (tài khoản
   Cloudflare của người dùng, KV `MOC_KV` id nằm trong `cloudflare/wrangler.toml`).
